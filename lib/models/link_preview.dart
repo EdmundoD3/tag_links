@@ -1,5 +1,7 @@
+import 'package:uuid/uuid.dart';
+
 class LinkPreview {
-  final String id;
+  String id;
   final String noteId;
   final String url;
   final String? title;
@@ -16,6 +18,17 @@ class LinkPreview {
     this.image,
     this.siteName,
   });
+  LinkPreview ensureForInsert(String noteId) {
+    return LinkPreview(
+      id: id.isEmpty ? const Uuid().v4() : id,
+      noteId: noteId,
+      url: url,
+      title: title,
+      description: description,
+      image: image,
+      siteName: siteName,
+    );
+  }
 }
 
 String linkPreviewTable = '''

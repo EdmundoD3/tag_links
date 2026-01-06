@@ -8,6 +8,7 @@ class FolderTag {
   });
 }
 
+
 String folderTagTable = '''
           CREATE TABLE folder_tags(
             folderId TEXT NOT NULL,

@@ -1,35 +1,34 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../state/folders_notifier.dart';
+import 'package:tag_links/ui/folder/folder_form_page.dart';
+import 'package:tag_links/ui/folder/folder_tile.dart';
+import '../state/folders_provider.dart';
 import '../models/folder.dart';
-import 'folder_page.dart';
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final folders = ref.watch(foldersProvider(null));
-    final rootFolders = folders.where((f) => f.parentId == null).toList();
+    final foldersAsyncValue = ref.watch(foldersProvider(null));
 
     return Scaffold(
       appBar: AppBar(title: const Text('Folders')),
-      floatingActionButton: _createNewFolderBtn(context, ref),
-      body: _l(context, rootFolders),
+      floatingActionButton: _createNewFolderBtn(context, ref), // Keep the FAB
+      body: foldersAsyncValue.when(
+        data: (folders) {
+          final rootFolders = folders.where((f) => f.parentId == null).toList();
+          return _buildFolderList(context, rootFolders);
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(child: Text('Error: $error')),
+      ),
     );
   }
-  Widget _l(BuildContext context, List<Folder> rootFolders){
+  Widget _buildFolderList(BuildContext context, List<Folder> rootFolders){
     return ListView(
         children: rootFolders.map((f) {
-          return ListTile(
-            title: Text(f.title),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => FolderPage(folder: f)),
-              );
-            },
-          );
+          return FolderTile(folder: f);
         }).toList(),
       );
   }
@@ -37,15 +36,15 @@ class HomePage extends ConsumerWidget {
   Widget _createNewFolderBtn(BuildContext context, WidgetRef ref) {
     return FloatingActionButton(
         onPressed: () {
-          final folder = Folder(
-            id: DateTime.now().millisecondsSinceEpoch.toString(),
-            title: 'Nuevo Folder',
-            tags: const [],
-            createdAt: DateTime.now(),
-          );
-          ref.read(foldersProvider(null).notifier).addFolder(folder);
+          _createNewFolder(context);
         },
         child: const Icon(Icons.add),
       );
+  }
+  Future<void> _createNewFolder(BuildContext context) {
+    return Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const FolderFormPage()),
+    );
   }
 }

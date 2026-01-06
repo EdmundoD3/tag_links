@@ -10,11 +10,26 @@ import 'package:tag_links/models/tag.dart';
 class AppDatabase {
   static Database? _db;
   static String indexes = '''
-      CREATE INDEX idx_notes_folderId ON notes(folderId);
-      CREATE INDEX idx_notes_favorite ON notes(isFavorite);
-      CREATE INDEX idx_folders_parentId ON folders(parentId);
-      CREATE INDEX idx_link_noteId ON link_previews(noteId);
+      -- NOTES
+        CREATE INDEX idx_notes_folder_updated
+        ON notes(folderId, updatedAt DESC);
+
+        CREATE INDEX idx_notes_favorite_updated
+        ON notes(isFavorite, updatedAt DESC);
+
+        -- TAGS
+        CREATE INDEX idx_note_tags_tag_note
+        ON note_tags(tagId, noteId);
+
+        -- FOLDERS
+        CREATE INDEX idx_folders_parentId
+        ON folders(parentId);
+
+        -- LINKS
+        CREATE INDEX idx_link_noteId
+        ON link_previews(noteId);
 ''';
+
   Future<Database> get database async {
     if (_db != null) return _db!;
     _db = await _initDB();
@@ -45,4 +60,3 @@ class AppDatabase {
     );
   }
 }
-
