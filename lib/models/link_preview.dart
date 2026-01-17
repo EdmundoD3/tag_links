@@ -18,15 +18,52 @@ class LinkPreview {
     this.image,
     this.siteName,
   });
-  LinkPreview ensureForInsert(String noteId) {
+
+  factory LinkPreview.create({
+    required String noteId,
+    required String url,
+  }) {
     return LinkPreview(
-      id: id.isEmpty ? const Uuid().v4() : id,
+      id: const Uuid().v4(),
+      noteId: noteId,
+      url: url,
+    );
+  }
+
+  factory LinkPreview.withMetadata({
+    required String id,
+    required String noteId,
+    required String url,
+    String? title,
+    String? description,
+    String? image,
+    String? siteName,
+  }) {
+    return LinkPreview(
+      id: id,
       noteId: noteId,
       url: url,
       title: title,
       description: description,
       image: image,
       siteName: siteName,
+    );
+  }
+
+  LinkPreview copyWith({
+    String? title,
+    String? description,
+    String? image,
+    String? siteName,
+  }) {
+    return LinkPreview(
+      id: id,
+      noteId: noteId,
+      url: url,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      image: image ?? this.image,
+      siteName: siteName ?? this.siteName,
     );
   }
 }

@@ -1,16 +1,104 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:tag_links/data/database.dart';
 import 'package:tag_links/models/folder.dart';
+import 'package:tag_links/models/note.dart';
+import 'package:tag_links/models/search_query.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/utils/paginated_utils.dart';
 
 class FoldersDao {
   Future<Database> get _db async => AppDatabase().database;
 
+  Future<List<Folder>> searchByQuery(
+    SearchQuery searchQuery, {
+    required PaginatedByDate paginated,
+  }) async {
+    final db = await _db;
+
+    final where = <String>[];
+    final args = <Object?>[];
+
+    if (searchQuery.text.isNotEmpty) {
+      where.add('(title LIKE ? OR description LIKE ?)');
+      args.add('%${searchQuery.text}%');
+      args.add('%${searchQuery.text}%');
+    }
+
+    if (searchQuery.hasIncludeTags) {
+      final placeholders = List.filled(
+        searchQuery.includeTagsIds.length,
+        '?',
+      ).join(',');
+
+      where.add('''
+      id IN (
+        SELECT ft.folderId
+        FROM folder_tags ft
+        WHERE ft.tagId IN ($placeholders)
+        GROUP BY ft.folderId
+        HAVING COUNT(DISTINCT ft.tagId) = ${searchQuery.includeTagsIds.length}
+      )
+    ''');
+
+      args.addAll(searchQuery.includeTagsIds);
+    }
+
+    final whereSql = where.isEmpty ? '' : 'WHERE ${where.join(' AND ')}';
+
+    final sql =
+        '''
+    SELECT *
+    FROM folders
+    $whereSql
+    ORDER BY ${paginated.orderSql}
+    LIMIT ? OFFSET ?
+  ''';
+
+    args.add(paginated.limit);
+    args.add(paginated.offset);
+
+    final result = await db.rawQuery(sql, args);
+
+    return Future.wait(result.map((f) => _mapFolderWithTags(db, f)));
+  }
+
+  Future<PaginatedByDate> getPageForNoteId(
+    Note note, {
+    required PaginatedByDate paginated,
+  }) async {
+    final field = _buildOrderField(paginated);
+    final whereClause = _buildOrderWhereClause(paginated);
+
+    final query =
+        '''
+          SELECT COUNT(*) as count
+          FROM notes
+          WHERE folderId = ?
+            AND $whereClause (
+              SELECT $field FROM notes WHERE id = ?
+            );
+        ''';
+
+    final args = [note.folderId, note.id];
+
+    final result = await _db.then((db) => db.rawQuery(query, args));
+
+    final rawCount = result.first['count'];
+    final count = (rawCount as num?)?.toInt() ?? 0;
+
+    final page = (count ~/ paginated.pageSize) + 1;
+
+    return PaginatedByDate(
+      page: page < 1 ? 1 : page,
+      pageSize: paginated.pageSize,
+      order: paginated.order,
+    );
+  }
+
   /// INSERT
   Future<void> insert(Folder folder) async {
     final db = await _db;
-    
+
     await db.transaction((txn) async {
       await txn.insert('folders', folder.toMap());
 
@@ -146,13 +234,15 @@ class FoldersDao {
   }
 
   /// ROOT FOLDERS
-  Future<List<Folder>> getRootFolders({PaginatedParams paginated = const PaginatedParams()}) async {
+  Future<List<Folder>> getRootFolders({
+    required PaginatedByDate paginated,
+  }) async {
     final db = await _db;
 
     final result = await db.query(
       'folders',
       where: 'parentId IS NULL',
-      orderBy: orderBySql(paginated.order),
+      orderBy: paginated.orderSql,
       limit: paginated.limit,
       offset: paginated.offset,
     );
@@ -161,14 +251,17 @@ class FoldersDao {
   }
 
   /// BY PARENT
-  Future<List<Folder>> getByParentId(String parentId,{PaginatedParams paginated = const PaginatedParams()}) async {
+  Future<List<Folder>> getByParentId(
+    String parentId, {
+    required PaginatedByDate paginated,
+  }) async {
     final db = await _db;
 
     final result = await db.query(
       'folders',
       where: 'parentId = ?',
       whereArgs: [parentId],
-      orderBy: orderBySql(paginated.order),
+      orderBy: paginated.orderSql,
       limit: paginated.limit,
       offset: paginated.offset,
     );
@@ -177,13 +270,15 @@ class FoldersDao {
   }
 
   /// FAVORITES
-  Future<List<Folder>> getFavorites({PaginatedParams paginated = const PaginatedParams()}) async {
+  Future<List<Folder>> getFavorites({
+    required PaginatedByDate paginated,
+  }) async {
     final db = await _db;
 
     final result = await db.query(
       'folders',
       where: 'isFavorite = 1',
-      orderBy: orderBySql(paginated.order),
+      orderBy: paginated.orderSql,
       limit: paginated.limit,
       offset: paginated.offset,
     );
@@ -227,4 +322,20 @@ class FoldersDao {
 
     return result.map(Tag.fromMap).toList();
   }
+}
+
+String _buildOrderWhereClause(PaginatedByDate paginated) {
+  return switch (paginated.order) {
+    OrderDate.updatedDesc => 'updatedAt > ?',
+    OrderDate.updatedAsc => 'updatedAt < ?',
+    OrderDate.createdDesc => 'createdAt > ?',
+    OrderDate.createdAsc => 'createdAt < ?',
+  };
+}
+
+String _buildOrderField(PaginatedByDate paginated) {
+  return switch (paginated.order) {
+    OrderDate.updatedDesc || OrderDate.updatedAsc => 'updatedAt',
+    OrderDate.createdDesc || OrderDate.createdAsc => 'createdAt',
+  };
 }

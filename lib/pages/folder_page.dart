@@ -1,111 +1,261 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/models/folder.dart';
+import 'package:tag_links/models/folder_preference.dart';
+import 'package:tag_links/models/note.dart';
+import 'package:tag_links/repository/folder_repository.dart';
+import 'package:tag_links/state/folders_provider.dart';
+import 'package:tag_links/state/notes_provider.dart';
+import 'package:tag_links/state/shared_media_provider.dart';
+import 'package:tag_links/ui/alerts/confirm_dialog.dart';
+import 'package:tag_links/ui/banners/banner_pending.dart';
 import 'package:tag_links/ui/folder/folder_form_page.dart';
-import 'package:tag_links/ui/note/note_form_page.dart';
 import 'package:tag_links/ui/folder/folder_tile.dart';
+import 'package:tag_links/ui/note/note_form_page.dart';
 import 'package:tag_links/ui/note/note_tile.dart';
-import '../models/folder.dart';
-import '../state/folders_provider.dart';
-import '../state/notes_provider.dart';
-import '../models/note.dart';
+import 'package:tag_links/utils/paginated_utils.dart';
 
-class FolderPage extends ConsumerWidget {
+class FolderPage extends ConsumerStatefulWidget {
   final Folder folder;
-  const FolderPage({super.key, required this.folder});
+  final Note? highlightNote;
+  final PaginatedByDate? paginated;
+
+  const FolderPage({
+    super.key,
+    required this.folder,
+    this.highlightNote,
+    this.paginated,
+  });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final subFolders = ref.watch(foldersProvider(folder.id));
-    final folderNotes = ref.watch(notesProvider(folder.id));
+  ConsumerState<FolderPage> createState() => _FolderPageState();
+}
 
-    return Scaffold(
-      appBar: AppBar(title: Text(folder.title)),
-      floatingActionButton: _createFabMenu(context, ref),
-      body: ListView(
-        children: [
-          ..._foldersList(context, subFolders),
-          ..._notesList(context, folderNotes),
-        ],
-      ),
-    );
+class _FolderPageState extends ConsumerState<FolderPage> {
+  final ScrollController _scrollController = ScrollController();
+  bool _didScrollToHighlight = false;
+
+  AsyncNotifierProvider<NotesNotifier, List<Note>> get _notesProvider =>
+      notesProvider(widget.folder.id);
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
-  List<Widget> _foldersList(
-    BuildContext context,
-    AsyncValue<List<Folder>> subFolders,
-  ) {
-    return subFolders.when(
-      data: (folders) {
-        if (folders.isEmpty) return [];
-        return [
-          const Padding(
-            padding: EdgeInsets.all(8),
-            child: Text(
-              'Carpetas',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
+  @override
+  void initState() {
+    super.initState();
+
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels <=
+          _scrollController.position.minScrollExtent + 100) {
+        ref.read(_notesProvider.notifier).loadMore();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final subFolders = ref.watch(foldersProvider(widget.folder.id));
+    final notes = ref.watch(_notesProvider);
+    final preferenceAsync = ref.watch(
+      folderPreferenceProvider(widget.folder.id),
+    );
+
+    final hasPendingSharedNotes = ref.watch(hasPendingSharedNoteProvider);
+
+    final sharedNote = ref.watch(sharedNoteProvider);
+
+    return preferenceAsync.when(
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (err, _) => Scaffold(body: Center(child: Text('Error: $err'))),
+      data: (preference) {
+        final showFolders = preference == FolderDefaultView.folders;
+
+        if (!showFolders && widget.highlightNote != null) {
+          _scrollToHighlightedNote(notes);
+        }
+
+        return Scaffold(
+          appBar: _appBar(context, ref, showFolders, preference),
+          floatingActionButton: _buildFab(context, showFolders, sharedNote),
+          body: Column(
+            children: [
+              if (hasPendingSharedNotes)
+                _bannerHasPendingSharedNotes(context, ref),
+
+              Expanded(
+                child: ListView(
+                  controller: _scrollController,
+                  children: showFolders
+                      ? _foldersList(context, ref, subFolders)
+                      : _buildNotes(context, ref, notes),
+                ),
+              ),
+            ],
           ),
-          ...folders.map((f) => FolderTile(folder: folder)),
-        ];
+        );
       },
-      loading: () => [const Center(child: CircularProgressIndicator())],
-      error: (err, stack) => [Center(child: Text('Error: $err'))],
     );
   }
 
-  List<Widget> _notesList(
+  /// 🎯 Scroll a la nota resaltada (solo una vez)
+  void _scrollToHighlightedNote(AsyncValue<List<Note>> notesAsync) {
+    if (widget.paginated == null) return; //ahi contiene la paginacion correcta
+    if (_didScrollToHighlight) return;
+
+    notesAsync.whenData((notes) {
+      final index = notes.indexWhere((n) => n.id == widget.highlightNote!.id);
+
+      if (index == -1) return;
+
+      _didScrollToHighlight = true;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+
+        _scrollController.animateTo(
+          index * 72.0, // altura aproximada de NoteTile
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      });
+    });
+  }
+
+  PreferredSizeWidget _appBar(
     BuildContext context,
-    AsyncValue<List<Note>> folderNotes,
+    WidgetRef ref,
+    bool showFolders,
+    FolderDefaultView preference,
   ) {
-    return folderNotes.when(
-      data: (notes) {
-        if (notes.isEmpty) return [];
-        return [
-          const Divider(),
-          ...notes.map(
-            (note) => NoteTile(note: note),
-            )
-        ];
-      },
-      loading: () => [const Center(child: CircularProgressIndicator())],
-      error: (err, stack) => [Center(child: Text('Error: $err'))],
-    );
-  }
-
-  Widget _createFabMenu(BuildContext context, WidgetRef ref) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        FloatingActionButton(
-          heroTag: 'addFolder',
-          mini: true,
-          onPressed: () => _createNewFolder(context, folder.id),
-          child: const Icon(Icons.create_new_folder),
-        ),
-        const SizedBox(height: 8),
-        FloatingActionButton(
-          heroTag: 'addNote',
-          onPressed: () => _createNewNote(context),
-          child: const Icon(Icons.note_add),
+    return AppBar(
+      title: Text(widget.folder.title),
+      actions: [
+        IconButton(
+          onPressed: () => _toggleView(ref, preference),
+          icon: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child: showFolders
+                ? const Icon(Icons.note, key: ValueKey('note'))
+                : const Icon(Icons.folder_open, key: ValueKey('folder')),
+          ),
         ),
       ],
     );
   }
 
-  Future<void> _createNewFolder(BuildContext context, String parentFolderId) {
-    return Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => FolderFormPage(parentFolderId: parentFolderId),
-      ),
+  /// 🔁 Cambiar vista y guardar preferencia
+  Future<void> _toggleView(WidgetRef ref, FolderDefaultView current) async {
+    final repo = ref.read(folderRepositoryProvider);
+    final newView = current == FolderDefaultView.folders
+        ? FolderDefaultView.notes
+        : FolderDefaultView.folders;
+
+    await repo.savePreference(widget.folder.id, newView);
+    ref.invalidate(folderPreferenceProvider(widget.folder.id));
+  }
+
+  /// 📂 Lista de carpetas
+  List<Widget> _foldersList(
+    BuildContext context,
+    WidgetRef ref,
+    AsyncValue<List<Folder>> subFolders,
+  ) {
+    return subFolders.when(
+      data: (folders) {
+        if (folders.isEmpty) {
+          return [
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text('No hay carpetas'),
+            ),
+          ];
+        }
+
+        return folders.map((f) => FolderTile(folder: f)).toList();
+      },
+      loading: () => const [Center(child: CircularProgressIndicator())],
+      error: (err, _) => [Center(child: Text('Error: $err'))],
     );
   }
 
-  Future<void> _createNewNote(BuildContext context) {
-    return Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => NoteFormPage(folderId: folder.id)),
+  /// 📝 Lista de notas
+  List<Widget> _buildNotes(
+    BuildContext context,
+    WidgetRef ref,
+    AsyncValue<List<Note>> notes,
+  ) {
+    return notes.when(
+      data: (items) {
+        if (items.isEmpty) {
+          return [
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text('No hay notas'),
+            ),
+          ];
+        }
+        return items.map((n) => NoteTile(note: n)).toList();
+      },
+      loading: () => const [Center(child: CircularProgressIndicator())],
+      error: (err, _) => [Center(child: Text('Error: $err'))],
+    );
+  }
+
+  /// ➕ FAB dinámico
+  Widget _buildFab(BuildContext context, bool showFolders, Note? sharedNote) {
+    return showFolders
+        ? _fabAddFolder(context)
+        : _fabAddNote(context, sharedNote);
+  }
+
+  Widget _fabAddFolder(BuildContext context) {
+    return FloatingActionButton(
+      heroTag: 'addFolder',
+      onPressed: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => FolderFormPage(parentFolderId: widget.folder.id),
+        ),
+      ),
+      child: const Icon(Icons.create_new_folder),
+    );
+  }
+
+  Widget _fabAddNote(BuildContext context, Note? sharedNote) {
+    return FloatingActionButton(
+      heroTag: 'addNote',
+      onPressed: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              NoteFormPage(note: sharedNote, folderId: widget.folder.id),
+        ),
+      ),
+      child: const Icon(Icons.note_add),
+    );
+  }
+
+  // 🔔 Banners
+  Widget _bannerHasPendingSharedNotes(BuildContext context, WidgetRef ref) {
+    return BannerPending(
+      text:
+          'Tienes una nueva nota compartida. Puedes almacenarla aquí, elige o crea una carpeta donde se guardará la nota compartida',
+      onClose: () async {
+        final confirm = await showConfirmDialog(
+          context,
+          title: 'No almacenar la nueva nota',
+          message: '¿Estás seguro de descartar la nueva nota?',
+        );
+
+        if (confirm == true) {
+          ref.read(sharedNoteProvider.notifier).clear();
+        }
+      },
     );
   }
 }

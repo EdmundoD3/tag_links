@@ -2,12 +2,23 @@ import 'package:sqflite/sqflite.dart';
 import 'package:tag_links/data/database.dart';
 import 'package:tag_links/models/link_preview.dart';
 import 'package:tag_links/models/note.dart';
+import 'package:tag_links/models/search_query.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/utils/paginated_utils.dart';
+
 //DAO = Data Access Object
 class NotesDao {
   final _fetch = _FetchersNotesDao();
   /* ----------------------------- PUBLIC API ----------------------------- */
+  Future<List<Note>> searchByQuery(
+    SearchQuery query, {
+    required PaginatedByDate paginated,
+    String? folderId,
+  }) async {
+    final rows = await _fetch.searchByQuery(query, folderId: folderId, paginated: paginated);
+    return _hydrate(rows);
+  }
+
   Future<void> insert(Note note) async {
     await _fetch.insert(note);
   }
@@ -28,21 +39,18 @@ class NotesDao {
 
   Future<List<Note>> getByFolder(
     String folderId, {
-    PaginatedParams? pagination,
+    required PaginatedByDate pagination,
   }) async {
-    final rows = await _fetch.byFolder(
-      folderId,
-      pagination ?? const PaginatedParams(),
-    );
+    final rows = await _fetch.byFolder(folderId, pagination);
     return _hydrate(rows);
   }
 
   Future<List<Note>> getByTags(
     String folderId,
     List<String> tagIds, {
-    PaginatedParams? pagination,
+    required PaginatedByDate pagination,
   }) async {
-    final p = pagination ?? const PaginatedParams();
+    final p = pagination;
 
     if (tagIds.isEmpty) {
       return getByFolder(folderId, pagination: p);
@@ -52,8 +60,8 @@ class NotesDao {
     return _hydrate(rows);
   }
 
-  Future<List<Note>> getFavorites({PaginatedParams? pagination}) async {
-    final rows = await _fetch.favorites(pagination ?? const PaginatedParams());
+  Future<List<Note>> getFavorites({required PaginatedByDate pagination}) async {
+    final rows = await _fetch.favorites(pagination);
     return _hydrate(rows);
   }
 
@@ -68,13 +76,9 @@ class NotesDao {
   Future<List<Note>> search(
     String folderId,
     String query, {
-    PaginatedParams? pagination,
+    required PaginatedByDate pagination,
   }) async {
-    final rows = await _fetch.search(
-      folderId,
-      query,
-      pagination ?? const PaginatedParams(),
-    );
+    final rows = await _fetch.search(folderId, query, pagination);
     return _hydrate(rows);
   }
 
@@ -93,9 +97,10 @@ class NotesDao {
           id: row.noteId,
           folderId: row.folderId,
           title: row.title,
-          content: row.content,
+          content: row.content ?? '',
           createdAt: DateTime.fromMillisecondsSinceEpoch(row.createdAt),
           updatedAt: DateTime.fromMillisecondsSinceEpoch(row.updatedAt),
+          isFavorite: row.isFavorite,
           tags: [],
           link: row.linkId == null
               ? null
@@ -125,7 +130,29 @@ class NotesDao {
 class _FetchersNotesDao {
   Future<Database> get _db async => AppDatabase().database;
 
-  Future<List<NoteJoinRow>> byFolder(String folderId, PaginatedParams p) async {
+  Future<List<NoteJoinRow>> searchByQuery(
+  SearchQuery searchQuery, {
+  required PaginatedByDate paginated,
+  String? folderId,
+}) async {
+  final ids = await _fetchNoteIds(searchQuery, folderId: folderId, paginated: paginated);
+  if (ids.isEmpty) return [];
+
+  final db = await _db;
+  final placeholders = List.filled(ids.length, '?').join(',');
+
+  final sql = '''
+    ${NoteJoinRow.selectQuery}
+    WHERE n.id IN ($placeholders)
+    ORDER BY ${paginated.orderSql}
+  ''';
+
+  final result = await db.rawQuery(sql, ids);
+  return result.map(NoteJoinRow.fromMap).toList();
+}
+
+
+  Future<List<NoteJoinRow>> byFolder(String folderId, PaginatedByDate p) async {
     final db = await _db;
 
     final rows = await db.rawQuery(
@@ -135,21 +162,20 @@ class _FetchersNotesDao {
         SELECT id
         FROM notes
         WHERE folderId = ?
-        ORDER BY ${orderBySql(p.order)}
+        ORDER BY ${p.orderSql}
         LIMIT ? OFFSET ?
       )
-      ORDER BY ${orderBySql(p.order)}
+      ORDER BY ${p.orderSql}
       ''',
       [folderId, p.limit, p.offset],
     );
-
     return rows.map(NoteJoinRow.fromMap).toList();
   }
 
   Future<List<NoteJoinRow>> byTags(
     String folderId,
     List<String> tagIds,
-    PaginatedParams p,
+    PaginatedByDate p,
   ) async {
     final db = await _db;
     final placeholders = List.filled(tagIds.length, '?').join(',');
@@ -165,10 +191,10 @@ class _FetchersNotesDao {
           AND nt2.tagId IN ($placeholders)
         GROUP BY n2.id
         HAVING COUNT(DISTINCT nt2.tagId) = ?
-        ORDER BY ${orderBySql(p.order)}
+        ORDER BY ${p.orderSql}
         LIMIT ? OFFSET ?
       )
-      ORDER BY ${orderBySql(p.order)}
+      ORDER BY ${p.orderSql}
       ''',
       [folderId, ...tagIds, tagIds.length, p.limit, p.offset],
     );
@@ -176,7 +202,7 @@ class _FetchersNotesDao {
     return rows.map(NoteJoinRow.fromMap).toList();
   }
 
-  Future<List<NoteJoinRow>> favorites(PaginatedParams p) async {
+  Future<List<NoteJoinRow>> favorites(PaginatedByDate p) async {
     final db = await _db;
 
     final rows = await db.rawQuery(
@@ -186,16 +212,90 @@ class _FetchersNotesDao {
         SELECT id
         FROM notes
         WHERE isFavorite = 1
-        ORDER BY ${orderBySql(p.order)}
+        ORDER BY ${p.orderSql}
         LIMIT ? OFFSET ?
       )
-      ORDER BY ${orderBySql(p.order)}
+      ORDER BY ${p.orderSql}
       ''',
       [p.limit, p.offset],
     );
 
     return rows.map(NoteJoinRow.fromMap).toList();
   }
+Future<List<String>> _fetchNoteIds(
+  SearchQuery searchQuery, {
+  required PaginatedByDate paginated,
+  String? folderId,
+}) async {
+  final db = await _db;
+
+  final where = <String>[];
+  final args = <Object?>[];
+
+  if (searchQuery.text.isNotEmpty) {
+    where.add('(n.title LIKE ? OR n.content LIKE ?)');
+    args.add('%${searchQuery.text}%');
+    args.add('%${searchQuery.text}%');
+  }
+
+  if (folderId != null && folderId.isNotEmpty) {
+    where.add('n.folderId = ?');
+    args.add(folderId);
+  }
+
+  if (searchQuery.hasIncludeTags) {
+    final placeholders = List.filled(
+      searchQuery.includeTagsIds.length,
+      '?',
+    ).join(',');
+
+    where.add('''
+      n.id IN (
+        SELECT nt.noteId
+        FROM note_tags nt
+        WHERE nt.tagId IN ($placeholders)
+        GROUP BY nt.noteId
+        HAVING COUNT(DISTINCT nt.tagId) = ${searchQuery.includeTagsIds.length}
+      )
+    ''');
+
+    args.addAll(searchQuery.includeTagsIds);
+  }
+
+  if (searchQuery.hasExcludeTags) {
+    final placeholders = List.filled(
+      searchQuery.excludeTagsIds.length,
+      '?',
+    ).join(',');
+
+    where.add('''
+      n.id NOT IN (
+        SELECT nt.noteId
+        FROM note_tags nt
+        WHERE nt.tagId IN ($placeholders)
+      )
+    ''');
+
+    args.addAll(searchQuery.excludeTagsIds);
+  }
+
+  final whereSql = where.isEmpty ? '' : 'WHERE ${where.join(' AND ')}';
+
+  final sql = '''
+    SELECT n.id
+    FROM notes n
+    $whereSql
+    ORDER BY ${paginated.orderSql}
+    LIMIT ? OFFSET ?
+  ''';
+
+  args.add(paginated.limit);
+  args.add(paginated.offset);
+
+  final result = await db.rawQuery(sql, args);
+  return result.map((r) => r['id'] as String).toList();
+}
+
 
   Future<List<NoteJoinRow>> byId(String id) async {
     final db = await _db;
@@ -252,7 +352,7 @@ class _FetchersNotesDao {
   Future<List<NoteJoinRow>> search(
     String folderId,
     String query,
-    PaginatedParams p,
+    PaginatedByDate p,
   ) async {
     final db = await _db;
     final q = '%$query%';
@@ -265,10 +365,10 @@ class _FetchersNotesDao {
       FROM notes
       WHERE folderId = ?
         AND (title LIKE ? OR content LIKE ?)
-      ORDER BY ${orderBySql(p.order)}
+      ORDER BY ${p.orderSql}
       LIMIT ? OFFSET ?
     )
-    ORDER BY ${orderBySql(p.order)}
+    ORDER BY ${p.orderSql}
     ''',
       [folderId, q, q, p.limit, p.offset],
     );
@@ -342,7 +442,7 @@ class _FetchersNotesDao {
 
   Future<void> update(Note note) async {
     final db = await _db;
-
+    print(note.toMap());
     await db.transaction((txn) async {
       // 1️⃣ Update note
       await txn.update(

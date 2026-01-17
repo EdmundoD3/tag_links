@@ -1,3 +1,5 @@
+import 'package:uuid/uuid.dart';
+
 class Tag {
   final String id;
   final String name;
@@ -29,19 +31,19 @@ class Tag {
     };
   }
 
-  Tag copyWith({
-    bool? isFavorite,
-    int? usageCount,
-  }) {
+  Tag copyWith({String? id, bool? isFavorite, int? usageCount}) {
     return Tag(
-      id: id,
+      id: id ?? this.id,
       name: name,
       isFavorite: isFavorite ?? this.isFavorite,
       usageCount: usageCount ?? this.usageCount,
     );
   }
-}
 
+  Tag ensureForInsert() {
+    return copyWith(id: Uuid().v4());
+  }
+}
 
 String tagTable = '''
           CREATE TABLE tags (

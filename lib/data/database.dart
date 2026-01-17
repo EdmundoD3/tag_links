@@ -1,6 +1,7 @@
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:tag_links/models/folder.dart';
+import 'package:tag_links/models/folder_preference.dart';
 import 'package:tag_links/models/folder_tag.dart';
 import 'package:tag_links/models/link_preview.dart';
 import 'package:tag_links/models/note.dart';
@@ -51,6 +52,7 @@ class AppDatabase {
         await db.execute(linkPreviewTable);
         await db.execute(folderTagTable);
         await db.execute(noteTagTable);
+        await db.execute(folderPreferencesTable);
 
         await db.execute(indexes);
       },

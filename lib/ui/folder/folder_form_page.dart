@@ -43,35 +43,40 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
-    final isUpdate = widget.folder?.id != null;
-    final now = DateTime.now();
+  if (!_formKey.currentState!.validate()) return;
 
-    final folder = Folder(
-      id: widget.folder?.id ?? const Uuid().v4(),
-      parentId: widget.folder?.parentId ?? widget.parentFolderId,
-      title: _titleCtrl.text.trim(),
-      description: _descriptionCtrl.text.trim().isEmpty
-          ? null
-          : _descriptionCtrl.text,
-      tags: widget.folder?.tags ?? [],
-      image: widget.folder?.image,
-      createdAt: widget.folder?.createdAt ?? now,
-      updatedAt: now,
-      isFavorite: _isFavorite,
-    );
+  final now = DateTime.now();
+  final parentId = widget.isEdit
+      ? widget.folder!.parentId
+      : widget.parentFolderId;
 
-    final provider = foldersProvider(folder.parentId);
-    if (isUpdate) {
-      await ref.read(provider.notifier).updateFolder(folder);
-    } else {
-      await ref.read(provider.notifier).addFolder(folder);
-    }
+  final desc = _descriptionCtrl.text.trim();
 
-    if (mounted) {
-      Navigator.pop(context);
-    }
+  final folder = Folder(
+    id: widget.folder?.id ?? const Uuid().v4(),
+    parentId: parentId,
+    title: _titleCtrl.text.trim(),
+    description: desc.isEmpty ? null : desc,
+    tags: widget.folder?.tags ?? const [],
+    image: widget.folder?.image,
+    createdAt: widget.folder?.createdAt ?? now,
+    updatedAt: now,
+    isFavorite: _isFavorite,
+  );
+
+  final provider = foldersProvider(parentId);
+
+  if (widget.isEdit) {
+    await ref.read(provider.notifier).updateFolder(folder);
+  } else {
+    await ref.read(provider.notifier).addFolder(folder);
   }
+
+  if (mounted) {
+    Navigator.pop(context);
+  }
+}
+
 
   @override
   Widget build(BuildContext context) {

@@ -8,11 +8,7 @@ class NoteFormPage extends ConsumerStatefulWidget {
   final Note? note;
   final String folderId;
 
-  const NoteFormPage({
-    super.key,
-    this.note,
-    required this.folderId,
-  });
+  const NoteFormPage({super.key, this.note, required this.folderId});
 
   bool get isEdit => note != null;
 
@@ -53,9 +49,7 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
       id: widget.note?.id ?? const Uuid().v4(),
       folderId: widget.folderId,
       title: _titleCtrl.text.trim(),
-      content: _contentCtrl.text.trim().isEmpty
-          ? null
-          : _contentCtrl.text.trim(),
+      content: _contentCtrl.text.trim(),
       link: widget.note?.link,
       tags: widget.note?.tags ?? const [],
       createdAt: widget.note?.createdAt ?? now,
@@ -64,6 +58,7 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
     );
 
     final provider = notesProvider(widget.folderId);
+    print(note.isFavorite);
 
     if (widget.isEdit) {
       await ref.read(provider.notifier).updateNote(note);
@@ -78,14 +73,21 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.isEdit ? 'Editar nota' : 'Nueva nota'),
+        title: Text(widget.isEdit ? _titleCtrl.text : 'Nueva nota'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: _save,
-          ),
+          _isFavorite
+              ? IconButton(
+                  onPressed: _isFavoriteToogle,
+                  icon: const Icon(Icons.star, color: Colors.amber),
+                )
+              : IconButton(
+                  onPressed: _isFavoriteToogle,
+                  icon: const Icon(Icons.star_border),
+                ),
+          IconButton(icon: const Icon(Icons.save), onPressed: _save),
         ],
       ),
       body: Form(
@@ -93,56 +95,59 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            /// Título
-            TextFormField(
-              controller: _titleCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Título',
-                border: OutlineInputBorder(),
-              ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'El título es obligatorio';
-                }
-                return null;
-              },
-            ),
-
+            _tituloController(context),
             const SizedBox(height: 16),
-
-            /// Contenido
-            TextFormField(
-              controller: _contentCtrl,
-              maxLines: 8,
-              decoration: const InputDecoration(
-                labelText: 'Contenido',
-                alignLabelWithHint: true,
-                border: OutlineInputBorder(),
-              ),
-            ),
-
+            _contenidoController(context),
             const SizedBox(height: 16),
-
-            /// Favorito
-            SwitchListTile(
-              title: const Text('Marcar como favorita'),
-              value: _isFavorite,
-              onChanged: (value) {
-                setState(() => _isFavorite = value);
-              },
-            ),
-
+            _favoriteController(context),
             const SizedBox(height: 24),
-
-            /// Guardar
-            FilledButton.icon(
-              icon: const Icon(Icons.check),
-              label: Text(widget.isEdit ? 'Guardar cambios' : 'Crear nota'),
-              onPressed: _save,
-            ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _tituloController(BuildContext context) {
+    return TextFormField(
+      controller: _titleCtrl,
+      decoration: const InputDecoration(
+        labelText: 'Título',
+        border: OutlineInputBorder(),
+      ),
+      validator: (value) {
+        if (value == null || value.trim().isEmpty) {
+          return 'El título es obligatorio';
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _contenidoController(BuildContext context) {
+    return TextFormField(
+      controller: _contentCtrl,
+      maxLines: 8,
+      decoration: const InputDecoration(
+        labelText: 'Contenido',
+        alignLabelWithHint: true,
+        border: OutlineInputBorder(),
+      ),
+    );
+  }
+
+  Widget _favoriteController(BuildContext context) {
+    return SwitchListTile(
+      title: const Text('Marcar como favorita'),
+      value: _isFavorite,
+      onChanged: (value) {
+        setState(() => _isFavorite = value);
+      },
+    );
+  }
+
+  void _isFavoriteToogle() {
+    setState(() {
+      _isFavorite = !_isFavorite;
+    });
   }
 }
