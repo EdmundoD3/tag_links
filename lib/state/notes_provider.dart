@@ -1,22 +1,55 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
+import 'package:tag_links/models/search_query.dart';
 import 'package:tag_links/state/search_query_provider.dart';
 import 'package:tag_links/utils/paginated_utils.dart';
 import '../models/note.dart';
 import '../repository/notes_repository.dart';
 
+final notesViewProvider = Provider<AsyncValue<List<Note>>>((ref) {
+  final searchQuery = ref.watch(searchQueryProvider);
+  final pagination = ref.watch(notePaginationProvider);
+
+  final hasSearch =
+      searchQuery.text.isNotEmpty || searchQuery.includeTags.isNotEmpty;
+
+  if (!hasSearch) {
+    return ref.watch(notesProvider(null)); // favoritas
+  }
+
+  return ref.watch(
+    noteSearchProvider((searchQuery, pagination)),
+  );
+});
+
+final noteSearchProvider = FutureProvider.family<
+    List<Note>,
+    (SearchQuery, PaginatedByDate)>((ref, params) {
+  final repo = ref.read(notesRepositoryProvider);
+
+  return repo.searchByQuery(
+    params.$1,
+    paginated: params.$2,
+  );
+});
+
+final notePaginationProvider =
+    StateProvider<PaginatedByDate>((ref) => const PaginatedByDate());
+
 final notesProvider =
     AsyncNotifierProvider.family<NotesNotifier, List<Note>, String?>(
-      NotesNotifier.new,
-    );
+  NotesNotifier.new,
+);
 
 class NotesNotifier extends AsyncNotifier<List<Note>> {
+  NotesNotifier(this.folderId);
+
   final String? folderId;
+
   int _page = 1;
   final int _pageSize = 20;
   bool _hasMore = true;
   bool _isLoadingMore = false;
-
-  NotesNotifier(this.folderId);
 
   NotesRepository get _repo => ref.read(notesRepositoryProvider);
 
@@ -24,31 +57,9 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
   Future<List<Note>> build() async {
     _page = 1;
     _hasMore = true;
-    final query = ref.watch(searchQueryProvider);
+    _isLoadingMore = false;
 
-    if (query.isEmpty) {
-      if (folderId == null) {
-        return _repo.getFavorites(pagination: const PaginatedByDate());
-      }
-      return _repo.getByFolder(folderId!, pagination: const PaginatedByDate());
-    }
-
-    return _repo.searchByQuery(query, paginated: const PaginatedByDate());
-  }
-
-  Future<void> addNote(Note note) async {
-    await _repo.create(note);
-    ref.invalidateSelf();
-  }
-
-  Future<void> updateNote(Note note) async {
-    await _repo.update(note);
-    ref.invalidateSelf();
-  }
-
-  Future<void> deleteNote(String id) async {
-    await _repo.delete(id);
-    ref.invalidateSelf();
+    return _fetchPage(reset: true);
   }
 
   Future<List<Note>> _fetchPage({bool reset = false}) async {
@@ -66,21 +77,42 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
       _hasMore = false;
     }
 
-    if (reset) return newItems;
-
-    return [...state.value ?? [], ...newItems];
+    return reset ? newItems : [...state.value ?? [], ...newItems];
   }
+
+  bool get hasMore => _hasMore;
+  bool get isLoadingMore => _isLoadingMore;
 
   Future<void> loadMore() async {
     if (!_hasMore || _isLoadingMore) return;
 
     _isLoadingMore = true;
+    // 🔁 fuerza rebuild
+    state = AsyncData(state.value ?? []);
+
     _page++;
 
-    final current = state.value ?? [];
-    final next = await _fetchPage();
+    final updated = await _fetchPage();
+    state = AsyncData(updated);
 
-    state = AsyncData([...current, ...next]);
     _isLoadingMore = false;
+    // 🔁 rebuild final
+    state = AsyncData(state.value ?? []);
+  }
+
+  // CRUD
+  Future<void> addNote(Note note) async {
+    await _repo.create(note);
+    ref.invalidateSelf();
+  }
+
+  Future<void> updateNote(Note note) async {
+    await _repo.update(note);
+    ref.invalidateSelf();
+  }
+
+  Future<void> deleteNote(String id) async {
+    await _repo.delete(id);
+    ref.invalidateSelf();
   }
 }

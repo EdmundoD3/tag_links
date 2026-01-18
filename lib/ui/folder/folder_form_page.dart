@@ -43,40 +43,39 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
   }
 
   Future<void> _save() async {
-  if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) return;
 
-  final now = DateTime.now();
-  final parentId = widget.isEdit
-      ? widget.folder!.parentId
-      : widget.parentFolderId;
+    final now = DateTime.now();
+    final parentId = widget.isEdit
+        ? widget.folder!.parentId
+        : widget.parentFolderId;
 
-  final desc = _descriptionCtrl.text.trim();
+    final desc = _descriptionCtrl.text.trim();
 
-  final folder = Folder(
-    id: widget.folder?.id ?? const Uuid().v4(),
-    parentId: parentId,
-    title: _titleCtrl.text.trim(),
-    description: desc.isEmpty ? null : desc,
-    tags: widget.folder?.tags ?? const [],
-    image: widget.folder?.image,
-    createdAt: widget.folder?.createdAt ?? now,
-    updatedAt: now,
-    isFavorite: _isFavorite,
-  );
+    final folder = Folder(
+      id: widget.folder?.id ?? const Uuid().v4(),
+      parentId: parentId,
+      title: _titleCtrl.text.trim(),
+      description: desc.isEmpty ? null : desc,
+      tags: widget.folder?.tags ?? const [],
+      image: widget.folder?.image,
+      createdAt: widget.folder?.createdAt ?? now,
+      updatedAt: now,
+      isFavorite: _isFavorite,
+    );
 
-  final provider = foldersProvider(parentId);
+    final provider = foldersProvider(parentId);
 
-  if (widget.isEdit) {
-    await ref.read(provider.notifier).updateFolder(folder);
-  } else {
-    await ref.read(provider.notifier).addFolder(folder);
+    if (widget.isEdit) {
+      await ref.read(provider.notifier).updateFolder(folder);
+    } else {
+      await ref.read(provider.notifier).addFolder(folder);
+    }
+
+    if (mounted) {
+      Navigator.pop(context);
+    }
   }
-
-  if (mounted) {
-    Navigator.pop(context);
-  }
-}
-
 
   @override
   Widget build(BuildContext context) {

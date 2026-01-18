@@ -49,11 +49,16 @@ class _FolderPageState extends ConsumerState<FolderPage> {
     super.initState();
 
     _scrollController.addListener(() {
-      if (_scrollController.position.pixels <=
-          _scrollController.position.minScrollExtent + 100) {
-        ref.read(_notesProvider.notifier).loadMore();
-      }
-    });
+  final position = _scrollController.position;
+  final notifier = ref.read(_notesProvider.notifier);
+
+  if (position.pixels >= position.maxScrollExtent - 200 &&
+      notifier.hasMore &&
+      !notifier.isLoadingMore) {
+    notifier.loadMore();
+  }
+});
+
   }
 
   @override
@@ -88,11 +93,18 @@ class _FolderPageState extends ConsumerState<FolderPage> {
                 _bannerHasPendingSharedNotes(context, ref),
 
               Expanded(
-                child: ListView(
-                  controller: _scrollController,
-                  children: showFolders
-                      ? _foldersList(context, ref, subFolders)
-                      : _buildNotes(context, ref, notes),
+                child: Stack(
+                  children: [
+                    ListView(
+                      controller: _scrollController,
+                      children: showFolders
+                          ? _foldersList(subFolders)
+                          : _buildNotes(notes),
+                    ),
+
+                    // 👇 loader flotante
+                    _loadMoreIndicator(notes),
+                  ],
                 ),
               ),
             ],
@@ -102,29 +114,53 @@ class _FolderPageState extends ConsumerState<FolderPage> {
     );
   }
 
+Widget _loadMoreIndicator(AsyncValue<List<Note>> notes) {
+  return notes.when(
+    data: (_) {
+      final notifier = ref.read(_notesProvider.notifier);
+
+      if (!notifier.isLoadingMore) {
+        return const SizedBox.shrink();
+      }
+
+      return const Positioned(
+        bottom: 16,
+        left: 0,
+        right: 0,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    },
+    loading: () => const SizedBox.shrink(),
+    error: (_, __) => const SizedBox.shrink(),
+  );
+}
+
+
   /// 🎯 Scroll a la nota resaltada (solo una vez)
-  void _scrollToHighlightedNote(AsyncValue<List<Note>> notesAsync) {
-    if (widget.paginated == null) return; //ahi contiene la paginacion correcta
-    if (_didScrollToHighlight) return;
+void _scrollToHighlightedNote(AsyncValue<List<Note>> notesAsync) {
+  if (_didScrollToHighlight) return;
 
-    notesAsync.whenData((notes) {
-      final index = notes.indexWhere((n) => n.id == widget.highlightNote!.id);
+  notesAsync.whenData((notes) {
+    final index = notes.indexWhere(
+      (n) => n.id == widget.highlightNote?.id,
+    );
 
-      if (index == -1) return;
+    if (index == -1) return;
 
-      _didScrollToHighlight = true;
+    _didScrollToHighlight = true;
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
 
-        _scrollController.animateTo(
-          index * 72.0, // altura aproximada de NoteTile
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
-      });
+      _scrollController.animateTo(
+        index * 72.0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
     });
-  }
+  });
+}
+
 
   PreferredSizeWidget _appBar(
     BuildContext context,
@@ -160,11 +196,7 @@ class _FolderPageState extends ConsumerState<FolderPage> {
   }
 
   /// 📂 Lista de carpetas
-  List<Widget> _foldersList(
-    BuildContext context,
-    WidgetRef ref,
-    AsyncValue<List<Folder>> subFolders,
-  ) {
+  List<Widget> _foldersList(AsyncValue<List<Folder>> subFolders) {
     return subFolders.when(
       data: (folders) {
         if (folders.isEmpty) {
@@ -184,11 +216,7 @@ class _FolderPageState extends ConsumerState<FolderPage> {
   }
 
   /// 📝 Lista de notas
-  List<Widget> _buildNotes(
-    BuildContext context,
-    WidgetRef ref,
-    AsyncValue<List<Note>> notes,
-  ) {
+  List<Widget> _buildNotes(AsyncValue<List<Note>> notes) {
     return notes.when(
       data: (items) {
         if (items.isEmpty) {

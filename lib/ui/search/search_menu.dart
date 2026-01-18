@@ -7,12 +7,14 @@ class SearchTags extends StatefulWidget {
   final AsyncValue<List<Tag>> tagsSuggestion;
   final void Function(String text) onChangeText;
   final void Function(Tag tag) onTagSelected;
+  final Widget? iconButton;
   const SearchTags({
     super.key,
     required this.queryText,
     required this.tagsSuggestion,
     required this.onChangeText,
     required this.onTagSelected,
+    this.iconButton,
   });
 
   @override
@@ -63,7 +65,7 @@ class _SearchTagsState extends State<SearchTags> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SearchInput(controller: _controller, onChangeText: _onChangeText),
+        _SearchInput(controller: _controller, onChangeText: _onChangeText, iconButton: widget.iconButton),
         const SizedBox(height: 8),
 
         if (queryText.isNotEmpty)
@@ -79,11 +81,13 @@ class _SearchTagsState extends State<SearchTags> {
 }
 class _SearchInput extends StatelessWidget {
   final TextEditingController controller;
+  final Widget? iconButton;
   final void Function(String value) onChangeText;
 
   const _SearchInput({
     required this.controller,
     required this.onChangeText,
+    this.iconButton,
   });
 
   @override
@@ -94,6 +98,7 @@ class _SearchInput extends StatelessWidget {
         return TextField(
           controller: controller,
           decoration: InputDecoration(
+            icon: iconButton,
             hintText: 'Buscar notas...',
             prefixIcon: const Icon(Icons.search),
             suffixIcon: value.text.isNotEmpty

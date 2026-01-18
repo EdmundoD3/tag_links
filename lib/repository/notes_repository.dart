@@ -26,6 +26,10 @@ class NotesRepository {
 
   Future<Note?> getById(String id) => _dao.getById(id);
 
+  Future<PaginatedByDate> getPageForNoteId(Note note, {required PaginatedByDate paginated}){
+    return _dao.getPageForNoteId(note, paginated:paginated);
+  }
+
   Future<void> create(Note note) {
     final noteToSave = note.ensureForInsert();
     return _dao.insert(noteToSave);

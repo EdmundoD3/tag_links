@@ -4,10 +4,7 @@ abstract class PaginatedParams {
   final int page;
   final int pageSize;
 
-  const PaginatedParams({
-    this.page = 1,
-    this.pageSize = 10,
-  });
+  const PaginatedParams({this.page = 1, this.pageSize = 10});
 
   int get offset => (page - 1) * pageSize;
   int get limit => pageSize;
@@ -27,18 +24,18 @@ class PaginatedByDate extends PaginatedParams {
 
   const PaginatedByDate({
     super.page = 1,
-    super.pageSize = 10,
+    super.pageSize = 20,
     this.order = OrderDate.updatedDesc,
   });
+  PaginatedByDate get initial => PaginatedByDate();
+
+  PaginatedByDate next() {
+    return copyWith(page: page + 1);
+  }
 
   @override
-  String get orderSql =>
-      _orderSqlDate[order] ?? 'updatedAt DESC';
-  PaginatedByDate copyWith({
-    int? page,
-    int? pageSize,
-    OrderDate? order,
-  }) {
+  String get orderSql => _orderSqlDate[order] ?? 'updatedAt DESC';
+  PaginatedByDate copyWith({int? page, int? pageSize, OrderDate? order}) {
     return PaginatedByDate(
       page: page ?? this.page,
       pageSize: pageSize ?? this.pageSize,
@@ -62,8 +59,7 @@ class PaginatedByUsage extends PaginatedParams {
   });
 
   @override
-  String get orderSql =>
-      _orderSqlUsage[order] ?? 'usageCount DESC';
+  String get orderSql => _orderSqlUsage[order] ?? 'usageCount DESC';
 }
 
 enum OrderByUsage { usageDesc, usageAsc }

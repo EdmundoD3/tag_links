@@ -1,7 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:tag_links/data/database.dart';
 import 'package:tag_links/models/folder.dart';
-import 'package:tag_links/models/note.dart';
 import 'package:tag_links/models/search_query.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/utils/paginated_utils.dart';
@@ -60,39 +59,6 @@ class FoldersDao {
     final result = await db.rawQuery(sql, args);
 
     return Future.wait(result.map((f) => _mapFolderWithTags(db, f)));
-  }
-
-  Future<PaginatedByDate> getPageForNoteId(
-    Note note, {
-    required PaginatedByDate paginated,
-  }) async {
-    final field = _buildOrderField(paginated);
-    final whereClause = _buildOrderWhereClause(paginated);
-
-    final query =
-        '''
-          SELECT COUNT(*) as count
-          FROM notes
-          WHERE folderId = ?
-            AND $whereClause (
-              SELECT $field FROM notes WHERE id = ?
-            );
-        ''';
-
-    final args = [note.folderId, note.id];
-
-    final result = await _db.then((db) => db.rawQuery(query, args));
-
-    final rawCount = result.first['count'];
-    final count = (rawCount as num?)?.toInt() ?? 0;
-
-    final page = (count ~/ paginated.pageSize) + 1;
-
-    return PaginatedByDate(
-      page: page < 1 ? 1 : page,
-      pageSize: paginated.pageSize,
-      order: paginated.order,
-    );
   }
 
   /// INSERT
@@ -324,18 +290,4 @@ class FoldersDao {
   }
 }
 
-String _buildOrderWhereClause(PaginatedByDate paginated) {
-  return switch (paginated.order) {
-    OrderDate.updatedDesc => 'updatedAt > ?',
-    OrderDate.updatedAsc => 'updatedAt < ?',
-    OrderDate.createdDesc => 'createdAt > ?',
-    OrderDate.createdAsc => 'createdAt < ?',
-  };
-}
 
-String _buildOrderField(PaginatedByDate paginated) {
-  return switch (paginated.order) {
-    OrderDate.updatedDesc || OrderDate.updatedAsc => 'updatedAt',
-    OrderDate.createdDesc || OrderDate.createdAsc => 'createdAt',
-  };
-}

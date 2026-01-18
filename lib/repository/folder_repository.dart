@@ -3,7 +3,6 @@ import 'package:tag_links/data/data_sources/folder_preferences_dao.dart';
 import 'package:tag_links/data/data_sources/folders_dao.dart';
 import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/models/folder_preference.dart';
-import 'package:tag_links/models/note.dart';
 import 'package:tag_links/models/search_query.dart';
 import 'package:tag_links/utils/paginated_utils.dart';
 
@@ -18,9 +17,6 @@ class FolderRepository {
     required PaginatedByDate paginated,
   }) async {
     return _dao.searchByQuery(query, paginated: paginated);
-  }
-  Future<PaginatedByDate> getPageForNoteId(Note note, {required PaginatedByDate paginated}){
-    return _dao.getPageForNoteId(note, paginated:paginated);
   }
 
   Future<void> create(Folder folder) async {
