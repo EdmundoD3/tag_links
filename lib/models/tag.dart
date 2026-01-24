@@ -31,10 +31,10 @@ class Tag {
     };
   }
 
-  Tag copyWith({String? id, bool? isFavorite, int? usageCount}) {
+  Tag copyWith({String? id, String? name, bool? isFavorite, int? usageCount}) {
     return Tag(
       id: id ?? this.id,
-      name: name,
+      name: name ?? this.name,
       isFavorite: isFavorite ?? this.isFavorite,
       usageCount: usageCount ?? this.usageCount,
     );

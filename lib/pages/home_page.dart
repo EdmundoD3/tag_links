@@ -5,16 +5,18 @@ import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/state/is_folder_provider.dart';
 import 'package:tag_links/state/notes_provider.dart';
 import 'package:tag_links/state/search_query_provider.dart';
-import 'package:tag_links/state/shared_media_provider.dart';
+import 'package:tag_links/state/pending_note_provider.dart';
 import 'package:tag_links/state/tags_provider.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
+import 'package:tag_links/ui/app_bar/app_bar_folder.dart';
 import 'package:tag_links/ui/banners/banner_pending.dart';
+import 'package:tag_links/ui/folder/banner_pending_folder.dart';
 import 'package:tag_links/ui/folder/folder_form_page.dart';
 import 'package:tag_links/ui/folder/folder_tile.dart';
 import 'package:tag_links/ui/menu/menu_container.dart';
 import 'package:tag_links/ui/note/note_tile.dart';
-import 'package:tag_links/ui/search/search_menu.dart';
-import 'package:tag_links/ui/tags/select_tags_container.dart';
+import 'package:tag_links/ui/search/search_bar.dart';
+import 'package:tag_links/ui/tags/tag_selected_container.dart';
 import 'package:tag_links/utils/note_helpers.dart';
 import '../state/folders_provider.dart';
 import '../models/folder.dart';
@@ -55,7 +57,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final bool hasPendingSharedNotes = ref.watch(hasPendingSharedNoteProvider);
+    final bool hasPendingNotes = ref.watch(hasPendingNoteProvider);
     final foldersAsync = ref.watch(foldersViewProvider);
     final bool isFolder = ref.watch(isFolderProvider);
 
@@ -65,16 +67,13 @@ class _HomePageState extends ConsumerState<HomePage> {
     //que empieze con las notas favoritas
 
     return Scaffold(
-      appBar: AppBar(
-        title: hasPendingSharedNotes
-            ? const Text('Selecciona donde almacenar la nota')
-            : const Text('Folders'),
-      ),
+      appBar: AppBarFolder(),
       floatingActionButton: _createNewFolderBtn(context),
       body: Column(
         children: [
-          if (hasPendingSharedNotes)
-            _bannerFolderHasPendingSharedNotes(context, ref),
+          if (hasPendingNotes) _bannerHasPendingNotes(context, ref),
+          BannerPendingFolder(toParentId: null),
+
           _searchBar(ref, isFolder),
           _selectedIncludeTags(ref),
           isFolder ? _buildFolders(foldersAsync) : _buildNotes(notesAsync),
@@ -185,8 +184,8 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Widget _searchBar(WidgetRef ref, bool isFolder) {
-    return SearchTags(
-      iconButton: IconButton(
+    return SearchListBar(
+      iconLeftBtn: IconButton(
         onPressed: () {
           ref.read(isFolderProvider.notifier).state = !isFolder;
 
@@ -210,7 +209,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Widget _selectedIncludeTags(WidgetRef ref) {
-    return SelectedTagsContainer(
+    return TagsSelectedContainer(
       tags: ref.watch(searchQueryProvider).includeTags,
       onDeleted: (Tag tag) {
         ref.read(searchQueryProvider.notifier).removeTag(tag);
@@ -220,35 +219,30 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   Widget _createNewFolderBtn(BuildContext context) {
     return FloatingActionButton(
-      onPressed: () {
-        _createNewFolder(context);
-      },
-      child: const Icon(Icons.add),
+      heroTag: 'addFolder',
+      onPressed: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => FolderFormPage(parentFolderId: null, isRoot: true,),
+        ),
+      ),
+      child: const Icon(Icons.create_new_folder),
     );
   }
 
-  Future<void> _createNewFolder(BuildContext context) {
-    return Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const FolderFormPage()),
-    );
-  }
-
-  Widget _bannerFolderHasPendingSharedNotes(
-    BuildContext context,
-    WidgetRef ref,
-  ) {
+  //las notas no pueden estar en la carpeta raiz, por eso aqui solo se permite descartar la nota
+  Widget _bannerHasPendingNotes(BuildContext context, WidgetRef ref) {
     return BannerPending(
-      text: 'Elige una carpeta donde se guardará la nota compartida',
+      text: 'Elige una carpeta donde almacenar la nota',
       onClose: () async {
         final confirm = await showConfirmDialog(
           context,
-          title: 'No almacenar la nueva nota',
-          message: '¿Estás seguro de descartar la nueva nota?',
+          title: 'No almacenar la nota',
+          message: '¿Estás seguro de descartar la nota?',
         );
 
         if (confirm == true) {
-          ref.read(sharedNoteProvider.notifier).clear();
+          ref.read(pendingNoteProvider.notifier).clear();
         }
       },
     );

@@ -1,6 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:tag_links/models/link_preview.dart';
 import 'package:tag_links/models/search_query.dart';
+import 'package:tag_links/repository/link_preview_repository.dart';
+import 'package:tag_links/service/link_preview_service.dart';
 import 'package:tag_links/state/search_query_provider.dart';
 import 'package:tag_links/utils/paginated_utils.dart';
 import '../models/note.dart';
@@ -17,29 +22,27 @@ final notesViewProvider = Provider<AsyncValue<List<Note>>>((ref) {
     return ref.watch(notesProvider(null)); // favoritas
   }
 
-  return ref.watch(
-    noteSearchProvider((searchQuery, pagination)),
-  );
+  return ref.watch(noteSearchProvider((searchQuery, pagination)));
 });
 
-final noteSearchProvider = FutureProvider.family<
-    List<Note>,
-    (SearchQuery, PaginatedByDate)>((ref, params) {
-  final repo = ref.read(notesRepositoryProvider);
+final noteSearchProvider =
+    FutureProvider.family<List<Note>, (SearchQuery, PaginatedByDate)>((
+      ref,
+      params,
+    ) {
+      final repo = ref.read(notesRepositoryProvider);
 
-  return repo.searchByQuery(
-    params.$1,
-    paginated: params.$2,
-  );
-});
+      return repo.searchByQuery(params.$1, paginated: params.$2);
+    });
 
-final notePaginationProvider =
-    StateProvider<PaginatedByDate>((ref) => const PaginatedByDate());
+final notePaginationProvider = StateProvider<PaginatedByDate>(
+  (ref) => const PaginatedByDate(),
+);
 
 final notesProvider =
     AsyncNotifierProvider.family<NotesNotifier, List<Note>, String?>(
-  NotesNotifier.new,
-);
+      NotesNotifier.new,
+    );
 
 class NotesNotifier extends AsyncNotifier<List<Note>> {
   NotesNotifier(this.folderId);
@@ -77,6 +80,19 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
       _hasMore = false;
     }
 
+    //revisar
+    final links = newItems
+        .map((n) => n.link)
+        .whereType<LinkPreview>()
+        .where((l) => !l.hasMetadata)
+        .fold<Map<String, LinkPreview>>({}, (map, link) {
+          map[link.url] = link;
+          return map;
+        })
+        .values
+        .toList();
+    unawaited(_enrichLinks(links));
+
     return reset ? newItems : [...state.value ?? [], ...newItems];
   }
 
@@ -106,6 +122,19 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
     ref.invalidateSelf();
   }
 
+  void removeNote(String id) {
+    final current = state.asData?.value;
+    if (current == null) return;
+
+    final updated = current.where((note) => note.id != id).toList();
+
+    if (updated.length < _pageSize) {
+      _hasMore = false;
+    }
+
+    state = AsyncValue.data(updated);
+  }
+
   Future<void> updateNote(Note note) async {
     await _repo.update(note);
     ref.invalidateSelf();
@@ -114,5 +143,23 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
   Future<void> deleteNote(String id) async {
     await _repo.delete(id);
     ref.invalidateSelf();
+  }
+
+  Future<void> _enrichLinks(List<LinkPreview> links) async {
+    final service = LinkPreviewService();
+    final repoLinkPreview = ref.read(linkPreviewRepositoryProvider);
+    bool updatedAny = false;
+
+    for (final link in links) {
+      final updated = await service.enrich(link);
+      if (updated != null && updated.hasMetadata) {
+        await repoLinkPreview.replace(updated);
+        updatedAny = true;
+      }
+    }
+
+    if (updatedAny) {
+      ref.invalidateSelf();
+    }
   }
 }

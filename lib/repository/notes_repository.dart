@@ -41,6 +41,7 @@ class NotesRepository {
   }
 
   Future<void> delete(String noteId) => _dao.delete(noteId);
+  
 }
 
 final notesRepositoryProvider = Provider<NotesRepository>((ref) {

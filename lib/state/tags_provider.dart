@@ -5,13 +5,13 @@ import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/repository/tags_repository.dart';
 import 'package:tag_links/utils/paginated_utils.dart';
 
-final tagSearchTextProvider = StateProvider<String>((ref) => '');
-final _debouncedTagSearchProvider = FutureProvider<String>((ref) async {
+final tagSearchTextProvider = StateProvider.autoDispose<String>((ref) => '');
+
+final _debouncedTagSearchProvider = FutureProvider.autoDispose<String>((
+  ref,
+) async {
   final searchText = ref.watch(tagSearchTextProvider);
-
-  // Se usa debounce para evitar saturar SQLite al escribir rápido
   await Future.delayed(const Duration(milliseconds: 200));
-
   return searchText;
 });
 
@@ -36,5 +36,20 @@ class TagsNotifier extends AsyncNotifier<List<Tag>> {
       searchText,
       paginated: const PaginatedByUsage(page: 1, pageSize: 10),
     );
+  }
+
+  Future<void> addTag(Tag tag) async {
+    await _repo.insert(tag);
+    ref.invalidateSelf();
+  }
+
+  Future<void> updateTag(Tag tag) async {
+    await _repo.update(tag);
+    ref.invalidateSelf();
+  }
+
+  Future<void> deleteTag(String id) async {
+    await _repo.delete(id);
+    ref.invalidateSelf();
   }
 }

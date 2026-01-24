@@ -111,6 +111,13 @@ class FoldersNotifier extends AsyncNotifier<List<Folder>> {
     ref.invalidateSelf();
   }
 
+  void removeFolder(String folderId) {
+    final current = state.asData?.value;
+    if (current == null) return;
+
+    state = AsyncValue.data(current.where((f) => f.id != folderId).toList());
+  }
+
   Future<void> toggleFavorite(Folder folder) async {
     await _repo.toggleFavorite(folder);
     ref.invalidateSelf();

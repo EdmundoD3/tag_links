@@ -66,7 +66,7 @@ class FoldersDao {
     final db = await _db;
 
     await db.transaction((txn) async {
-      await txn.insert('folders', folder.toMap());
+      await txn.insert('folders', folder.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
 
       for (final tag in folder.tags) {
         await txn.insert('folder_tags', {

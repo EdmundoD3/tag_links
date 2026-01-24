@@ -23,6 +23,21 @@ class Folder {
     this.updatedAt,
     this.isFavorite = false,
   });
+
+  factory Folder.empty(){
+    final folder = Folder(
+      id: '',
+      parentId: '',
+      title: '',
+      tags: [],
+      description: '',
+      image: '',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+      isFavorite: false,
+    );
+    return folder.ensureForInsert();
+  }
   static Folder fromMap(Map<String, dynamic> map) {
     return Folder(
       id: map['id'],

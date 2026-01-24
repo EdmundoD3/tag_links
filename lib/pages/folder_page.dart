@@ -6,11 +6,10 @@ import 'package:tag_links/models/note.dart';
 import 'package:tag_links/repository/folder_repository.dart';
 import 'package:tag_links/state/folders_provider.dart';
 import 'package:tag_links/state/notes_provider.dart';
-import 'package:tag_links/state/shared_media_provider.dart';
-import 'package:tag_links/ui/alerts/confirm_dialog.dart';
-import 'package:tag_links/ui/banners/banner_pending.dart';
+import 'package:tag_links/ui/folder/banner_pending_folder.dart';
 import 'package:tag_links/ui/folder/folder_form_page.dart';
 import 'package:tag_links/ui/folder/folder_tile.dart';
+import 'package:tag_links/ui/note/banner_pending_note.dart';
 import 'package:tag_links/ui/note/note_form_page.dart';
 import 'package:tag_links/ui/note/note_tile.dart';
 import 'package:tag_links/utils/paginated_utils.dart';
@@ -49,16 +48,15 @@ class _FolderPageState extends ConsumerState<FolderPage> {
     super.initState();
 
     _scrollController.addListener(() {
-  final position = _scrollController.position;
-  final notifier = ref.read(_notesProvider.notifier);
+      final position = _scrollController.position;
+      final notifier = ref.read(_notesProvider.notifier);
 
-  if (position.pixels >= position.maxScrollExtent - 200 &&
-      notifier.hasMore &&
-      !notifier.isLoadingMore) {
-    notifier.loadMore();
-  }
-});
-
+      if (position.pixels >= position.maxScrollExtent - 200 &&
+          notifier.hasMore &&
+          !notifier.isLoadingMore) {
+        notifier.loadMore();
+      }
+    });
   }
 
   @override
@@ -68,10 +66,6 @@ class _FolderPageState extends ConsumerState<FolderPage> {
     final preferenceAsync = ref.watch(
       folderPreferenceProvider(widget.folder.id),
     );
-
-    final hasPendingSharedNotes = ref.watch(hasPendingSharedNoteProvider);
-
-    final sharedNote = ref.watch(sharedNoteProvider);
 
     return preferenceAsync.when(
       loading: () =>
@@ -86,11 +80,11 @@ class _FolderPageState extends ConsumerState<FolderPage> {
 
         return Scaffold(
           appBar: _appBar(context, ref, showFolders, preference),
-          floatingActionButton: _buildFab(context, showFolders, sharedNote),
+          floatingActionButton: _buildFab(context, showFolders),
           body: Column(
             children: [
-              if (hasPendingSharedNotes)
-                _bannerHasPendingSharedNotes(context, ref),
+              BannerPendingNote(toFolderId: widget.folder.id),
+              BannerPendingFolder(toParentId: widget.folder.id),
 
               Expanded(
                 child: Stack(
@@ -114,53 +108,49 @@ class _FolderPageState extends ConsumerState<FolderPage> {
     );
   }
 
-Widget _loadMoreIndicator(AsyncValue<List<Note>> notes) {
-  return notes.when(
-    data: (_) {
-      final notifier = ref.read(_notesProvider.notifier);
+  Widget _loadMoreIndicator(AsyncValue<List<Note>> notes) {
+    return notes.when(
+      data: (_) {
+        final notifier = ref.read(_notesProvider.notifier);
 
-      if (!notifier.isLoadingMore) {
-        return const SizedBox.shrink();
-      }
+        if (!notifier.isLoadingMore) {
+          return const SizedBox.shrink();
+        }
 
-      return const Positioned(
-        bottom: 16,
-        left: 0,
-        right: 0,
-        child: Center(child: CircularProgressIndicator()),
-      );
-    },
-    loading: () => const SizedBox.shrink(),
-    error: (_, __) => const SizedBox.shrink(),
-  );
-}
-
+        return const Positioned(
+          bottom: 16,
+          left: 0,
+          right: 0,
+          child: Center(child: CircularProgressIndicator()),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
 
   /// 🎯 Scroll a la nota resaltada (solo una vez)
-void _scrollToHighlightedNote(AsyncValue<List<Note>> notesAsync) {
-  if (_didScrollToHighlight) return;
+  void _scrollToHighlightedNote(AsyncValue<List<Note>> notesAsync) {
+    if (_didScrollToHighlight) return;
 
-  notesAsync.whenData((notes) {
-    final index = notes.indexWhere(
-      (n) => n.id == widget.highlightNote?.id,
-    );
+    notesAsync.whenData((notes) {
+      final index = notes.indexWhere((n) => n.id == widget.highlightNote?.id);
 
-    if (index == -1) return;
+      if (index == -1) return;
 
-    _didScrollToHighlight = true;
+      _didScrollToHighlight = true;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
 
-      _scrollController.animateTo(
-        index * 72.0,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+        _scrollController.animateTo(
+          index * 72.0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      });
     });
-  });
-}
-
+  }
 
   PreferredSizeWidget _appBar(
     BuildContext context,
@@ -235,10 +225,10 @@ void _scrollToHighlightedNote(AsyncValue<List<Note>> notesAsync) {
   }
 
   /// ➕ FAB dinámico
-  Widget _buildFab(BuildContext context, bool showFolders, Note? sharedNote) {
+  Widget _buildFab(BuildContext context, bool showFolders) {
     return showFolders
         ? _fabAddFolder(context)
-        : _fabAddNote(context, sharedNote);
+        : _fabAddNote(context);
   }
 
   Widget _fabAddFolder(BuildContext context) {
@@ -254,36 +244,17 @@ void _scrollToHighlightedNote(AsyncValue<List<Note>> notesAsync) {
     );
   }
 
-  Widget _fabAddNote(BuildContext context, Note? sharedNote) {
+  Widget _fabAddNote(BuildContext context) {
     return FloatingActionButton(
       heroTag: 'addNote',
       onPressed: () => Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) =>
-              NoteFormPage(note: sharedNote, folderId: widget.folder.id),
+              NoteFormPage(folderId: widget.folder.id),
         ),
       ),
       child: const Icon(Icons.note_add),
-    );
-  }
-
-  // 🔔 Banners
-  Widget _bannerHasPendingSharedNotes(BuildContext context, WidgetRef ref) {
-    return BannerPending(
-      text:
-          'Tienes una nueva nota compartida. Puedes almacenarla aquí, elige o crea una carpeta donde se guardará la nota compartida',
-      onClose: () async {
-        final confirm = await showConfirmDialog(
-          context,
-          title: 'No almacenar la nueva nota',
-          message: '¿Estás seguro de descartar la nueva nota?',
-        );
-
-        if (confirm == true) {
-          ref.read(sharedNoteProvider.notifier).clear();
-        }
-      },
     );
   }
 }

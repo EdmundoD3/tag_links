@@ -2,26 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/models/tag.dart';
 
-class SearchTags extends StatefulWidget {
+class SearchListBar extends StatefulWidget {
   final String queryText;
   final AsyncValue<List<Tag>> tagsSuggestion;
   final void Function(String text) onChangeText;
   final void Function(Tag tag) onTagSelected;
-  final Widget? iconButton;
-  const SearchTags({
+  final Widget? iconLeftBtn;
+  final Widget? iconRightBtn;
+  const SearchListBar({
     super.key,
     required this.queryText,
     required this.tagsSuggestion,
     required this.onChangeText,
     required this.onTagSelected,
-    this.iconButton,
+    this.iconLeftBtn,
+    this.iconRightBtn,
   });
 
   @override
-  State<SearchTags> createState() => _SearchTagsState();
+  State<SearchListBar> createState() => _SearchListBarState();
 }
 
-class _SearchTagsState extends State<SearchTags> {
+class _SearchListBarState extends State<SearchListBar> {
   late final TextEditingController _controller;
 
   @override
@@ -37,7 +39,7 @@ class _SearchTagsState extends State<SearchTags> {
   }
 
   @override
-  void didUpdateWidget(covariant SearchTags oldWidget) {
+  void didUpdateWidget(covariant SearchListBar oldWidget) {
     super.didUpdateWidget(oldWidget);
 
     if (oldWidget.queryText != widget.queryText &&
@@ -65,7 +67,7 @@ class _SearchTagsState extends State<SearchTags> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SearchInput(controller: _controller, onChangeText: _onChangeText, iconButton: widget.iconButton),
+        _SearchInput(controller: _controller, onChangeText: _onChangeText, iconLeftButton: widget.iconLeftBtn),
         const SizedBox(height: 8),
 
         if (queryText.isNotEmpty)
@@ -81,13 +83,13 @@ class _SearchTagsState extends State<SearchTags> {
 }
 class _SearchInput extends StatelessWidget {
   final TextEditingController controller;
-  final Widget? iconButton;
+  final Widget? iconLeftButton;
   final void Function(String value) onChangeText;
 
   const _SearchInput({
     required this.controller,
     required this.onChangeText,
-    this.iconButton,
+    this.iconLeftButton,
   });
 
   @override
@@ -98,7 +100,7 @@ class _SearchInput extends StatelessWidget {
         return TextField(
           controller: controller,
           decoration: InputDecoration(
-            icon: iconButton,
+            icon: iconLeftButton,
             hintText: 'Buscar notas...',
             prefixIcon: const Icon(Icons.search),
             suffixIcon: value.text.isNotEmpty

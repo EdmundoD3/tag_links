@@ -1,4 +1,5 @@
 import 'package:sqflite/sqflite.dart';
+import 'package:tag_links/data/data_sources/link_preview_dao.dart';
 import 'package:tag_links/data/database.dart';
 import 'package:tag_links/models/link_preview.dart';
 import 'package:tag_links/models/note.dart';
@@ -140,7 +141,7 @@ class NotesDao {
 
 class _FetchersNotesDao {
   Future<Database> get _db async => AppDatabase().database;
-
+  final _linkDao = LinkPreviewDao();
   Future<List<NoteJoinRow>> searchByQuery(
     SearchQuery searchQuery, {
     required PaginatedByDate paginated,
@@ -243,20 +244,20 @@ class _FetchersNotesDao {
     required PaginatedByDate paginated,
   }) async {
     final field = _buildOrderField(paginated);
-    final whereClause = _buildOrderWhereClause(paginated);
+    final whereClause = paginated.order == OrderDate.updatedDesc ? '>' : '<';
 
     final query =
         '''
-          SELECT COUNT(*) as count
-          FROM notes
-          WHERE folderId = ?
-            AND $whereClause (
-              SELECT $field FROM notes WHERE id = ?
-            );
-        ''';
-
+  SELECT COUNT(*) as count
+  FROM notes
+  WHERE folderId = ?
+    AND $field $whereClause (
+      SELECT $field FROM notes WHERE id = ?
+    );
+''';
     final args = [note.folderId, note.id];
-
+    print("args: $args");
+    print("query: $query");
     final result = await _db.then((db) => db.rawQuery(query, args));
 
     final rawCount = result.first['count'];
@@ -450,7 +451,7 @@ class _FetchersNotesDao {
 
     await db.transaction((txn) async {
       // 1️⃣ Insert note
-      await txn.insert('notes', note.toMap());
+      await txn.insert('notes', note.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
 
       // 2️⃣ Insert tags
       for (final tag in note.tags) {
@@ -472,15 +473,7 @@ class _FetchersNotesDao {
 
       // 3️⃣ Insert link (si existe)
       if (note.link != null) {
-        await txn.insert('link_previews', {
-          'id': note.link!.id,
-          'noteId': note.id,
-          'url': note.link!.url,
-          'title': note.link!.title,
-          'description': note.link!.description,
-          'image': note.link!.image,
-          'siteName': note.link!.siteName,
-        });
+        _linkDao.insert(txn, note.id, note.link!);
       }
     });
   }
@@ -491,7 +484,6 @@ class _FetchersNotesDao {
 
   Future<void> update(Note note) async {
     final db = await _db;
-    print(note.toMap());
     await db.transaction((txn) async {
       // 1️⃣ Update note
       await txn.update(
@@ -540,22 +532,10 @@ class _FetchersNotesDao {
       }
 
       // 3️⃣ Links: borrar y recrear
-      await txn.delete(
-        'link_previews',
-        where: 'noteId = ?',
-        whereArgs: [note.id],
-      );
-
       if (note.link != null) {
-        await txn.insert('link_previews', {
-          'id': note.link!.id,
-          'noteId': note.id,
-          'url': note.link!.url,
-          'title': note.link!.title,
-          'description': note.link!.description,
-          'image': note.link!.image,
-          'siteName': note.link!.siteName,
-        });
+        await _linkDao.replace(txn: txn, noteId: note.id, link: note.link);
+      } else {
+        await _linkDao.delete(txn, note.id);
       }
     });
   }

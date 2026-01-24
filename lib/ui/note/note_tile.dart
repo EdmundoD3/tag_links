@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:tag_links/models/note.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
+import 'package:tag_links/ui/link/link_preview_widget.dart';
 import 'package:tag_links/ui/menu/menu_container.dart';
 import 'package:tag_links/ui/note/note_form_page.dart';
 
@@ -157,12 +158,8 @@ class _NoteTileCard extends StatelessWidget {
   }
 
   Widget _previewWidget(ThemeData theme, Note note) {
-    return Text(
-      _previewText(note),
-      maxLines: 2,
-      overflow: TextOverflow.ellipsis,
-      style: theme.textTheme.bodySmall,
-    );
+    if (note.link == null) return const SizedBox.shrink();
+    return LinkPreviewWidget(preview: note.link!);
   }
 
   Widget _dateWidget(ThemeData theme, DateTime date) {
@@ -181,12 +178,4 @@ class _NoteTileCard extends StatelessWidget {
     return '$horas:$minutos';
   }
 
-  String _previewText(Note note) {
-    if (note.link != null && note.link!.url.isNotEmpty) {
-      return note.link!.url;
-    }
-    return note.content.trim().isNotEmpty == true
-        ? note.content
-        : 'Sin contenido';
-  }
 }
