@@ -7,11 +7,11 @@ import 'package:tag_links/repository/folder_repository.dart';
 import 'package:tag_links/state/folders_provider.dart';
 import 'package:tag_links/state/notes_provider.dart';
 import 'package:tag_links/ui/folder/banner_pending_folder.dart';
+import 'package:tag_links/ui/folder/build_folders_list.dart';
 import 'package:tag_links/ui/folder/folder_form_page.dart';
-import 'package:tag_links/ui/folder/folder_tile.dart';
 import 'package:tag_links/ui/note/banner_pending_note.dart';
+import 'package:tag_links/ui/note/build_notes_list.dart';
 import 'package:tag_links/ui/note/note_form_page.dart';
-import 'package:tag_links/ui/note/note_tile.dart';
 import 'package:tag_links/utils/paginated_utils.dart';
 
 class FolderPage extends ConsumerStatefulWidget {
@@ -85,47 +85,12 @@ class _FolderPageState extends ConsumerState<FolderPage> {
             children: [
               BannerPendingNote(toFolderId: widget.folder.id),
               BannerPendingFolder(toParentId: widget.folder.id),
-
-              Expanded(
-                child: Stack(
-                  children: [
-                    ListView(
-                      controller: _scrollController,
-                      children: showFolders
-                          ? _foldersList(subFolders)
-                          : _buildNotes(notes),
-                    ),
-
-                    // 👇 loader flotante
-                    _loadMoreIndicator(notes),
-                  ],
-                ),
-              ),
+              if(showFolders) _foldersList(subFolders)
+              else _buildNotes(notes),
             ],
           ),
         );
       },
-    );
-  }
-
-  Widget _loadMoreIndicator(AsyncValue<List<Note>> notes) {
-    return notes.when(
-      data: (_) {
-        final notifier = ref.read(_notesProvider.notifier);
-
-        if (!notifier.isLoadingMore) {
-          return const SizedBox.shrink();
-        }
-
-        return const Positioned(
-          bottom: 16,
-          left: 0,
-          right: 0,
-          child: Center(child: CircularProgressIndicator()),
-        );
-      },
-      loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
     );
   }
 
@@ -186,41 +151,20 @@ class _FolderPageState extends ConsumerState<FolderPage> {
   }
 
   /// 📂 Lista de carpetas
-  List<Widget> _foldersList(AsyncValue<List<Folder>> subFolders) {
-    return subFolders.when(
-      data: (folders) {
-        if (folders.isEmpty) {
-          return [
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text('No hay carpetas'),
-            ),
-          ];
-        }
-
-        return folders.map((f) => FolderTile(folder: f)).toList();
-      },
-      loading: () => const [Center(child: CircularProgressIndicator())],
-      error: (err, _) => [Center(child: Text('Error: $err'))],
+  Widget _foldersList(AsyncValue<List<Folder>> subFolders) {
+    final notifier = ref.read(foldersProvider(widget.folder.id).notifier);
+    return BuildFoldersList(
+      foldersAsync: subFolders,
+      scrollController: _scrollController,
+      notifier: notifier,
     );
   }
-
-  /// 📝 Lista de notas
-  List<Widget> _buildNotes(AsyncValue<List<Note>> notes) {
-    return notes.when(
-      data: (items) {
-        if (items.isEmpty) {
-          return [
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text('No hay notas'),
-            ),
-          ];
-        }
-        return items.map((n) => NoteTile(note: n)).toList();
-      },
-      loading: () => const [Center(child: CircularProgressIndicator())],
-      error: (err, _) => [Center(child: Text('Error: $err'))],
+  Widget _buildNotes(AsyncValue<List<Note>> notesAsync) {
+    final notifier = ref.read(notesProvider(null).notifier);
+    return BuildNotesList(
+      notifier: notifier,
+      notesAsync: notesAsync,
+      scrollController: _scrollController,
     );
   }
 

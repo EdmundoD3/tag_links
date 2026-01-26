@@ -10,11 +10,10 @@ import 'package:tag_links/state/tags_provider.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
 import 'package:tag_links/ui/app_bar/app_bar_folder.dart';
 import 'package:tag_links/ui/banners/banner_pending.dart';
+import 'package:tag_links/ui/button/create_new_folder_button.dart';
 import 'package:tag_links/ui/folder/banner_pending_folder.dart';
-import 'package:tag_links/ui/folder/folder_form_page.dart';
-import 'package:tag_links/ui/folder/folder_tile.dart';
-import 'package:tag_links/ui/menu/menu_container.dart';
-import 'package:tag_links/ui/note/note_tile.dart';
+import 'package:tag_links/ui/folder/build_folders_list.dart';
+import 'package:tag_links/ui/note/build_notes_list.dart';
 import 'package:tag_links/ui/search/search_bar.dart';
 import 'package:tag_links/ui/tags/tag_selected_container.dart';
 import 'package:tag_links/utils/note_helpers.dart';
@@ -67,18 +66,12 @@ class _HomePageState extends ConsumerState<HomePage> {
     //que empieze con las notas favoritas
 
     return Scaffold(
-      appBar: AppBarFolder(),
-      floatingActionButton: _createNewFolderBtn(context),
-      body: Column(
-        children: [
-          if (hasPendingNotes) _bannerHasPendingNotes(context, ref),
-          BannerPendingFolder(toParentId: null),
-
-          _searchBar(ref, isFolder),
-          _selectedIncludeTags(ref),
-          isFolder ? _buildFolders(foldersAsync) : _buildNotes(notesAsync),
-        ],
+      appBar: appBar('Folders'),
+      floatingActionButton: CreateNewFolderButton(
+        isRoot: true,
+        parentFolderId: null,
       ),
+      body: _body(ref, isFolder, hasPendingNotes, foldersAsync, notesAsync),
     );
   }
 
@@ -91,95 +84,42 @@ class _HomePageState extends ConsumerState<HomePage> {
     ref.invalidate(notesProvider(null));
   }
 
+  Widget _body(
+    WidgetRef ref,
+    bool isFolder,
+    bool hasPendingNotes,
+    AsyncValue<List<Folder>> foldersAsync,
+    AsyncValue<List<Note>> notesAsync,
+  ) {
+    return Column(
+      children: [
+        if (hasPendingNotes) _bannerHasPendingNotes(context, ref),
+        BannerPendingFolder(toParentId: null),
+
+        _searchBar(ref, isFolder),
+        _selectedIncludeTags(ref),
+        isFolder ? _buildFolders(foldersAsync) : _buildNotes(notesAsync),
+      ],
+    );
+  }
+
   Widget _buildFolders(AsyncValue<List<Folder>> foldersAsync) {
     final notifier = ref.read(foldersProvider(null).notifier);
-
-    return Expanded(
-      child: foldersAsync.when(
-        data: (folders) {
-          if (folders.isEmpty) {
-            return const Center(child: Text('No hay carpetas'));
-          }
-
-          return Stack(
-            children: [
-              ListView.builder(
-                controller: _scrollController,
-                itemCount: folders.length,
-                itemBuilder: (_, i) => FolderTile(folder: folders[i]),
-              ),
-
-              if (notifier.isLoadingMore)
-                const Positioned(
-                  top: 8,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  ),
-                ),
-            ],
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('Error: $error')),
-      ),
+    return BuildFoldersList(
+      foldersAsync: foldersAsync,
+      scrollController: _scrollController,
+      notifier: notifier,
     );
   }
 
   /// 📝 Lista de notas
   Widget _buildNotes(AsyncValue<List<Note>> notesAsync) {
     final notifier = ref.read(notesProvider(null).notifier);
-
-    return Expanded(
-      child: notesAsync.when(
-        data: (notes) {
-          if (notes.isEmpty) {
-            return const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text('No hay notas'),
-            );
-          }
-
-          return Stack(
-            children: [
-              if (notifier.isLoadingMore)
-                const Positioned(
-                  top: 8,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  ),
-                ),
-              ListView.builder(
-                controller: _scrollController,
-                itemCount: notes.length,
-                itemBuilder: (_, i) => NoteTile(
-                  note: notes[i],
-                  actionsItems: [
-                    ActionMenuItem(
-                      icon: Icons.drive_folder_upload,
-                      label: 'ir a la carpeta',
-                      onTap: () => NoteHelpers.goFolder(context, ref, notes[i]),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, _) => Center(child: Text('Error: $err')),
-      ),
+    return BuildNotesList(
+      notifier: notifier,
+      notesAsync: notesAsync,
+      scrollController: _scrollController,
+      goFolder: (Note note) => NoteHelpers.goFolder(context, ref, note),
     );
   }
 
@@ -214,19 +154,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       onDeleted: (Tag tag) {
         ref.read(searchQueryProvider.notifier).removeTag(tag);
       },
-    );
-  }
-
-  Widget _createNewFolderBtn(BuildContext context) {
-    return FloatingActionButton(
-      heroTag: 'addFolder',
-      onPressed: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => FolderFormPage(parentFolderId: null, isRoot: true,),
-        ),
-      ),
-      child: const Icon(Icons.create_new_folder),
+      isCreateTag: false,
     );
   }
 

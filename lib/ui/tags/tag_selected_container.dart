@@ -8,10 +8,12 @@ import 'package:tag_links/ui/tags/show_edit_tag_modal.dart';
 class TagsSelectedContainer extends ConsumerWidget {
   final void Function(Tag tag) onDeleted;
   final List<Tag> tags;
+  final bool? isCreateTag;
+
   const TagsSelectedContainer({
     super.key,
     required this.tags,
-    required this.onDeleted,
+    required this.onDeleted, this.isCreateTag = true,
   });
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -34,7 +36,7 @@ class TagsSelectedContainer extends ConsumerWidget {
             },
           ),
         ),
-        _createTagChip(context, ref),
+        if (isCreateTag == true) _createTagChip(context, ref),
       ],
     );
   }
