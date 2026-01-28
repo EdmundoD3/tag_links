@@ -141,8 +141,19 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
   }
 
   Future<void> deleteNote(String id) async {
-    await _repo.delete(id);
-    ref.invalidateSelf();
+    final current = state.asData?.value;
+    if (current == null) return;
+
+    // 🔥 optimistic update
+    state = AsyncValue.data(current.where((note) => note.id != id).toList());
+
+    try {
+      await _repo.delete(id);
+    } catch (e) {
+      // ❌ rollback si falla
+      state = AsyncValue.data(current);
+      rethrow;
+    }
   }
 
   Future<void> _enrichLinks(List<LinkPreview> links) async {

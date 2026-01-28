@@ -54,7 +54,7 @@ class NoteTile extends StatelessWidget {
         ActionMenuItem(
           icon: Icons.delete,
           label: 'Eliminar',
-          onTap: () => deleteNote(context, () => onDeleteNote(note.id)),
+          onTap: () => _deleteNote(context),
         ),
         const ActionMenuItem(icon: Icons.share, label: 'Compartir'),
         ...actionsItems,
@@ -81,9 +81,8 @@ class NoteTile extends StatelessWidget {
   }
 
   // helpers
-  static Future<void> deleteNote(
-    BuildContext context,
-    Function deleteNote,
+   Future<void> _deleteNote(
+    BuildContext context
   ) async {
     final isDelete = await showConfirmDialog(
       context,
@@ -91,7 +90,7 @@ class NoteTile extends StatelessWidget {
       message: "¿Estás seguro de eliminar la nota?",
     );
     if (isDelete != null && isDelete) {
-      deleteNote();
+      onDeleteNote(note.id);
     }
   }
 }
