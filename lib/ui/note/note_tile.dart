@@ -81,18 +81,20 @@ class NoteTile extends StatelessWidget {
   }
 
   // helpers
-   Future<void> _deleteNote(
-    BuildContext context
-  ) async {
-    final isDelete = await showConfirmDialog(
-      context,
-      title: "Eliminar nota",
-      message: "¿Estás seguro de eliminar la nota?",
-    );
-    if (isDelete != null && isDelete) {
-      onDeleteNote(note.id);
-    }
+Future<void> _deleteNote(BuildContext context) async {
+  final isDelete = await showConfirmDialog(
+    context,
+    title: "Eliminar nota",
+    message: "¿Estás seguro de eliminar la nota?",
+  );
+
+  if (isDelete == true) {
+    if(!context.mounted) return;
+    Navigator.of(context).pop();
+    onDeleteNote(note.id);
   }
+}
+
 }
 
 class _NoteTileCard extends StatelessWidget {

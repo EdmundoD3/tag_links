@@ -51,9 +51,21 @@ class BuildNotesList extends StatelessWidget {
                 itemCount: notes.length,
                 itemBuilder: (_, i) => NoteTile(
                   note: notes[i],
-                  onDeleteNote: (id) => notifier.deleteNote(id),
+                  onDeleteNote: (id) async {
+                    try {
+                      await notifier.deleteNote(id);
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Nota eliminada')),
+                      );
+                    } catch (_) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Error al eliminar')),
+                      );
+                    }
+                  },
                   actionsItems: [
-                    if(actionsItems != null) ...actionsItems!,
+                    if (actionsItems != null) ...actionsItems!,
                     if (goFolder != null)
                       ActionMenuItem(
                         icon: Icons.drive_folder_upload,
