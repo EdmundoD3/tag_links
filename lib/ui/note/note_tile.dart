@@ -9,10 +9,15 @@ import 'package:tag_links/ui/note/note_form_page.dart';
 class NoteTile extends StatelessWidget {
   final Note note;
   final List<ActionMenuItem> actionsItems;
-
+  final void Function(String id) onDeleteNote;
   final GlobalKey _tileKey = GlobalKey();
 
-  NoteTile({super.key, required this.note, this.actionsItems = const []});
+  NoteTile({
+    super.key,
+    required this.note,
+    this.actionsItems = const [],
+    required this.onDeleteNote,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +50,11 @@ class NoteTile extends StatelessWidget {
           icon: Icons.copy,
           label: 'Copiar',
           onTap: () => _copyText(context),
+        ),
+        ActionMenuItem(
+          icon: Icons.delete,
+          label: 'Eliminar',
+          onTap: () => deleteNote(context, () => onDeleteNote(note.id)),
         ),
         const ActionMenuItem(icon: Icons.share, label: 'Compartir'),
         ...actionsItems,
@@ -177,5 +187,4 @@ class _NoteTileCard extends StatelessWidget {
     String minutos = date.minute.toString().padLeft(2, '0');
     return '$horas:$minutos';
   }
-
 }

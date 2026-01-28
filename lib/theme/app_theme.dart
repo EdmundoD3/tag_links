@@ -5,6 +5,7 @@ class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
+      scaffoldBackgroundColor: Color(0xFFEDE7F6),
       
       // Configuración global del AppBar
       appBarTheme: const AppBarTheme(

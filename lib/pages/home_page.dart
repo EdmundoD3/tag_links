@@ -11,6 +11,7 @@ import 'package:tag_links/ui/alerts/confirm_dialog.dart';
 import 'package:tag_links/ui/app_bar/app_bar_folder.dart';
 import 'package:tag_links/ui/banners/banner_pending.dart';
 import 'package:tag_links/ui/button/create_new_folder_button.dart';
+import 'package:tag_links/ui/button/switch_folder_note.dart';
 import 'package:tag_links/ui/folder/banner_pending_folder.dart';
 import 'package:tag_links/ui/folder/build_folders_list.dart';
 import 'package:tag_links/ui/note/build_notes_list.dart';
@@ -66,7 +67,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     //que empieze con las notas favoritas
 
     return Scaffold(
-      appBar: appBar('Folders'),
+      appBar: appBar(title: 'Folders'),
       floatingActionButton: CreateNewFolderButton(
         isRoot: true,
         parentFolderId: null,
@@ -125,19 +126,14 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   Widget _searchBar(WidgetRef ref, bool isFolder) {
     return SearchListBar(
-      iconLeftBtn: IconButton(
-        onPressed: () {
+      iconLeftBtn: SwitchFolderNote(
+        isFolder: isFolder,
+        size: 34,
+        onTap: () {
           ref.read(isFolderProvider.notifier).state = !isFolder;
-
           ref.invalidate(foldersProvider(null));
           ref.invalidate(notesProvider(null));
         },
-        icon: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 200),
-          child: isFolder
-              ? const Icon(Icons.note, key: ValueKey('note'))
-              : const Icon(Icons.folder_open, key: ValueKey('folder')),
-        ),
       ),
       onChangeText: (String text) => _onChangeText(ref, text),
       onTagSelected: (Tag tag) {

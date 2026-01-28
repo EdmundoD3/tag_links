@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tag_links/ui/button/floating_button_base.dart';
 import 'package:tag_links/ui/folder/folder_form_page.dart';
 
 class CreateNewFolderButton extends StatelessWidget {
@@ -13,18 +14,16 @@ class CreateNewFolderButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FloatingActionButton(
+    return FloatingButonBase(
       heroTag: 'addFolder',
+      icon: Icons.create_new_folder,
       onPressed: () => Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => FolderFormPage(
-            parentFolderId: parentFolderId,
-            isRoot: isRoot,
-          ),
+          builder: (_) =>
+              FolderFormPage(parentFolderId: parentFolderId, isRoot: isRoot),
         ),
       ),
-      child: const Icon(Icons.create_new_folder),
     );
   }
 }

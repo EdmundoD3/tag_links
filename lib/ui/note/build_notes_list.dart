@@ -51,6 +51,7 @@ class BuildNotesList extends StatelessWidget {
                 itemCount: notes.length,
                 itemBuilder: (_, i) => NoteTile(
                   note: notes[i],
+                  onDeleteNote: (id) => notifier.deleteNote(id),
                   actionsItems: [
                     if(actionsItems != null) ...actionsItems!,
                     if (goFolder != null)

@@ -6,12 +6,17 @@ import 'package:tag_links/models/note.dart';
 import 'package:tag_links/repository/folder_repository.dart';
 import 'package:tag_links/state/folders_provider.dart';
 import 'package:tag_links/state/notes_provider.dart';
+import 'package:tag_links/ui/app_bar/app_bar_folder.dart';
+import 'package:tag_links/ui/button/create_new_folder_button.dart';
+import 'package:tag_links/ui/button/floating_button_base.dart';
+import 'package:tag_links/ui/button/switch_folder_note.dart';
 import 'package:tag_links/ui/folder/banner_pending_folder.dart';
 import 'package:tag_links/ui/folder/build_folders_list.dart';
-import 'package:tag_links/ui/folder/folder_form_page.dart';
+import 'package:tag_links/ui/menu/menu_container.dart';
 import 'package:tag_links/ui/note/banner_pending_note.dart';
 import 'package:tag_links/ui/note/build_notes_list.dart';
 import 'package:tag_links/ui/note/note_form_page.dart';
+import 'package:tag_links/ui/note/note_tile.dart';
 import 'package:tag_links/utils/paginated_utils.dart';
 
 class FolderPage extends ConsumerStatefulWidget {
@@ -85,8 +90,7 @@ class _FolderPageState extends ConsumerState<FolderPage> {
             children: [
               BannerPendingNote(toFolderId: widget.folder.id),
               BannerPendingFolder(toParentId: widget.folder.id),
-              if(showFolders) _foldersList(subFolders)
-              else _buildNotes(notes),
+              if (showFolders) _foldersList(subFolders) else _buildNotes(notes),
             ],
           ),
         );
@@ -123,18 +127,15 @@ class _FolderPageState extends ConsumerState<FolderPage> {
     bool showFolders,
     FolderDefaultView preference,
   ) {
-    return AppBar(
-      title: Text(widget.folder.title),
+    return appBar(
+      title: widget.folder.title,
       actions: [
-        IconButton(
-          onPressed: () => _toggleView(ref, preference),
-          icon: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
-            child: showFolders
-                ? const Icon(Icons.note, key: ValueKey('note'))
-                : const Icon(Icons.folder_open, key: ValueKey('folder')),
-          ),
+        SwitchFolderNote(
+          isFolder: showFolders,
+          onTap: () => _toggleView(ref, preference),
+          size: 25,
         ),
+        Padding(padding: EdgeInsetsGeometry.directional(end: 4)),
       ],
     );
   }
@@ -159,46 +160,34 @@ class _FolderPageState extends ConsumerState<FolderPage> {
       notifier: notifier,
     );
   }
+
   Widget _buildNotes(AsyncValue<List<Note>> notesAsync) {
     final notifier = ref.read(notesProvider(null).notifier);
     return BuildNotesList(
       notifier: notifier,
       notesAsync: notesAsync,
       scrollController: _scrollController,
+      
     );
   }
 
   /// ➕ FAB dinámico
   Widget _buildFab(BuildContext context, bool showFolders) {
     return showFolders
-        ? _fabAddFolder(context)
+        ? CreateNewFolderButton(isRoot: false, parentFolderId: widget.folder.id)
         : _fabAddNote(context);
   }
 
-  Widget _fabAddFolder(BuildContext context) {
-    return FloatingActionButton(
-      heroTag: 'addFolder',
-      onPressed: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => FolderFormPage(parentFolderId: widget.folder.id),
-        ),
-      ),
-      child: const Icon(Icons.create_new_folder),
-    );
-  }
-
   Widget _fabAddNote(BuildContext context) {
-    return FloatingActionButton(
+    return FloatingButonBase(
       heroTag: 'addNote',
+      icon: Icons.note_add,
       onPressed: () => Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) =>
-              NoteFormPage(folderId: widget.folder.id),
+          builder: (_) => NoteFormPage(folderId: widget.folder.id),
         ),
       ),
-      child: const Icon(Icons.note_add),
     );
   }
 }

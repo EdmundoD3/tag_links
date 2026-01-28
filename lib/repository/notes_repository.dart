@@ -26,8 +26,11 @@ class NotesRepository {
 
   Future<Note?> getById(String id) => _dao.getById(id);
 
-  Future<PaginatedByDate> getPageForNoteId(Note note, {required PaginatedByDate paginated}){
-    return _dao.getPageForNoteId(note, paginated:paginated);
+  Future<PaginatedByDate> getPageForNoteId(
+    Note note, {
+    required PaginatedByDate paginated,
+  }) {
+    return _dao.getPageForNoteId(note, paginated: paginated);
   }
 
   Future<void> create(Note note) {
@@ -40,8 +43,9 @@ class NotesRepository {
     return _dao.update(noteToUpdate);
   }
 
-  Future<void> delete(String noteId) => _dao.delete(noteId);
-  
+  Future<void> delete(String noteId) {
+    return _dao.delete(noteId);
+  }
 }
 
 final notesRepositoryProvider = Provider<NotesRepository>((ref) {
