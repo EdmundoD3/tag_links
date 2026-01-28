@@ -49,7 +49,7 @@ class LinkPreview {
   LinkPreview? ensureForInsert() {
     final normalizedUrl = _normalizeUrl(url);
 
-    if (!_isValid(normalizedUrl)) return null;
+    if (!_isValidUrl(normalizedUrl)) return null;
 
     return copyWith(
       id: id.isEmpty ? const Uuid().v4() : id,
@@ -77,7 +77,7 @@ class LinkPreview {
     );
   }
 
-  bool _isValid(String url) {
+  bool _isValidUrl(String url) {
     final uri = Uri.tryParse(url);
     if (uri == null) return false;
     if (!uri.hasScheme || uri.host.isEmpty) return false;
