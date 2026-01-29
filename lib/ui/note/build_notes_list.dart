@@ -51,9 +51,17 @@ class BuildNotesList extends StatelessWidget {
                 itemCount: notes.length,
                 itemBuilder: (_, i) => NoteTile(
                   note: notes[i],
-                  onDeleteNote: (id) => notifier.deleteNote(id),
+                  onDeleteNote: (id) async {
+                    try {
+                      await notifier.deleteNote(id);
+                      if (!context.mounted) return;
+                      _feedbackDelete(context, 'Nota eliminada',backgroundColor: Colors.green);
+                    } catch (_) {
+                      _feedbackDelete(context, 'Error al eliminar', backgroundColor: Colors.deepOrangeAccent);
+                    }
+                  },
                   actionsItems: [
-                    if(actionsItems != null) ...actionsItems!,
+                    if (actionsItems != null) ...actionsItems!,
                     if (goFolder != null)
                       ActionMenuItem(
                         icon: Icons.drive_folder_upload,
@@ -70,5 +78,22 @@ class BuildNotesList extends StatelessWidget {
         error: (err, _) => Center(child: Text('Error: $err')),
       ),
     );
+  }
+
+  ScaffoldMessengerState _feedbackDelete(
+    BuildContext context,
+    String title, {
+    Color? backgroundColor,
+    Duration duration = const Duration(seconds: 2),
+  }) {
+    return ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(title),
+          backgroundColor: backgroundColor,
+          duration: duration,
+        ),
+      );
   }
 }

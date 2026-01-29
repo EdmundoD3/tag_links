@@ -5,6 +5,7 @@ import 'package:tag_links/ui/alerts/confirm_dialog.dart';
 import 'package:tag_links/ui/link/link_preview_widget.dart';
 import 'package:tag_links/ui/menu/menu_container.dart';
 import 'package:tag_links/ui/note/note_form_page.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class NoteTile extends StatelessWidget {
   final Note note;
@@ -41,6 +42,12 @@ class NoteTile extends StatelessWidget {
         position.dy - 8,
       ),
       items: [
+        if (note.link != null)
+          ActionMenuItem(
+            icon: Icons.open_in_new,
+            label: 'Abrir enlace',
+            onTap: () => _openLink(context),
+          ),
         ActionMenuItem(
           icon: Icons.edit,
           label: 'Editar',
@@ -54,9 +61,9 @@ class NoteTile extends StatelessWidget {
         ActionMenuItem(
           icon: Icons.delete,
           label: 'Eliminar',
-          onTap: () => deleteNote(context, () => onDeleteNote(note.id)),
+          onTap: () => _deleteNote(context),
         ),
-        const ActionMenuItem(icon: Icons.share, label: 'Compartir'),
+        // const ActionMenuItem(icon: Icons.share, label: 'Compartir'),
         ...actionsItems,
       ],
     );
@@ -81,18 +88,34 @@ class NoteTile extends StatelessWidget {
   }
 
   // helpers
-  static Future<void> deleteNote(
-    BuildContext context,
-    Function deleteNote,
-  ) async {
+  Future<void> _deleteNote(BuildContext context) async {
     final isDelete = await showConfirmDialog(
       context,
       title: "Eliminar nota",
       message: "¿Estás seguro de eliminar la nota?",
     );
-    if (isDelete != null && isDelete) {
-      deleteNote();
+
+    if (isDelete == true) {
+      if (!context.mounted) return;
+      Navigator.of(context).pop();
+      onDeleteNote(note.id);
     }
+  }
+
+  Future<void> _openLink(BuildContext context) async {
+    final link = note.link;
+    if (link == null) return;
+
+    final uri = Uri.parse(link.url);
+
+    if (!await canLaunchUrl(uri)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo abrir el enlace')),
+      );
+      return;
+    }
+
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 }
 

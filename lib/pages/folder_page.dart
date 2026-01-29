@@ -12,11 +12,9 @@ import 'package:tag_links/ui/button/floating_button_base.dart';
 import 'package:tag_links/ui/button/switch_folder_note.dart';
 import 'package:tag_links/ui/folder/banner_pending_folder.dart';
 import 'package:tag_links/ui/folder/build_folders_list.dart';
-import 'package:tag_links/ui/menu/menu_container.dart';
 import 'package:tag_links/ui/note/banner_pending_note.dart';
 import 'package:tag_links/ui/note/build_notes_list.dart';
 import 'package:tag_links/ui/note/note_form_page.dart';
-import 'package:tag_links/ui/note/note_tile.dart';
 import 'package:tag_links/utils/paginated_utils.dart';
 
 class FolderPage extends ConsumerStatefulWidget {
