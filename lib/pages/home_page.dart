@@ -117,10 +117,11 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget _buildNotes(AsyncValue<List<Note>> notesAsync) {
     final notifier = ref.read(notesProvider(null).notifier);
     return BuildNotesList(
-      notifier: notifier,
       notesAsync: notesAsync,
       scrollController: _scrollController,
       goFolder: (Note note) => NoteHelpers.goFolder(context, ref, note),
+      isLoadingMore: notifier.isLoadingMore,
+      onDeleteNote: (id) => notifier.deleteNote(id),
     );
   }
 

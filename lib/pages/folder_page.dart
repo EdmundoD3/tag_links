@@ -19,14 +19,14 @@ import 'package:tag_links/utils/paginated_utils.dart';
 
 class FolderPage extends ConsumerStatefulWidget {
   final Folder folder;
-  final Note? highlightNote;
+  final String? highlightNoteId;
+
   final PaginatedByDate? paginated;
 
   const FolderPage({
     super.key,
     required this.folder,
-    this.highlightNote,
-    this.paginated,
+    this.paginated, this.highlightNoteId,
   });
 
   @override
@@ -39,6 +39,8 @@ class _FolderPageState extends ConsumerState<FolderPage> {
 
   AsyncNotifierProvider<NotesNotifier, List<Note>> get _notesProvider =>
       notesProvider(widget.folder.id);
+  AsyncNotifierProvider<FoldersNotifier, List<Folder>> get _folderProvider => foldersProvider(widget.folder.id);
+  FutureProvider<FolderDefaultView> get _foldersPreferenceProvider => folderPreferenceProvider(widget.folder.id);
 
   @override
   void dispose() {
@@ -64,10 +66,10 @@ class _FolderPageState extends ConsumerState<FolderPage> {
 
   @override
   Widget build(BuildContext context) {
-    final subFolders = ref.watch(foldersProvider(widget.folder.id));
+    final subFolders = ref.watch(_folderProvider);
     final notes = ref.watch(_notesProvider);
     final preferenceAsync = ref.watch(
-      folderPreferenceProvider(widget.folder.id),
+      _foldersPreferenceProvider
     );
 
     return preferenceAsync.when(
@@ -77,7 +79,7 @@ class _FolderPageState extends ConsumerState<FolderPage> {
       data: (preference) {
         final showFolders = preference == FolderDefaultView.folders;
 
-        if (!showFolders && widget.highlightNote != null) {
+        if (!showFolders && widget.highlightNoteId != null) {
           _scrollToHighlightedNote(notes);
         }
 
@@ -98,26 +100,30 @@ class _FolderPageState extends ConsumerState<FolderPage> {
 
   /// 🎯 Scroll a la nota resaltada (solo una vez)
   void _scrollToHighlightedNote(AsyncValue<List<Note>> notesAsync) {
-    if (_didScrollToHighlight) return;
+  if (_didScrollToHighlight) return;
 
-    notesAsync.whenData((notes) {
-      final index = notes.indexWhere((n) => n.id == widget.highlightNote?.id);
+  notesAsync.whenData((notes) {
+    final index = notes.indexWhere((n) => n.id == widget.highlightNoteId);
 
-      if (index == -1) return;
+    if (index == -1) {
+      _didScrollToHighlight = true; // 👈 clave
+      return;
+    }
 
-      _didScrollToHighlight = true;
+    _didScrollToHighlight = true;
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
 
-        _scrollController.animateTo(
-          index * 72.0,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
-      });
+      _scrollController.animateTo(
+        index * 72.0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
     });
-  }
+  });
+}
+
 
   PreferredSizeWidget _appBar(
     BuildContext context,
@@ -146,12 +152,12 @@ class _FolderPageState extends ConsumerState<FolderPage> {
         : FolderDefaultView.folders;
 
     await repo.savePreference(widget.folder.id, newView);
-    ref.invalidate(folderPreferenceProvider(widget.folder.id));
+    ref.invalidate(_foldersPreferenceProvider);
   }
 
   /// 📂 Lista de carpetas
   Widget _foldersList(AsyncValue<List<Folder>> subFolders) {
-    final notifier = ref.read(foldersProvider(widget.folder.id).notifier);
+    final notifier = ref.read(_folderProvider.notifier);
     return BuildFoldersList(
       foldersAsync: subFolders,
       scrollController: _scrollController,
@@ -160,12 +166,12 @@ class _FolderPageState extends ConsumerState<FolderPage> {
   }
 
   Widget _buildNotes(AsyncValue<List<Note>> notesAsync) {
-    final notifier = ref.read(notesProvider(null).notifier);
+    final notifier = ref.watch(_notesProvider.notifier);
     return BuildNotesList(
-      notifier: notifier,
       notesAsync: notesAsync,
       scrollController: _scrollController,
-      
+      isLoadingMore: notifier.isLoadingMore,
+      onDeleteNote: (id) => notifier.deleteNote(id),
     );
   }
 

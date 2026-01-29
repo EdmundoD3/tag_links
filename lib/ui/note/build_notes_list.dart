@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/models/note.dart';
-import 'package:tag_links/state/notes_provider.dart';
 import 'package:tag_links/ui/menu/menu_container.dart';
 import 'package:tag_links/ui/note/note_tile.dart';
 import 'package:tag_links/ui/utils/empty_indicator.dart';
 
 class BuildNotesList extends StatelessWidget {
-  final NotesNotifier notifier;
+  final bool isLoadingMore;
+  final Future<void> Function(String id) onDeleteNote;
   final AsyncValue<List<Note>> notesAsync;
   final ScrollController scrollController;
   final List<ActionMenuItem>? actionsItems;
@@ -15,11 +15,10 @@ class BuildNotesList extends StatelessWidget {
 
   const BuildNotesList({
     super.key,
-    required this.notifier,
     required this.notesAsync,
     required this.scrollController,
     this.actionsItems = const [],
-    this.goFolder,
+    this.goFolder, required this.isLoadingMore, required this.onDeleteNote,
   });
 
   @override
@@ -33,7 +32,7 @@ class BuildNotesList extends StatelessWidget {
 
           return Stack(
             children: [
-              if (notifier.isLoadingMore)
+              if (isLoadingMore)
                 const Positioned(
                   top: 8,
                   left: 0,
@@ -53,10 +52,11 @@ class BuildNotesList extends StatelessWidget {
                   note: notes[i],
                   onDeleteNote: (id) async {
                     try {
-                      await notifier.deleteNote(id);
+                      await onDeleteNote(id);
                       if (!context.mounted) return;
                       _feedbackDelete(context, 'Nota eliminada',backgroundColor: Colors.green);
                     } catch (_) {
+                      if (!context.mounted) return;
                       _feedbackDelete(context, 'Error al eliminar', backgroundColor: Colors.deepOrangeAccent);
                     }
                   },

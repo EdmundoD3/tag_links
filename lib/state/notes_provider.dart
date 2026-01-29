@@ -144,7 +144,6 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
     final current = state.asData?.value;
     if (current == null) return;
 
-    // 🔥 optimistic update
     state = AsyncValue.data(current.where((note) => note.id != id).toList());
 
     try {

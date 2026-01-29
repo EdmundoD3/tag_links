@@ -25,7 +25,7 @@ class NoteHelpers {
       MaterialPageRoute(
         builder: (_) => FolderPage(
           folder: folder,
-          highlightNote: note,
+          highlightNoteId: note.id,
           paginated: paginated,
         ),
       ),
