@@ -102,19 +102,35 @@ class NoteTile extends StatelessWidget {
 
   Future<void> _openLink(BuildContext context) async {
     final link = note.link;
-    if (link == null) return;
+    if (link == null || link.url.isEmpty) return;
 
-    final uri = Uri.parse(link.url);
+    // 1. Limpiar la URL (quitar espacios en blanco accidentales)
+    final String urlString = link.url.trim();
+    final Uri uri = Uri.parse(urlString);
 
-    if (!await canLaunchUrl(uri)) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se pudo abrir el enlace')),
+    try {
+      // 2. Intentar lanzar la URL directamente
+      // LaunchMode.externalApplication es la clave para que aparezca el "menú" de apps
+      final bool launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
       );
-      return;
-    }
 
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched && context.mounted) {
+        _showError(context, 'No se encontró una app para abrir este enlace');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        _showError(context, 'URL no válida o mal formada');
+      }
+    }
+  }
+
+  // Helper rápido para errores
+  void _showError(BuildContext context, String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }
 
