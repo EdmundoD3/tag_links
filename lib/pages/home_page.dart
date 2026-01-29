@@ -96,8 +96,12 @@ class _HomePageState extends ConsumerState<HomePage> {
       children: [
         if (hasPendingNotes) _bannerHasPendingNotes(context, ref),
         BannerPendingFolder(toParentId: null),
-
-        _searchBar(ref, isFolder),
+        const SizedBox(height: 16),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: _searchBar(ref, isFolder),
+        ),
+        const SizedBox(height: 16),
         _selectedIncludeTags(ref),
         isFolder ? _buildFolders(foldersAsync) : _buildNotes(notesAsync),
       ],

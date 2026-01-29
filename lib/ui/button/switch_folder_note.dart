@@ -46,7 +46,7 @@ class SwitchFolderNote extends StatelessWidget {
                 child: Icon(
                   isFolder ? Icons.sticky_note_2 : Icons.folder,
                   size: inactiveSize,
-                  color: Colors.grey,
+                  color: Color(0xFF757575),
                 ),
               ),
             ),
@@ -61,7 +61,7 @@ class SwitchFolderNote extends StatelessWidget {
               child: Icon(
                 isFolder ? Icons.folder : Icons.sticky_note_2,
                 size: activeSize,
-                color: isFolder ? const Color(0xFF4A148C) : Colors.lightBlueAccent,
+                color: isFolder ?  Colors.deepPurple[400] : Colors.indigo[400],
               ),
             ),
 
