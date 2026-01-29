@@ -94,12 +94,10 @@ class NoteTile extends StatelessWidget {
       title: "Eliminar nota",
       message: "¿Estás seguro de eliminar la nota?",
     );
+    if (isDelete != true) return;
 
-    if (isDelete == true) {
-      if (!context.mounted) return;
-      Navigator.of(context).pop();
-      onDeleteNote(note.id);
-    }
+    if (!context.mounted) return;
+    onDeleteNote(note.id);
   }
 
   Future<void> _openLink(BuildContext context) async {
@@ -109,6 +107,7 @@ class NoteTile extends StatelessWidget {
     final uri = Uri.parse(link.url);
 
     if (!await canLaunchUrl(uri)) {
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No se pudo abrir el enlace')),
       );
@@ -131,7 +130,6 @@ class _NoteTileCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
           // Contenido
           Expanded(
             child: Column(

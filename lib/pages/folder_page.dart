@@ -106,7 +106,7 @@ class _FolderPageState extends ConsumerState<FolderPage> {
     final index = notes.indexWhere((n) => n.id == widget.highlightNoteId);
 
     if (index == -1) {
-      _didScrollToHighlight = true; // 👈 clave
+      _didScrollToHighlight = true;
       return;
     }
 

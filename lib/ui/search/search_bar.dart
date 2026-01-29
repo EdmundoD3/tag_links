@@ -95,7 +95,7 @@ class _SearchInput extends StatelessWidget {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: controller,
-      builder: (_, value, __) {
+      builder: (_, value, _) {
         return TextField(
           controller: controller,
           decoration: InputDecoration(
