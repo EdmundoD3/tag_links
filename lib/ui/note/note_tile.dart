@@ -108,9 +108,6 @@ class _NoteTileCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Icono
-          const Icon(Icons.note, size: 28),
-          const SizedBox(width: 12),
 
           // Contenido
           Expanded(
@@ -121,7 +118,8 @@ class _NoteTileCard extends StatelessWidget {
                 _titleWidget(theme, note),
                 const SizedBox(height: 4),
                 // Preview
-                _previewWidget(theme, note),
+                _linkPreviewWidget(theme, note),
+                Text(note.content),
                 // Fecha
                 const SizedBox(height: 6),
                 _dateWidget(theme, note.createdAt),
@@ -167,7 +165,7 @@ class _NoteTileCard extends StatelessWidget {
     );
   }
 
-  Widget _previewWidget(ThemeData theme, Note note) {
+  Widget _linkPreviewWidget(ThemeData theme, Note note) {
     if (note.link == null) return const SizedBox.shrink();
     return LinkPreviewWidget(preview: note.link!);
   }

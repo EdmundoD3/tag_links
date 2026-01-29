@@ -69,7 +69,6 @@ class _SearchListBarState extends State<SearchListBar> {
       children: [
         _SearchInput(controller: _controller, onChangeText: _onChangeText, iconLeftButton: widget.iconLeftBtn),
         const SizedBox(height: 8),
-
         if (queryText.isNotEmpty)
           _TagsSuggestionList(
             onTagSelected: _onTagSelected,
@@ -100,8 +99,10 @@ class _SearchInput extends StatelessWidget {
         return TextField(
           controller: controller,
           decoration: InputDecoration(
+            fillColor: const Color.fromARGB(35, 150, 135, 155),
+            filled: true,
             icon: iconLeftButton,
-            hintText: 'Buscar notas...',
+            hintText: 'Buscar...',
             prefixIcon: const Icon(Icons.search),
             suffixIcon: value.text.isNotEmpty
                 ? IconButton(
@@ -113,7 +114,8 @@ class _SearchInput extends StatelessWidget {
                   )
                 : null,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(30),
+              borderSide: BorderSide.none,
             ),
           ),
           onChanged: onChangeText,
