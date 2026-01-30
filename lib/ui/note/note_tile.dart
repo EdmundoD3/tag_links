@@ -5,6 +5,7 @@ import 'package:tag_links/ui/alerts/confirm_dialog.dart';
 import 'package:tag_links/ui/link/link_preview_widget.dart';
 import 'package:tag_links/ui/menu/menu_container.dart';
 import 'package:tag_links/ui/note/note_form_page.dart';
+import 'package:tag_links/ui/text/decorated_text.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class NoteTile extends StatelessWidget {
@@ -156,7 +157,7 @@ class _NoteTileCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 // Preview
                 _linkPreviewWidget(theme, note),
-                Text(note.content),
+                DecoratedText(text: note.content,),
                 // Fecha
                 const SizedBox(height: 6),
                 _dateWidget(theme, note.createdAt),
