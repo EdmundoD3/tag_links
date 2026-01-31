@@ -22,8 +22,7 @@ class BuildFoldersList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: foldersAsync.when(
+    return foldersAsync.when(
         data: (folders) {
           if (folders.isEmpty) {
             return EmptyIndicator(title: 'No hay carpetas');
@@ -48,8 +47,7 @@ class BuildFoldersList extends StatelessWidget {
         },
         loading: () => _loading(),
         error: (error, _) => _error(error.toString()),
-      ),
-    );
+      );
   }
 
   Widget _loading() {
