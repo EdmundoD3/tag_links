@@ -256,8 +256,6 @@ class _FetchersNotesDao {
     );
 ''';
     final args = [note.folderId, note.id];
-    print("args: $args");
-    print("query: $query");
     final result = await _db.then((db) => db.rawQuery(query, args));
 
     final rawCount = result.first['count'];

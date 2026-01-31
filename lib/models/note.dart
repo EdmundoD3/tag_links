@@ -51,7 +51,8 @@ class Note {
     );
   }
   String copyText() {
-    return '$title\n\n$content';
+    final String link = this.link?.url ?? '';
+    return '$title\n\n$link\n$content';
   }
 
   factory Note.baseNote({
