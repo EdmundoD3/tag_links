@@ -171,7 +171,7 @@ class _NoteTileCard extends StatelessWidget {
 
   Widget _container({required ThemeData theme, required Widget child}) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      margin: const EdgeInsets.only(top: 16, left: 12, right: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: theme.cardColor,
