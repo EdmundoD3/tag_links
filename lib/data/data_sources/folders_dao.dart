@@ -22,6 +22,9 @@ class FoldersDao {
       args.add('%${searchQuery.text}%');
       args.add('%${searchQuery.text}%');
     }
+    if(searchQuery.isFavorite == true){
+      where.add('isFavorite = 1');
+    }
 
     if (searchQuery.hasIncludeTags) {
       final placeholders = List.filled(
@@ -57,6 +60,22 @@ class FoldersDao {
     args.add(paginated.offset);
 
     final result = await db.rawQuery(sql, args);
+
+    return Future.wait(result.map((f) => _mapFolderWithTags(db, f)));
+  }
+    /// FAVORITES
+  Future<List<Folder>> getFavorites({
+    required PaginatedByDate paginated,
+  }) async {
+    final db = await _db;
+
+    final result = await db.query(
+      'folders',
+      where: 'isFavorite = 1',
+      orderBy: paginated.orderSql,
+      limit: paginated.limit,
+      offset: paginated.offset,
+    );
 
     return Future.wait(result.map((f) => _mapFolderWithTags(db, f)));
   }
@@ -227,23 +246,6 @@ class FoldersDao {
       'folders',
       where: 'parentId = ?',
       whereArgs: [parentId],
-      orderBy: paginated.orderSql,
-      limit: paginated.limit,
-      offset: paginated.offset,
-    );
-
-    return Future.wait(result.map((f) => _mapFolderWithTags(db, f)));
-  }
-
-  /// FAVORITES
-  Future<List<Folder>> getFavorites({
-    required PaginatedByDate paginated,
-  }) async {
-    final db = await _db;
-
-    final result = await db.query(
-      'folders',
-      where: 'isFavorite = 1',
       orderBy: paginated.orderSql,
       limit: paginated.limit,
       offset: paginated.offset,
