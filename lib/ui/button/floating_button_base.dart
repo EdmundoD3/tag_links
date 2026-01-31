@@ -14,14 +14,19 @@ class FloatingButonBase extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FloatingActionButton(
-      backgroundColor:  Color.fromARGB(92, 63, 81, 181),
-      shape: CircleBorder(),
-      elevation: 0,
-      foregroundColor: Colors.purple[900],
-      heroTag: heroTag,
-      onPressed: onPressed,
-      child: Icon(icon),
+    return Padding(
+      padding: const EdgeInsets.only(bottom:40.0),
+      child: FloatingActionButton(
+        backgroundColor:  Color.fromARGB(92, 63, 81, 181),
+        shape: CircleBorder(),
+        elevation: 0, 
+        hoverElevation: 0,
+        highlightElevation: 0,
+        foregroundColor: Colors.purple[900],
+        heroTag: heroTag,
+        onPressed: onPressed,
+        child: Icon(icon),
+      ),
     );
   }
 }

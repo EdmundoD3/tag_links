@@ -9,16 +9,45 @@ class FolderTile extends ConsumerWidget {
 
   const FolderTile({super.key, required this.folder});
 
+  // @override
+  // Widget build(BuildContext context, WidgetRef ref) {
+  //   return ListTile(
+  //     leading: const Icon(Icons.folder),
+  //     title: Text(folder.title),
+  //     trailing: IconButton(
+  //       icon: const Icon(Icons.edit),
+  //       onPressed: () => _editFolder(context),
+  //     ),
+  //     onTap: () => _goFolder(context, ref),
+  //   );
+  // }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return ListTile(
-      leading: const Icon(Icons.folder),
-      title: Text(folder.title),
-      trailing: IconButton(
-        icon: const Icon(Icons.edit),
-        onPressed: () => _editFolder(context),
+    return Card(
+      elevation: 3, // La sombra que le da profundidad
+      margin: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 6,
+      ), // Margen exterior
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ), // Bordes redondeados
+      child: ListTile(
+        leading: Icon(
+          Icons.folder,
+          color: Colors.deepPurple[400],
+        ), // Un toque de color
+        title: Text(
+          folder.title,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        trailing: IconButton(
+          icon: const Icon(Icons.edit),
+          onPressed: () => _editFolder(context),
+        ),
+        onTap: () => _goFolder(context, ref),
       ),
-      onTap: () => _goFolder(context, ref),
     );
   }
 
@@ -28,11 +57,12 @@ class FolderTile extends ConsumerWidget {
       MaterialPageRoute(builder: (_) => FolderFormPage(folder: folder)),
     );
   }
+
   Future<void> _goFolder(BuildContext context, WidgetRef ref) async {
     Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => FolderPage(folder: folder)),
-      );
-      return;
+      context,
+      MaterialPageRoute(builder: (_) => FolderPage(folder: folder)),
+    );
+    return;
   }
 }

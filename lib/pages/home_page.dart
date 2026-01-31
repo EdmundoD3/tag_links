@@ -68,6 +68,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     return Scaffold(
       appBar: appBar(title: 'Folders'),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: CreateNewFolderButton(
         isRoot: true,
         parentFolderId: null,
