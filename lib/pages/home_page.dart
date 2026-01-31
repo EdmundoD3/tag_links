@@ -75,7 +75,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             isFolder: isFolder,
             size: 26,
             onTap: () {
-              ref.read(isFolderProvider.notifier).state = !isFolder;
+              ref.read(isFolderProvider.notifier).set(!isFolder);
               ref.invalidate(foldersProvider(null));
               ref.invalidate(notesProvider(null));
             },
