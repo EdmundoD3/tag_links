@@ -105,6 +105,7 @@ class FoldersNotifier extends AsyncNotifier<List<Folder>> {
 
   Future<void> deleteFolder(String id) async {
     await _repo.delete(id);
+    removeFolder(id);
     ref.invalidateSelf();
   }
 

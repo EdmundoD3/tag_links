@@ -26,7 +26,8 @@ class FolderPage extends ConsumerStatefulWidget {
   const FolderPage({
     super.key,
     required this.folder,
-    this.paginated, this.highlightNoteId,
+    this.paginated,
+    this.highlightNoteId,
   });
 
   @override
@@ -39,8 +40,10 @@ class _FolderPageState extends ConsumerState<FolderPage> {
 
   AsyncNotifierProvider<NotesNotifier, List<Note>> get _notesProvider =>
       notesProvider(widget.folder.id);
-  AsyncNotifierProvider<FoldersNotifier, List<Folder>> get _folderProvider => foldersProvider(widget.folder.id);
-  FutureProvider<FolderDefaultView> get _foldersPreferenceProvider => folderPreferenceProvider(widget.folder.id);
+  AsyncNotifierProvider<FoldersNotifier, List<Folder>> get _folderProvider =>
+      foldersProvider(widget.folder.id);
+  FutureProvider<FolderDefaultView> get _foldersPreferenceProvider =>
+      folderPreferenceProvider(widget.folder.id);
 
   @override
   void dispose() {
@@ -68,9 +71,7 @@ class _FolderPageState extends ConsumerState<FolderPage> {
   Widget build(BuildContext context) {
     final subFolders = ref.watch(_folderProvider);
     final notes = ref.watch(_notesProvider);
-    final preferenceAsync = ref.watch(
-      _foldersPreferenceProvider
-    );
+    final preferenceAsync = ref.watch(_foldersPreferenceProvider);
 
     return preferenceAsync.when(
       loading: () =>
@@ -100,30 +101,29 @@ class _FolderPageState extends ConsumerState<FolderPage> {
 
   /// 🎯 Scroll a la nota resaltada (solo una vez)
   void _scrollToHighlightedNote(AsyncValue<List<Note>> notesAsync) {
-  if (_didScrollToHighlight) return;
+    if (_didScrollToHighlight) return;
 
-  notesAsync.whenData((notes) {
-    final index = notes.indexWhere((n) => n.id == widget.highlightNoteId);
+    notesAsync.whenData((notes) {
+      final index = notes.indexWhere((n) => n.id == widget.highlightNoteId);
 
-    if (index == -1) {
+      if (index == -1) {
+        _didScrollToHighlight = true;
+        return;
+      }
+
       _didScrollToHighlight = true;
-      return;
-    }
 
-    _didScrollToHighlight = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-
-      _scrollController.animateTo(
-        index * 72.0,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+        _scrollController.animateTo(
+          index * 72.0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      });
     });
-  });
-}
-
+  }
 
   PreferredSizeWidget _appBar(
     BuildContext context,
@@ -162,6 +162,7 @@ class _FolderPageState extends ConsumerState<FolderPage> {
       foldersAsync: subFolders,
       scrollController: _scrollController,
       notifier: notifier,
+      onDeleteFolder: (id) => notifier.deleteFolder(id),
     );
   }
 

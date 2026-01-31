@@ -62,9 +62,9 @@ class NoteTile extends StatelessWidget {
         ActionMenuItem(
           icon: Icons.delete,
           label: 'Eliminar',
-          onTap: () => _deleteNote(context),
+          onTap: () =>
+              ConfirmDialog.deleteNote(context, () async => onDeleteNote(note.id)),
         ),
-        // const ActionMenuItem(icon: Icons.share, label: 'Compartir'),
         ...actionsItems,
       ],
     );
@@ -89,18 +89,6 @@ class NoteTile extends StatelessWidget {
   }
 
   // helpers
-  Future<void> _deleteNote(BuildContext context) async {
-    final isDelete = await showConfirmDialog(
-      context,
-      title: "Eliminar nota",
-      message: "¿Estás seguro de eliminar la nota?",
-    );
-    if (isDelete != true) return;
-
-    if (!context.mounted) return;
-    onDeleteNote(note.id);
-  }
-
   Future<void> _openLink(BuildContext context) async {
     final link = note.link;
     if (link == null || link.url.isEmpty) return;
@@ -157,7 +145,7 @@ class _NoteTileCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 // Preview
                 _linkPreviewWidget(theme, note),
-                DecoratedText(text: note.content,),
+                DecoratedText(text: note.content),
                 // Fecha
                 const SizedBox(height: 6),
                 _dateWidget(theme, note.createdAt),

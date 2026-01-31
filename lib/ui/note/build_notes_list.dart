@@ -51,14 +51,7 @@ class BuildNotesList extends StatelessWidget {
                 itemBuilder: (_, i) => NoteTile(
                   note: notes[i],
                   onDeleteNote: (id) async {
-                    try {
-                      await onDeleteNote(id);
-                      if (!context.mounted) return;
-                      _feedbackDelete(context, 'Nota eliminada',backgroundColor: Colors.green);
-                    } catch (_) {
-                      if (!context.mounted) return;
-                      _feedbackDelete(context, 'Error al eliminar', backgroundColor: Colors.deepOrangeAccent);
-                    }
+                    await onDeleteNote(id);
                   },
                   actionsItems: [
                     if (actionsItems != null) ...actionsItems!,
@@ -80,20 +73,5 @@ class BuildNotesList extends StatelessWidget {
     );
   }
 
-  ScaffoldMessengerState _feedbackDelete(
-    BuildContext context,
-    String title, {
-    Color? backgroundColor,
-    Duration duration = const Duration(seconds: 2),
-  }) {
-    return ScaffoldMessenger.of(context)
-      ..clearSnackBars()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(title),
-          backgroundColor: backgroundColor,
-          duration: duration,
-        ),
-      );
-  }
+
 }

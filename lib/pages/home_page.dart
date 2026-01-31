@@ -129,6 +129,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       foldersAsync: foldersAsync,
       scrollController: _scrollController,
       notifier: notifier,
+      onDeleteFolder: (id) => notifier.deleteFolder(id),
     );
   }
 
