@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 import 'package:tag_links/models/folder_preference.dart';
 import 'package:tag_links/models/search_query.dart';
 import 'package:tag_links/repository/folder_repository.dart';
@@ -12,7 +11,7 @@ final foldersViewProvider = Provider<AsyncValue<List<Folder>>>((ref) {
   final pagination = ref.watch(folderPaginationProvider);
 
   final hasSearch =
-      searchQuery.text.isNotEmpty || searchQuery.includeTags.isNotEmpty;
+      searchQuery.text.isNotEmpty || searchQuery.includeTags.isNotEmpty || searchQuery.isFavorite;
 
   if (hasSearch) {
     return ref.watch(folderSearchProvider((searchQuery, pagination)));
@@ -29,9 +28,11 @@ final folderSearchProvider =
       final repo = ref.read(folderRepositoryProvider);
       return repo.searchByQuery(params.$1, paginated: params.$2);
     });
-final folderPaginationProvider = StateProvider<PaginatedByDate>((ref) {
-  return PaginatedByDate();
-});
+
+final folderPaginationProvider =
+    NotifierProvider<FolderPaginationNotifier, PaginatedByDate>(
+      FolderPaginationNotifier.new,
+    );
 
 final foldersProvider =
     AsyncNotifierProvider.family<FoldersNotifier, List<Folder>, String?>(
@@ -71,17 +72,13 @@ class FoldersNotifier extends AsyncNotifier<List<Folder>> {
         ? await _repo.getRootFolders(paginated: pagination)
         : await _repo.getByParentId(parentFolderId!, paginated: pagination);
 
-    // 🔑 regla de corte (tu idea, correcta)
     if (items.length < _pageSize) {
       _hasMore = false;
     }
 
-    if (reset) return items;
-
-    return [...state.value ?? [], ...items];
+    return reset ? items : [...state.value ?? [], ...items];
   }
 
-  /// ⬆️ Scroll hacia arriba
   Future<void> loadMore() async {
     if (!_hasMore || _isLoadingMore) return;
 
@@ -124,11 +121,27 @@ class FoldersNotifier extends AsyncNotifier<List<Folder>> {
   }
 
   Future<FolderDefaultView> getPreference() async {
+    if (parentFolderId == null) {
+      throw StateError('No parentFolderId');
+    }
     return _repo.getPreference(parentFolderId!);
   }
 
-  // ───────────── getters para UI ─────────────
+  // ───────────── UI getters ─────────────
 
   bool get isLoadingMore => _isLoadingMore;
   bool get hasMore => _hasMore;
+}
+
+class FolderPaginationNotifier extends Notifier<PaginatedByDate> {
+  @override
+  PaginatedByDate build() => const PaginatedByDate();
+
+  void reset() {
+    state = const PaginatedByDate();
+  }
+
+  void set(PaginatedByDate pagination) {
+    state = pagination;
+  }
 }

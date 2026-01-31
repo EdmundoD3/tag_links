@@ -1,7 +1,5 @@
 import 'dart:async';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 import 'package:tag_links/models/link_preview.dart';
 import 'package:tag_links/models/search_query.dart';
 import 'package:tag_links/repository/link_preview_repository.dart';
@@ -35,9 +33,10 @@ final noteSearchProvider =
       return repo.searchByQuery(params.$1, paginated: params.$2);
     });
 
-final notePaginationProvider = StateProvider<PaginatedByDate>(
-  (ref) => const PaginatedByDate(),
-);
+final notePaginationProvider =
+    NotifierProvider<NotePaginationNotifier, PaginatedByDate>(
+      NotePaginationNotifier.new,
+    );
 
 final notesProvider =
     AsyncNotifierProvider.family<NotesNotifier, List<Note>, String?>(
@@ -45,15 +44,14 @@ final notesProvider =
     );
 
 class NotesNotifier extends AsyncNotifier<List<Note>> {
-  NotesNotifier(this.folderId);
-
   final String? folderId;
+
+  NotesNotifier(this.folderId);
 
   int _page = 1;
   final int _pageSize = 20;
   bool _hasMore = true;
   bool _isLoadingMore = false;
-
   NotesRepository get _repo => ref.read(notesRepositoryProvider);
 
   @override
@@ -171,5 +169,20 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
     if (updatedAny) {
       ref.invalidateSelf();
     }
+  }
+}
+
+class NotePaginationNotifier extends Notifier<PaginatedByDate> {
+  @override
+  PaginatedByDate build() {
+    return const PaginatedByDate();
+  }
+
+  void reset() {
+    state = const PaginatedByDate();
+  }
+
+  void set(PaginatedByDate pagination) {
+    state = pagination;
   }
 }

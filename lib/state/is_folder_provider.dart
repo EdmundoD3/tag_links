@@ -1,4 +1,17 @@
-import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// Definición del provider con valor inicial true
-final isFolderProvider = StateProvider<bool>((ref) => true);
+final isFolderProvider =
+    NotifierProvider<IsFolderNotifier, bool>(IsFolderNotifier.new);
+
+class IsFolderNotifier extends Notifier<bool> {
+  @override
+  bool build() => true;
+
+  void set(bool value) {
+    state = value;
+  }
+
+  void toggle() {
+    state = !state;
+  }
+}

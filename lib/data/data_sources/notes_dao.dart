@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:tag_links/data/data_sources/link_preview_dao.dart';
 import 'package:tag_links/data/database.dart';
@@ -142,6 +143,7 @@ class NotesDao {
 class _FetchersNotesDao {
   Future<Database> get _db async => AppDatabase().database;
   final _linkDao = LinkPreviewDao();
+
   Future<List<NoteJoinRow>> searchByQuery(
     SearchQuery searchQuery, {
     required PaginatedByDate paginated,
@@ -289,6 +291,10 @@ class _FetchersNotesDao {
     if (folderId != null && folderId.isNotEmpty) {
       where.add('n.folderId = ?');
       args.add(folderId);
+    }
+
+    if (searchQuery.isFavorite == true) {
+      where.add('isFavorite = 1');
     }
 
     if (searchQuery.hasIncludeTags) {
@@ -449,7 +455,11 @@ class _FetchersNotesDao {
 
     await db.transaction((txn) async {
       // 1️⃣ Insert note
-      await txn.insert('notes', note.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+      await txn.insert(
+        'notes',
+        note.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
 
       // 2️⃣ Insert tags
       for (final tag in note.tags) {

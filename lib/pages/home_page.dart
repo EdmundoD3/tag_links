@@ -11,6 +11,7 @@ import 'package:tag_links/ui/alerts/confirm_dialog.dart';
 import 'package:tag_links/ui/app_bar/app_bar_folder.dart';
 import 'package:tag_links/ui/banners/banner_pending.dart';
 import 'package:tag_links/ui/button/create_new_folder_button.dart';
+import 'package:tag_links/ui/button/switch_favorite.dart';
 import 'package:tag_links/ui/button/switch_folder_note.dart';
 import 'package:tag_links/ui/folder/banner_pending_folder.dart';
 import 'package:tag_links/ui/folder/build_folders_list.dart';
@@ -67,8 +68,21 @@ class _HomePageState extends ConsumerState<HomePage> {
     //que empieze con las notas favoritas
 
     return Scaffold(
-      appBar: appBar(title: 'Folders'),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      appBar: appBar(
+        title: 'Folders',
+        actions: [
+          SwitchFolderNote(
+            isFolder: isFolder,
+            size: 26,
+            onTap: () {
+              ref.read(isFolderProvider.notifier).state = !isFolder;
+              ref.invalidate(foldersProvider(null));
+              ref.invalidate(notesProvider(null));
+            },
+          ),
+          Padding(padding: EdgeInsetsGeometry.directional(end: 4)),
+        ],
+      ),
       floatingActionButton: CreateNewFolderButton(
         isRoot: true,
         parentFolderId: null,
@@ -132,13 +146,10 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   Widget _searchBar(WidgetRef ref, bool isFolder) {
     return SearchListBar(
-      iconLeftBtn: SwitchFolderNote(
-        isFolder: isFolder,
-        size: 34,
-        onTap: () {
-          ref.read(isFolderProvider.notifier).state = !isFolder;
-          ref.invalidate(foldersProvider(null));
-          ref.invalidate(notesProvider(null));
+      iconLeftBtn: SwitchFavorite(
+        isFavorite: ref.read(searchQueryProvider).isFavorite,
+        onChanged: (){
+          ref.read(searchQueryProvider.notifier).toggleFavorite();
         },
       ),
       onChangeText: (String text) => _onChangeText(ref, text),

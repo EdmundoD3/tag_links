@@ -137,7 +137,7 @@ class _FolderPageState extends ConsumerState<FolderPage> {
         SwitchFolderNote(
           isFolder: showFolders,
           onTap: () => _toggleView(ref, preference),
-          size: 25,
+          size: 26,
         ),
         Padding(padding: EdgeInsetsGeometry.directional(end: 4)),
       ],
