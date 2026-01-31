@@ -68,17 +68,21 @@ class _HomePageState extends ConsumerState<HomePage> {
     //que empieze con las notas favoritas
 
     return Scaffold(
+      backgroundColor: Colors.deepPurple[50],
       appBar: appBar(
         title: 'Folders',
         actions: [
-          SwitchFolderNote(
-            isFolder: isFolder,
-            size: 26,
-            onTap: () {
-              ref.read(isFolderProvider.notifier).set(!isFolder);
-              ref.invalidate(foldersProvider(null));
-              ref.invalidate(notesProvider(null));
-            },
+          Padding(
+            padding: const EdgeInsets.only(right:8.0),
+            child: SwitchFolderNote(
+              isFolder: isFolder,
+              size: 26,
+              onTap: () {
+                ref.read(isFolderProvider.notifier).set(!isFolder);
+                ref.invalidate(foldersProvider(null));
+                ref.invalidate(notesProvider(null));
+              },
+            ),
           ),
           Padding(padding: EdgeInsetsGeometry.directional(end: 4)),
         ],

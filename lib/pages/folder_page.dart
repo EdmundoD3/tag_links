@@ -134,10 +134,13 @@ class _FolderPageState extends ConsumerState<FolderPage> {
     return appBar(
       title: widget.folder.title,
       actions: [
-        SwitchFolderNote(
-          isFolder: showFolders,
-          onTap: () => _toggleView(ref, preference),
-          size: 26,
+        Padding(
+          padding: const EdgeInsets.only(right: 8.0),
+          child: SwitchFolderNote(
+            isFolder: showFolders,
+            onTap: () => _toggleView(ref, preference),
+            size: 26,
+          ),
         ),
         Padding(padding: EdgeInsetsGeometry.directional(end: 4)),
       ],

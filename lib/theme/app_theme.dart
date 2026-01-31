@@ -5,7 +5,7 @@ class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
-      scaffoldBackgroundColor: Color(0xFFEDE7F6),
+      scaffoldBackgroundColor: Colors.indigo[50],
       highlightColor: Colors.transparent,
 
       // Configuración global del AppBar
@@ -20,13 +20,19 @@ class AppTheme {
       ),
 
       // Configuración global de Cards
-      cardTheme: CardThemeData(),
+      cardTheme: CardThemeData(
+        color: Colors.white,
+      ),
       //button
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: const Color.fromARGB(92, 63, 81, 181),
         shape: const CircleBorder(),
         elevation: 0,
         foregroundColor: Colors.purple[900],
+      ),
+      //icon
+      iconTheme: IconThemeData(
+        color: Colors.purple[900],
       ),
       chipTheme: ChipThemeData(),
     );

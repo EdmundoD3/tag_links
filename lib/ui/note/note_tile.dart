@@ -62,8 +62,10 @@ class NoteTile extends StatelessWidget {
         ActionMenuItem(
           icon: Icons.delete,
           label: 'Eliminar',
-          onTap: () =>
-              ConfirmDialog.deleteNote(context, () async => onDeleteNote(note.id)),
+          onTap: () => ConfirmDialog.deleteNote(
+            context,
+            () async => onDeleteNote(note.id),
+          ),
         ),
         ...actionsItems,
       ],
@@ -142,9 +144,8 @@ class _NoteTileCard extends StatelessWidget {
               children: [
                 // Título + estrella
                 _titleWidget(theme, note),
-                const SizedBox(height: 4),
-                // Preview
-                _linkPreviewWidget(theme, note),
+                ..._linkPreviewWidget(theme, note),
+                const SizedBox(height: 10),
                 DecoratedText(text: note.content),
                 // Fecha
                 const SizedBox(height: 6),
@@ -162,10 +163,10 @@ class _NoteTileCard extends StatelessWidget {
       margin: const EdgeInsets.only(top: 16, left: 12, right: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(12),
+        color: theme.cardTheme.color ?? Colors.white,
+        borderRadius: BorderRadius.circular(5),
         boxShadow: const [
-          BoxShadow(blurRadius: 4, color: Colors.black12, offset: Offset(0, 2)),
+          BoxShadow(blurRadius: 4, color: Colors.black12, offset: Offset(0, 1)),
         ],
       ),
       child: child,
@@ -186,14 +187,24 @@ class _NoteTileCard extends StatelessWidget {
           ),
         ),
         if (note.isFavorite)
-          const Icon(Icons.star, color: Colors.amber, size: 18),
+          const Icon(Icons.star, color: Colors.amber, size: 20),
       ],
     );
   }
 
-  Widget _linkPreviewWidget(ThemeData theme, Note note) {
-    if (note.link == null) return const SizedBox.shrink();
-    return LinkPreviewWidget(preview: note.link!);
+  List<Widget> _linkPreviewWidget(ThemeData theme, Note note) {
+    if (note.link == null) return [];
+
+    return [
+      const SizedBox(height: 4),
+      LinkPreviewWidget(preview: note.link!),
+      const Divider(
+        color: Colors.grey, // Color de la línea
+        thickness: 1, // Grosor de la líneasa
+        indent: 0, // Espacio vacío al inicio (izquierda)
+        endIndent: 0, // Espacio vacío al final (derecha)
+      ),
+    ];
   }
 
   Widget _dateWidget(ThemeData theme, DateTime date) {

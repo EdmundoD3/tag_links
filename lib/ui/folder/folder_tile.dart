@@ -64,6 +64,7 @@ class _FolderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Card(
       elevation: 3, // La sombra que le da profundidad
       margin: const EdgeInsets.symmetric(
@@ -73,6 +74,7 @@ class _FolderCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
       ), // Bordes redondeados
+      color: theme.cardTheme.color,
       child: ListTile(
         leading: Icon(
           Icons.folder,

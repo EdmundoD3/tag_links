@@ -67,7 +67,11 @@ class _SearchListBarState extends State<SearchListBar> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _SearchInput(controller: _controller, onChangeText: _onChangeText, iconLeftButton: widget.iconLeftBtn),
+        _SearchInput(
+          controller: _controller,
+          onChangeText: _onChangeText,
+          iconLeftButton: widget.iconLeftBtn,
+        ),
         const SizedBox(height: 8),
         if (queryText.isNotEmpty)
           _TagsSuggestionList(
@@ -78,8 +82,8 @@ class _SearchListBarState extends State<SearchListBar> {
     );
   }
   //Style
-  
 }
+
 class _SearchInput extends StatelessWidget {
   final TextEditingController controller;
   final Widget? iconLeftButton;
@@ -100,6 +104,10 @@ class _SearchInput extends StatelessWidget {
           controller: controller,
           decoration: InputDecoration(
             fillColor: const Color.fromARGB(35, 150, 135, 155),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(30),
+              borderSide: const BorderSide(color: Color.fromARGB(92, 63, 81, 181), width: 2),
+            ),
             filled: true,
             icon: iconLeftButton,
             hintText: 'Buscar...',
