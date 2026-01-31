@@ -2,174 +2,97 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+class TextRule {
+  final TextStyle style;
+  final int offset;
+  const TextRule({required this.style, this.offset = 0});
+}
+
 class DecoratedText extends StatelessWidget {
   final String text;
-
   const DecoratedText({super.key, required this.text});
 
   @override
   Widget build(BuildContext context) {
-    final matches = _allmatches(text);
-    final spans = _textSpans(matches);
-
-    // Emojis grandes
-    final onlyEmojis = RegExp(
-      r'^[\p{Emoji}\s]+$',
-      unicode: true,
-    ).hasMatch(text);
+    final matches = _allMatches(text);
+    final onlyEmojis = RegExp(r'^[\p{Emoji}\s]+$', unicode: true).hasMatch(text);
 
     return RichText(
       text: TextSpan(
         style: TextStyle(color: Colors.black, fontSize: onlyEmojis ? 32 : 14),
-        children: spans,
+        children: _buildSpans(matches),
       ),
     );
   }
 
-  Iterable<RegExpMatch> _allmatches(String text) sync* {
-    final regex = RegExp(
-      r'(\\.|' // escape
-      r'\*\*.*?\*\*|' // bold alternative
-      r'\*.*?\*|' // bold
-      r'__.*?__|' // underline
-      r'_.*?_|' // italic
-      r'~.*?~|' // strike
-      r'`.*?`|' // code
-      r'\|\|.*?\|\||' // spoiler
-      r'https?:\/\/[^\s]+|' // link
-      r'@\w+|' // mention
-      r'#\w+)', // hashtag
+  Iterable<RegExpMatch> _allMatches(String text) {
+    return RegExp(
+      r'(?<escape>\\.)|'
+      r'(?<bold>\*\*.*?\*\*|\*.*?\*)|'
+      r'(?<underline>__.*?__|~.*?~)|' // Puedes agrupar similares si quieres
+      r'(?<italic>_.*?_)|'
+      r'(?<strike>~.*?~)|'
+      r'(?<codeText>`.*?`)|'
+      r'(?<link>https?:\/\/[^\s]+)|'
+      r'(?<mention>@\w+)|'
+      r'(?<hashtag>#\w+)',
       unicode: true,
-    );
-//    ✔ Negrita *text*
-//    ✔ Cursiva _text_
-//    ✔ Tachado ~text~
-//    ✔ Subrayado __text__
-//    ✔ Código `code`
-//    ✔ Spoiler ||text|| (tap para revelar)
-//    ✔ Links clicables
-//    ✔ Menciones @user
-//    ✔ Hashtags #topic
-//    ✔ Emojis grandes si el texto solo tiene emojis
-//    ✔ Escape \*no bold*
-
-    final matches = regex.allMatches(text);
-    yield* matches;
+    ).allMatches(text);
   }
+    // Configuración centralizada de estilos
+  static const Map<String, TextRule> _styleRules = {
+    'bold': TextRule(style: TextStyle(fontWeight: FontWeight.bold), offset: 1),
+    'italic': TextRule(style: TextStyle(fontStyle: FontStyle.italic), offset: 1),
+    'underline': TextRule(style: TextStyle(decoration: TextDecoration.underline), offset: 2),
+    'strike': TextRule(style: TextStyle(decoration: TextDecoration.lineThrough), offset: 1),
+    'code': TextRule(
+      style: TextStyle(fontFamily: 'monospace', backgroundColor: Color(0xFFE0E0E0)),
+      offset: 1,
+    ),
+    'mention': TextRule(style: TextStyle(color: Colors.blueAccent)),
+    'hashtag': TextRule(style: TextStyle(color: Colors.deepPurple)),
+  };
 
-  List<TextSpan> _textSpans(Iterable<RegExpMatch> matches) {
+  List<TextSpan> _buildSpans(Iterable<RegExpMatch> matches) {
     final List<TextSpan> spans = [];
     int lastIndex = 0;
+
     for (final match in matches) {
       if (match.start > lastIndex) {
         spans.add(TextSpan(text: text.substring(lastIndex, match.start)));
       }
 
       final matchText = match.group(0)!;
+      bool matched = false;
 
-      // ESCAPE
-      if (matchText.startsWith(r'\')) {
-        spans.add(TextSpan(text: matchText.substring(1)));
-      }
-      // BOLD
-      else if (matchText.startsWith('*')) {
-        spans.add(
-          TextSpan(
-            text: matchText.substring(1, matchText.length - 1),
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-        );
-      }
-      // ITALIC
-      else if (matchText.startsWith('_') && !matchText.startsWith('__')) {
-        spans.add(
-          TextSpan(
-            text: matchText.substring(1, matchText.length - 1),
-            style: const TextStyle(fontStyle: FontStyle.italic),
-          ),
-        );
-      }
-      // UNDERLINE
-      else if (matchText.startsWith('__')) {
-        spans.add(
-          TextSpan(
-            text: matchText.substring(2, matchText.length - 2),
-            style: const TextStyle(decoration: TextDecoration.underline),
-          ),
-        );
-      }
-      // STRIKE
-      else if (matchText.startsWith('~')) {
-        spans.add(
-          TextSpan(
-            text: matchText.substring(1, matchText.length - 1),
-            style: const TextStyle(decoration: TextDecoration.lineThrough),
-          ),
-        );
-      }
-      // CODE
-      else if (matchText.startsWith('`')) {
-        spans.add(
-          TextSpan(
-            text: matchText.substring(1, matchText.length - 1),
-            style: TextStyle(
-              fontFamily: 'monospace',
-              backgroundColor: Colors.grey.shade300,
-            ),
-          ),
-        );
-      }
-      // SPOILER
-      else if (matchText.startsWith('||')) {
-        spans.add(
-          TextSpan(
-            text: matchText.substring(2, matchText.length - 2),
-            style: const TextStyle(
-              color: Colors.transparent,
-              backgroundColor: Colors.black,
-            ),
-            recognizer: TapGestureRecognizer()
-              ..onTap = () {
-                // En producción: manejar estado para revelar
-              },
-          ),
-        );
-      }
-      // LINK
-      else if (matchText.startsWith('http')) {
-        spans.add(
-          TextSpan(
-            text: matchText,
-            style: const TextStyle(
-              color: Colors.blue,
-              decoration: TextDecoration.underline,
-            ),
-            recognizer: TapGestureRecognizer()
-              ..onTap = () => launchUrl(Uri.parse(matchText)),
-          ),
-        );
-      }
-      // MENTION
-      else if (matchText.startsWith('@')) {
-        spans.add(
-          TextSpan(
-            text: matchText,
-            style: const TextStyle(color: Colors.blueAccent),
-          ),
-        );
-      }
-      // HASHTAG
-      else if (matchText.startsWith('#')) {
-        spans.add(
-          TextSpan(
-            text: matchText,
-            style: const TextStyle(color: Colors.deepPurple),
-          ),
-        );
+      // Aplicar estilos del mapa
+      for (final entry in _styleRules.entries) {
+        if (match.namedGroup(entry.key) != null) {
+          final rule = entry.value;
+          spans.add(TextSpan(
+            text: matchText.substring(rule.offset, matchText.length - rule.offset),
+            style: rule.style,
+          ));
+          matched = true;
+          break;
+        }
       }
 
+      // Casos que no están en el mapa (Links y Escapes)
+      if (!matched) {
+        if (match.namedGroup('link') != null) {
+          spans.add(TextSpan(
+            text: matchText,
+            style: const TextStyle(color: Colors.blue, decoration: TextDecoration.underline),
+            recognizer: TapGestureRecognizer()..onTap = () => launchUrl(Uri.parse(matchText)),
+          ));
+        } else if (match.namedGroup('escape') != null) {
+          spans.add(TextSpan(text: matchText.substring(1)));
+        }
+      }
       lastIndex = match.end;
     }
+
     if (lastIndex < text.length) {
       spans.add(TextSpan(text: text.substring(lastIndex)));
     }
