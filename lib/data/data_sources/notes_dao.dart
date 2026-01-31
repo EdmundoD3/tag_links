@@ -1,4 +1,3 @@
-import 'package:flutter/widgets.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:tag_links/data/data_sources/link_preview_dao.dart';
 import 'package:tag_links/data/database.dart';

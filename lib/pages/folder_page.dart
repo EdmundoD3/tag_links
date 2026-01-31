@@ -7,6 +7,7 @@ import 'package:tag_links/repository/folder_repository.dart';
 import 'package:tag_links/state/folders_provider.dart';
 import 'package:tag_links/state/notes_provider.dart';
 import 'package:tag_links/ui/app_bar/app_bar_folder.dart';
+import 'package:tag_links/ui/banner/small_banner.dart';
 import 'package:tag_links/ui/button/create_new_folder_button.dart';
 import 'package:tag_links/ui/button/floating_button_base.dart';
 import 'package:tag_links/ui/button/switch_folder_note.dart';
@@ -91,7 +92,14 @@ class _FolderPageState extends ConsumerState<FolderPage> {
             children: [
               BannerPendingNote(toFolderId: widget.folder.id),
               BannerPendingFolder(toParentId: widget.folder.id),
-              if (showFolders) _foldersList(subFolders) else _buildNotes(notes),
+              // if (showFolders) _foldersList(subFolders) else _buildNotes(notes),
+              Expanded(
+              child: showFolders 
+                  ? _foldersList(subFolders) 
+                  : _buildNotes(notes),
+            ),
+
+            const SmartBannerAd(),
             ],
           ),
         );
