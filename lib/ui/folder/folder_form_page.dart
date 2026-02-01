@@ -62,7 +62,17 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.isEdit ? 'Editar carpeta' : 'Nueva carpeta'),
-        actions: [IconButton(icon: const Icon(Icons.save), onPressed: _onSave)],
+        actions: [
+          _isFavorite
+              ? IconButton(
+                  onPressed: _isFavoriteToogle,
+                  icon: const Icon(Icons.star, color: Colors.amber),
+                )
+              : IconButton(
+                  onPressed: _isFavoriteToogle,
+                  icon: Icon(Icons.star, color: Colors.grey[600]),
+                ),
+          IconButton(icon: const Icon(Icons.save, color: Colors.deepPurple), onPressed: _onSave)],
       ),
       body: Form(
         key: _formKey,
@@ -79,14 +89,7 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
             /// Descripción
             _descriptionView(),
 
-            const SizedBox(height: 16),
-
-            _favoriteBtn(),
-
             const SizedBox(height: 24),
-
-            /// Botón guardar
-            _saveBtn(),
 
             FilledButton.tonalIcon(
               onPressed: _onChangeFolder,
@@ -136,22 +139,10 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
     );
   }
 
-  Widget _favoriteBtn() {
-    return SwitchListTile(
-      title: const Text('Marcar como favorita'),
-      value: _isFavorite,
-      onChanged: (value) {
-        setState(() => _isFavorite = value);
-      },
-    );
-  }
-
-  Widget _saveBtn() {
-    return FilledButton.icon(
-      icon: const Icon(Icons.check),
-      label: Text(widget.isEdit ? 'Guardar cambios' : 'Crear carpeta'),
-      onPressed: _onSave,
-    );
+  void _isFavoriteToogle() {
+    setState(() {
+      _isFavorite = !_isFavorite;
+    });
   }
 
   // controllers

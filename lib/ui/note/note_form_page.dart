@@ -116,9 +116,12 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
                 )
               : IconButton(
                   onPressed: _isFavoriteToogle,
-                  icon: const Icon(Icons.star_border),
+                  icon: Icon(Icons.star, color: Colors.grey[600]),
                 ),
-          IconButton(icon: const Icon(Icons.save), onPressed: _onSave),
+          IconButton(
+            icon: const Icon(Icons.save, color: Colors.deepPurple),
+            onPressed: _onSave,
+          ),
         ],
       ),
       body: Form(
@@ -141,18 +144,20 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
             const SizedBox(height: 16),
             _contenidoController(),
             const SizedBox(height: 16),
-            _favoriteController(),
-            const SizedBox(height: 16),
             TagsSelectorMenu(
               tags: _tags,
               onTagSelected: _onTagSelected,
               onDeletedTag: _onDeletedTag,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 8),
             FilledButton.tonalIcon(
               onPressed: _onChangeFolder,
               icon: const Icon(Icons.drive_file_move),
               label: const Text('Cambiar carpeta'),
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.deepPurple, // Color de fondo
+                foregroundColor: Colors.white,
+              ),
             ),
           ],
         ),
@@ -200,16 +205,6 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
         alignLabelWithHint: true,
         border: OutlineInputBorder(),
       ),
-    );
-  }
-
-  Widget _favoriteController() {
-    return SwitchListTile(
-      title: const Text('Marcar como favorita'),
-      value: _isFavorite,
-      onChanged: (value) {
-        setState(() => _isFavorite = value);
-      },
     );
   }
 

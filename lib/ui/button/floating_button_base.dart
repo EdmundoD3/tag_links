@@ -15,7 +15,7 @@ class FloatingButonBase extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom:40.0),
+      padding: const EdgeInsets.only(bottom:50.0),
       child: FloatingActionButton(
         backgroundColor:  Color.fromARGB(92, 63, 81, 181),
         shape: CircleBorder(),

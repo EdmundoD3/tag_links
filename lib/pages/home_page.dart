@@ -68,20 +68,22 @@ class _HomePageState extends ConsumerState<HomePage> {
       notesViewProvider,
     ); //en este caso como valor inicial o sea cuando no hay parametros de busqueda
     //que empieze con las notas favoritas
+    final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: Colors.deepPurple[50],
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: appBar(
         title: 'Folders',
         actions: [
-          IconButton(onPressed: () => {
-            Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => SupportProjectPage(),
-      ),
-    )
-          }, icon: const Icon(Icons.settings)),
+          IconButton(
+            onPressed: () => {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => SupportProjectPage()),
+              ),
+            },
+            icon: Icon(Icons.settings, color: Colors.deepPurple),
+          ),
           SwitchFolderNote(
             isFolder: isFolder,
             size: 26,

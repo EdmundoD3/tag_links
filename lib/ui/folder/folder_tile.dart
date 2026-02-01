@@ -84,7 +84,10 @@ class _FolderCard extends StatelessWidget {
           folder.title,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
+        trailing: folder.isFavorite
+            ? const Icon(Icons.star, color: Colors.amber, size: 20)
+            : null,
       ),
     );
-    }
+  }
 }

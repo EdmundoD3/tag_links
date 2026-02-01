@@ -86,7 +86,7 @@ class DecoratedText extends StatelessWidget {
     return RichText(
       text: TextSpan(
         style: TextStyle(
-          color: Colors.black,
+          color: Colors.black87,
           fontSize: onlyEmojis ? 32 : 14,
           
         ),

@@ -7,7 +7,6 @@ class AppTheme {
       useMaterial3: true,
       scaffoldBackgroundColor: Colors.indigo[50],
       highlightColor: Colors.transparent,
-
       // Configuración global del AppBar
       appBarTheme: AppBarTheme(
         backgroundColor: const Color.fromARGB(92, 63, 81, 181),
