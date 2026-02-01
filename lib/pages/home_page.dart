@@ -10,7 +10,7 @@ import 'package:tag_links/state/pending_note_provider.dart';
 import 'package:tag_links/state/tags_provider.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
 import 'package:tag_links/ui/app_bar/app_bar_folder.dart';
-import 'package:tag_links/ui/banner/small_banner.dart';
+import 'package:tag_links/ui/ads/small_banner.dart';
 import 'package:tag_links/ui/banners/banner_pending.dart';
 import 'package:tag_links/ui/button/create_new_folder_button.dart';
 import 'package:tag_links/ui/button/switch_favorite.dart';

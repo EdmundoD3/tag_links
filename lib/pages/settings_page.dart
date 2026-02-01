@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/state/is_banner_aviable.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:tag_links/ui/ads/ad_mob_config.dart';
+
 
 class SupportProjectPage extends ConsumerWidget {
   const SupportProjectPage({super.key});
@@ -98,18 +101,46 @@ class SupportProjectPage extends ConsumerWidget {
     );
   }
 
-  void _showRewardedAd(BuildContext context) {
-    // Aquí iría la lógica de Google Mobile Ads para mostrar el Interstitial.
-    // Una vez que el anuncio se cierra:
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          "¡Muchas gracias! Tu apoyo mantiene este proyecto vivo. ❤️",
-        ),
-        backgroundColor: Colors.green,
-      ),
-    );
-  }
+void _showRewardedAd(BuildContext context) {
+  RewardedAd.load(
+    adUnitId: AdMobConfig.rewardedAdUnitId,
+    request: const AdRequest(),
+    rewardedAdLoadCallback: RewardedAdLoadCallback(
+      onAdLoaded: (RewardedAd ad) {
+        ad.show(
+          onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  "¡Muchas gracias! Tu apoyo mantiene este proyecto vivo ❤️",
+                ),
+                backgroundColor: Colors.green,
+              ),
+            );
+          },
+        );
+
+        ad.fullScreenContentCallback = FullScreenContentCallback(
+          onAdDismissedFullScreenContent: (ad) {
+            ad.dispose();
+          },
+          onAdFailedToShowFullScreenContent: (ad, error) {
+            ad.dispose();
+          },
+        );
+      },
+      onAdFailedToLoad: (LoadAdError error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("No se pudo cargar el anuncio 😥"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      },
+    ),
+  );
+}
+
 
   void _launchDonationUrl() {}
 }
