@@ -1,19 +1,19 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_handler/share_handler.dart';
 import 'package:tag_links/models/link_preview.dart';
 import 'package:tag_links/models/note.dart';
 import 'package:tag_links/state/pending_note_provider.dart';
+import 'package:tag_links/state/theme_provider.dart';
 import 'package:tag_links/state/url_provider.dart';
 import 'package:tag_links/theme/app_theme.dart';
 import 'pages/home_page.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  MobileAds.instance.initialize();
+  // MobileAds.instance.initialize();
   runApp(const ProviderScope(child: MyApp()));
 }
 
@@ -80,6 +80,10 @@ class _MyAppState extends ConsumerState<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(theme: AppTheme.lightTheme, home: const HomePage());
+    final palette = ref.watch(paletteProvider);
+    return MaterialApp(
+      theme: getPalette(palette: palette),
+      home: const HomePage(),
+    );
   }
 }

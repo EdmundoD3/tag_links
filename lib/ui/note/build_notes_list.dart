@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/locate/app_lang.dart';
 import 'package:tag_links/models/note.dart';
 import 'package:tag_links/ui/menu/menu_container.dart';
 import 'package:tag_links/ui/note/note_tile.dart';
 import 'package:tag_links/ui/utils/empty_indicator.dart';
 
-class BuildNotesList extends StatelessWidget {
+class BuildNotesList extends ConsumerWidget {
   final bool isLoadingMore;
   final Future<void> Function(String id) onDeleteNote;
   final AsyncValue<List<Note>> notesAsync;
   final ScrollController scrollController;
   final List<ActionMenuItem>? actionsItems;
   final void Function(Note note)? goFolder;
+
 
   const BuildNotesList({
     super.key,
@@ -24,11 +26,11 @@ class BuildNotesList extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, ref) {
     return notesAsync.when(
       data: (notes) {
         if (notes.isEmpty) {
-          return EmptyIndicator(title: 'No hay notas');
+          return EmptyIndicator(title: t(ref, 'emptyNotes', fallback: 'No hay notas'));
         }
 
         return Stack(
@@ -59,7 +61,7 @@ class BuildNotesList extends StatelessWidget {
                   if (goFolder != null)
                     ActionMenuItem(
                       icon: Icons.drive_folder_upload,
-                      label: 'ir a la carpeta',
+                      label: t(ref, 'goToFolder', fallback: 'Ir a la carpeta'),
                       onTap: () => goFolder!(notes[i]),
                     ),
                 ],

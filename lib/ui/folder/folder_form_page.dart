@@ -8,7 +8,7 @@ import 'package:tag_links/state/pending_folder_provider.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
 import 'package:tag_links/ui/tags/tags_selector_menu.dart';
 import 'package:uuid/uuid.dart';
-
+import 'package:tag_links/locate/app_lang.dart';
 class FolderFormPage extends ConsumerStatefulWidget {
   final Folder? folder;
   final String? parentFolderId;
@@ -94,7 +94,7 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
             FilledButton.tonalIcon(
               onPressed: _onChangeFolder,
               icon: const Icon(Icons.drive_file_move),
-              label: const Text('Cambiar carpeta'),
+              label: Text(t(ref, 'moveToFolder', fallback: 'Cambiar carpeta')),
             ),
           ],
         ),
@@ -106,13 +106,13 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
   Widget _titleView() {
     return TextFormField(
       controller: _titleCtrl,
-      decoration: const InputDecoration(
-        labelText: 'Título',
+      decoration: InputDecoration(
+        labelText: t(ref,'formFolderTitle', fallback: 'Nombre de la carpeta'),
         border: OutlineInputBorder(),
       ),
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
-          return 'El título es obligatorio';
+          return t(ref, 'formFolderTitleRequired', fallback: 'El título es obligatorio');
         }
         return null;
       },
@@ -123,8 +123,8 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
     return TextFormField(
       controller: _descriptionCtrl,
       maxLines: 8,
-      decoration: const InputDecoration(
-        labelText: 'Descripción',
+      decoration: InputDecoration(
+        labelText: t(ref, 'formFolderDescription', fallback: 'Descripción'),
         alignLabelWithHint: true,
         border: OutlineInputBorder(),
       ),
@@ -198,11 +198,9 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
   }
 
   Future<void> _onChangeFolder() async {
-    final isConfirm = await showConfirmDialog(
+    final isConfirm = await ConfirmDialog.moveFolder(
       context,
-      title: "Cambiar carpeta",
-      message:
-          "Cualquier cambio que no se almacenó se perderá si no se elige una carpeta. ¿Desea continuar?",
+      ref,
     );
 
     if (isConfirm != true) return;

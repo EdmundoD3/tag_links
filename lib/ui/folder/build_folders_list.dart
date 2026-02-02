@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/locate/app_lang.dart';
 import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/pages/folder_page.dart';
 import 'package:tag_links/state/folders_provider.dart';
 import 'package:tag_links/ui/folder/folder_tile.dart';
 import 'package:tag_links/ui/utils/empty_indicator.dart';
 
-class BuildFoldersList extends StatelessWidget {
+class BuildFoldersList extends ConsumerWidget {
   final FoldersNotifier notifier;
   final AsyncValue<List<Folder>> foldersAsync;
   final ScrollController scrollController;
@@ -21,11 +22,11 @@ class BuildFoldersList extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return foldersAsync.when(
         data: (folders) {
           if (folders.isEmpty) {
-            return EmptyIndicator(title: 'No hay carpetas');
+            return EmptyIndicator(title: t(ref, 'noFolders', fallback: 'No folders'));
           }
 
           return Stack(

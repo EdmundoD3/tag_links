@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/locate/app_lang.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:uuid/uuid.dart';
 
-Future<Tag?> showCreateTagModal(BuildContext context) {
+Future<Tag?> showCreateTagModal(BuildContext context, WidgetRef ref) {
   final controller = TextEditingController();
 
   return showModalBottomSheet<Tag>(
@@ -23,8 +25,8 @@ Future<Tag?> showCreateTagModal(BuildContext context) {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Crear nuevo tag',
+            Text(
+              t(ref, 'createTag', fallback: 'Crear tag'),
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
@@ -32,8 +34,8 @@ Future<Tag?> showCreateTagModal(BuildContext context) {
             TextField(
               controller: controller,
               autofocus: true,
-              decoration: const InputDecoration(
-                labelText: 'Nombre del tag',
+              decoration: InputDecoration(
+                labelText: t(ref, 'tagName', fallback: 'Nombre del tag'),
                 border: OutlineInputBorder(),
               ),
               textInputAction: TextInputAction.done,
@@ -46,7 +48,7 @@ Future<Tag?> showCreateTagModal(BuildContext context) {
               alignment: Alignment.centerRight,
               child: FilledButton(
                 onPressed: () => _submit(context, controller),
-                child: const Text('Crear'),
+                child: Text(t(ref, 'createTag', fallback: 'Crear tag')),
               ),
             ),
           ],

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:tag_links/ui/ads/ad_mob_config.dart';
+// import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:tag_links/state/is_banner_aviable.dart';
 
 class SmartBannerAd extends ConsumerStatefulWidget {
@@ -12,34 +11,34 @@ class SmartBannerAd extends ConsumerStatefulWidget {
 }
 
 class _SmartBannerAdState extends ConsumerState<SmartBannerAd> {
-  BannerAd? _bannerAd;
-  bool _isLoaded = false;
+  // BannerAd? _bannerAd;
+  // bool _isLoaded = false;
 
   @override
   void initState() {
     super.initState();
-    _loadAd();
+    // _loadAd();
   }
 
-  void _loadAd() {
-    _bannerAd = BannerAd(
-      adUnitId: AdMobConfig.bannerAdUnitId,
-      size: AdSize.banner,
-      request: const AdRequest(),
-      listener: BannerAdListener(
-        onAdLoaded: (_) {
-          setState(() => _isLoaded = true);
-        },
-        onAdFailedToLoad: (ad, error) {
-          ad.dispose();
-        },
-      ),
-    )..load();
-  }
+  // void _loadAd() {
+  //   _bannerAd = BannerAd(
+  //     adUnitId: AdMobConfig.bannerAdUnitId,
+  //     size: AdSize.banner,
+  //     request: const AdRequest(),
+  //     listener: BannerAdListener(
+  //       onAdLoaded: (_) {
+  //         setState(() => _isLoaded = true);
+  //       },
+  //       onAdFailedToLoad: (ad, error) {
+  //         ad.dispose();
+  //       },
+  //     ),
+  //   )..load();
+  // }
 
   @override
   void dispose() {
-    _bannerAd?.dispose();
+    // _bannerAd?.dispose();
     super.dispose();
   }
 
@@ -47,14 +46,24 @@ class _SmartBannerAdState extends ConsumerState<SmartBannerAd> {
   Widget build(BuildContext context) {
     final showAds = ref.watch(isAdsActiveProvider) ?? true;
 
-    if (!showAds || !_isLoaded || _bannerAd == null) {
+    // if (!showAds || !_isLoaded || _bannerAd == null) {
+    if (!showAds) {
       return const SizedBox.shrink();
     }
-
-    return SizedBox(
-      width: _bannerAd!.size.width.toDouble(),
-      height: _bannerAd!.size.height.toDouble(),
-      child: AdWidget(ad: _bannerAd!),
+    return Container(
+      width: MediaQuery.of(context).size.width,
+      height: 50,
+      color: Colors.grey[300],
+      alignment: Alignment.center,
+      child: const Text('Banner de Publicidad'),
     );
+
+
+    // return SizedBox(
+    //   width: _bannerAd!.size.width.toDouble(),
+    //   height: _bannerAd!.size.height.toDouble(),
+    //   child: const Text(data)
+    //   //AdWidget(ad: _bannerAd!),
+    // );
   }
 }

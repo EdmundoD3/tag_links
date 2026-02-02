@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/locate/app_lang.dart';
 import 'package:tag_links/models/link_preview.dart';
 import 'package:tag_links/models/note.dart';
 import 'package:tag_links/models/tag.dart';
@@ -153,7 +154,7 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
             FilledButton.tonalIcon(
               onPressed: _onChangeFolder,
               icon: const Icon(Icons.drive_file_move),
-              label: const Text('Cambiar carpeta'),
+              label: Text(t(ref, 'moveToFolder', fallback: 'Cambiar carpeta')),
               style: FilledButton.styleFrom(
                 backgroundColor: Colors.deepPurple, // Color de fondo
                 foregroundColor: Colors.white,
@@ -183,13 +184,13 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
   Widget _tituloController() {
     return TextFormField(
       controller: _titleCtrl,
-      decoration: const InputDecoration(
-        labelText: 'Título',
+      decoration: InputDecoration(
+        labelText: t(ref, 'title', fallback: 'Título'),
         border: OutlineInputBorder(),
       ),
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
-          return 'El título es obligatorio';
+          return t(ref, 'titleRequired', fallback: 'El título es obligatorio');
         }
         return null;
       },
@@ -200,8 +201,8 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
     return TextFormField(
       controller: _contentCtrl,
       maxLines: 8,
-      decoration: const InputDecoration(
-        labelText: 'Contenido',
+      decoration: InputDecoration(
+        labelText: t(ref, 'content', fallback: 'Contenido'),
         alignLabelWithHint: true,
         border: OutlineInputBorder(),
       ),
@@ -209,11 +210,9 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
   }
 
   Future<void> _onChangeFolder() async {
-    final isConfirm = await showConfirmDialog(
+    final isConfirm = await ConfirmDialog.moveNote(
       context,
-      title: "Cambiar carpeta",
-      message:
-          "Cualquier cambio que no se almacenó se perderá si no se elige una carpeta. ¿Desea continuar?",
+      ref,
     );
 
     if (isConfirm != true) return;

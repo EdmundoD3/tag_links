@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/locate/app_lang.dart';
 import 'package:tag_links/models/folder.dart';
-import 'package:tag_links/ui/alerts/confirm_dialog.dart';
 import 'package:tag_links/ui/folder/folder_form_page.dart';
 import 'package:tag_links/ui/menu/menu_container.dart';
 
-class FolderTile extends StatelessWidget {
+class FolderTile extends ConsumerWidget {
   final List<ActionMenuItem> actionsItems;
   final Folder folder;
   final void Function() goFolder;
@@ -14,15 +15,15 @@ class FolderTile extends StatelessWidget {
   FolderTile({super.key, required this.folder, required this.actionsItems, required this.onDeleteFolder, required this.goFolder});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
         return InkWell(
       key: _tileKey,
       onTap: () => goFolder(),
-      onLongPress: () => _actionsMenu(context),
+      onLongPress: () => _actionsMenu(context, ref),
       child: _FolderCard(folder: folder),
     );
   }
-    void _actionsMenu(BuildContext context) {
+    void _actionsMenu(BuildContext context, WidgetRef ref) {
     final box = _tileKey.currentContext!.findRenderObject() as RenderBox;
 
     final position = box.localToGlobal(Offset.zero);
@@ -36,13 +37,13 @@ class FolderTile extends StatelessWidget {
       items: [
         ActionMenuItem(
           icon: Icons.edit,
-          label: 'Editar',
+          label: t(ref, 'edit', fallback: 'Editar'),
           onTap: () => _editFolder(context),
         ),
         ActionMenuItem(
           icon: Icons.delete,
-          label: 'Eliminar',
-          onTap: () =>  ConfirmDialog.deleteFolder(context, () async => onDeleteFolder())
+          label: t(ref, 'delete', fallback: 'Eliminar'),
+          onTap: () => onDeleteFolder()
         ),
         ...actionsItems,
       ],

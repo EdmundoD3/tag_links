@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/locate/app_lang.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/state/tags_provider.dart';
 import 'package:tag_links/ui/tags/show_create_tag_modal.dart';
@@ -25,7 +26,7 @@ class TagsSelectedContainer extends ConsumerWidget {
             tag,
             onDeleted: onDeleted,
             onEdit: (tag) async {
-              final result = await showEditTagModal(context, tag);
+              final result = await showEditTagModal(context, ref, tag);
 
               if (result == null) {
                 ref.read(tagsProvider.notifier).deleteTag(tag.id);
@@ -43,10 +44,10 @@ class TagsSelectedContainer extends ConsumerWidget {
 
   ActionChip _createTagChip(BuildContext context, WidgetRef ref) {
     return ActionChip(
-      label: const Text('Nuevo tag'),
+      label: Text(t(ref, 'createTag', fallback: 'Crear nuevo tag')),
       avatar: const Icon(Icons.add),
       onPressed: () async {
-        final newTag = await showCreateTagModal(context);
+        final newTag = await showCreateTagModal(context, ref);
         if (newTag != null) {
           ref.read(tagsProvider.notifier).addTag(newTag);
         }

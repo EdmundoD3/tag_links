@@ -110,6 +110,7 @@ class NotesDao {
           folderId: row.folderId,
           title: row.title,
           content: row.content ?? '',
+          color: row.color,
           createdAt: DateTime.fromMillisecondsSinceEpoch(row.createdAt),
           updatedAt: DateTime.fromMillisecondsSinceEpoch(row.updatedAt),
           isFavorite: row.isFavorite,

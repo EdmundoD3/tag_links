@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/locate/app_lang.dart';
 import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/models/folder_preference.dart';
 import 'package:tag_links/models/note.dart';
@@ -94,12 +95,12 @@ class _FolderPageState extends ConsumerState<FolderPage> {
               BannerPendingFolder(toParentId: widget.folder.id),
               // if (showFolders) _foldersList(subFolders) else _buildNotes(notes),
               Expanded(
-              child: showFolders 
-                  ? _foldersList(subFolders) 
-                  : _buildNotes(notes),
-            ),
+                child: showFolders
+                    ? _foldersList(subFolders)
+                    : _buildNotes(notes),
+              ),
 
-            const SmartBannerAd(),
+              const SmartBannerAd(),
             ],
           ),
         );
@@ -140,6 +141,7 @@ class _FolderPageState extends ConsumerState<FolderPage> {
     FolderDefaultView preference,
   ) {
     return appBar(
+      context,
       title: widget.folder.title,
       actions: [
         Padding(
@@ -196,7 +198,7 @@ class _FolderPageState extends ConsumerState<FolderPage> {
 
   Widget _fabAddNote(BuildContext context) {
     return FloatingButonBase(
-      heroTag: 'addNote',
+      heroTag: t(ref, 'fabAddNote',fallback: 'Add note'),
       icon: Icons.note_add,
       onPressed: () => Navigator.push(
         context,

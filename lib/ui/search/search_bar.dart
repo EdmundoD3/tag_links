@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/locate/app_lang.dart';
 import 'package:tag_links/models/tag.dart';
 
 class SearchListBar extends StatefulWidget {
@@ -84,7 +85,7 @@ class _SearchListBarState extends State<SearchListBar> {
   //Style
 }
 
-class _SearchInput extends StatelessWidget {
+class _SearchInput extends ConsumerWidget {
   final TextEditingController controller;
   final Widget? iconLeftButton;
   final void Function(String value) onChangeText;
@@ -96,7 +97,7 @@ class _SearchInput extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: controller,
       builder: (_, value, _) {
@@ -110,7 +111,7 @@ class _SearchInput extends StatelessWidget {
             ),
             filled: true,
             icon: iconLeftButton,
-            hintText: 'Buscar...',
+            hintText: t(ref, 'searchHintText', fallback: 'Buscar...'),
             prefixIcon: const Icon(Icons.search),
             suffixIcon: value.text.isNotEmpty
                 ? IconButton(

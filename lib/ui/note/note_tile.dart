@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/locate/app_lang.dart';
 import 'package:tag_links/models/note.dart';
-import 'package:tag_links/ui/alerts/confirm_dialog.dart';
 import 'package:tag_links/ui/link/link_preview_widget.dart';
 import 'package:tag_links/ui/menu/menu_container.dart';
 import 'package:tag_links/ui/note/note_form_page.dart';
 import 'package:tag_links/ui/text/decorated_text.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class NoteTile extends StatelessWidget {
+class NoteTile extends ConsumerWidget {
   final Note note;
   final List<ActionMenuItem> actionsItems;
   final void Function(String id) onDeleteNote;
@@ -22,16 +23,16 @@ class NoteTile extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return InkWell(
       key: _tileKey,
       // onTap: () => _openNote(context),
-      onLongPress: () => _actionsMenu(context),
+      onLongPress: () => _actionsMenu(context, ref),
       child: _NoteTileCard(note: note),
     );
   }
 
-  void _actionsMenu(BuildContext context) {
+  void _actionsMenu(BuildContext context, WidgetRef ref) {
     final box = _tileKey.currentContext!.findRenderObject() as RenderBox;
 
     final position = box.localToGlobal(Offset.zero);
@@ -46,26 +47,38 @@ class NoteTile extends StatelessWidget {
         if (note.link != null)
           ActionMenuItem(
             icon: Icons.open_in_new,
-            label: 'Abrir enlace',
-            onTap: () => _openLink(context),
+            label: t(ref, 'openLink', fallback: 'Abrir enlace'),
+            onTap: () => _openLink(
+              context,
+              notOpenLinkMsg: t(
+                ref,
+                'notOpenLink',
+                fallback: 'No se encontró una app para abrir este enlace',
+              ),
+              errorOpenLinkMsg: t(
+                ref,
+                'errorOpenLink',
+                fallback: 'URL no válida o mal formada',
+              ),
+            ),
           ),
         ActionMenuItem(
           icon: Icons.edit,
-          label: 'Editar',
+          label: t(ref, 'edit', fallback: 'Editar'),
           onTap: () => _editNote(context),
         ),
         ActionMenuItem(
           icon: Icons.copy,
-          label: 'Copiar',
-          onTap: () => _copyText(context),
+          label: t(ref, 'copyText', fallback: 'Copiar'),
+          onTap: () => _copyText(
+            context,
+            t(ref, 'copiedText', fallback: 'Texto copiado'),
+          ),
         ),
         ActionMenuItem(
           icon: Icons.delete,
-          label: 'Eliminar',
-          onTap: () => ConfirmDialog.deleteNote(
-            context,
-            () async => onDeleteNote(note.id),
-          ),
+          label: t(ref, 'delete', fallback: 'Eliminar'),
+          onTap: () => onDeleteNote(note.id),
         ),
         ...actionsItems,
       ],
@@ -73,12 +86,12 @@ class NoteTile extends StatelessWidget {
   }
 
   // functions
-  void _copyText(BuildContext context) {
+  void _copyText(BuildContext context, String okMessage) {
     final text = note.copyText();
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('Texto copiado')));
+    ).showSnackBar(SnackBar(content: Text(okMessage)));
   }
 
   void _editNote(BuildContext context) {
@@ -91,7 +104,11 @@ class NoteTile extends StatelessWidget {
   }
 
   // helpers
-  Future<void> _openLink(BuildContext context) async {
+  Future<void> _openLink(
+    BuildContext context, {
+    required String notOpenLinkMsg,
+    required String errorOpenLinkMsg,
+  }) async {
     final link = note.link;
     if (link == null || link.url.isEmpty) return;
 
@@ -108,11 +125,11 @@ class NoteTile extends StatelessWidget {
       );
 
       if (!launched && context.mounted) {
-        _showError(context, 'No se encontró una app para abrir este enlace');
+        _showError(context, notOpenLinkMsg);
       }
     } catch (e) {
       if (context.mounted) {
-        _showError(context, 'URL no válida o mal formada');
+        _showError(context, errorOpenLinkMsg);
       }
     }
   }
@@ -186,8 +203,7 @@ class _NoteTileCard extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        if (note.isFavorite)
-          const Icon(Icons.star, color: Colors.amber, size: 20),
+        if (note.isFavorite) Icon(Icons.star, color: Colors.amber, size: 20),
       ],
     );
   }

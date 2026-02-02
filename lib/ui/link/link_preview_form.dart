@@ -97,7 +97,7 @@ class _LinkPreviewFormState extends State<LinkPreviewForm> {
         TextFormField(
           controller: _urlCtrl,
           decoration: const InputDecoration(
-            labelText: 'Enlace (URL)',
+            labelText: 'URL',
             border: OutlineInputBorder(),
             prefixIcon: Icon(Icons.link),
             hintText: 'https://...',

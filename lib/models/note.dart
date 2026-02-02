@@ -8,6 +8,7 @@ String noteTable = '''
             folderId TEXT NOT NULL,
             title TEXT NOT NULL,
             content TEXT,
+            color TEXT,
             createdAt INTEGER NOT NULL,
             updatedAt INTEGER NOT NULL,
             isFavorite INTEGER NOT NULL DEFAULT 0 CHECK (isFavorite IN (0,1)),
@@ -20,6 +21,7 @@ class Note {
   final String folderId;
   final String title;
   final String content;
+  final String? color;
   LinkPreview? link;
   final List<Tag> tags;
   final DateTime createdAt;
@@ -31,6 +33,7 @@ class Note {
     required this.folderId,
     required this.title,
     required this.content,
+    this.color,
     required this.link,
     required this.tags,
     required this.createdAt,
@@ -43,6 +46,7 @@ class Note {
       folderId: map['folderId'],
       title: map['title'],
       content: map['content'],
+      color: map['color'],
       link: null, // luego lo conectas si aplica
       tags: const [], // se cargan después
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt']),
@@ -60,6 +64,7 @@ class Note {
     String? title,
     String? folderId,
     String? content,
+    String? color,
     LinkPreview? link,
     List<Tag> tags = const [],
     DateTime? createdAt,
@@ -71,6 +76,7 @@ class Note {
       folderId: folderId ?? '',
       title: title ?? 'Nueva nota',
       content: content ?? '',
+      color: color,
       link: link,
       tags: tags,
       createdAt: createdAt ?? DateTime.now(),
@@ -85,6 +91,7 @@ class Note {
       'folderId': folderId,
       'title': title,
       'content': content,
+      'color': color,
       'createdAt': createdAt.millisecondsSinceEpoch,
       'updatedAt': updatedAt.millisecondsSinceEpoch,
       'isFavorite': isFavorite ? 1 : 0,
@@ -96,6 +103,7 @@ class Note {
     String? folderId,
     String? title,
     String? content,
+    String? color,
     LinkPreview? link,
     List<Tag>? tags,
     bool? isFavorite,
@@ -106,6 +114,7 @@ class Note {
       folderId: folderId ?? this.folderId,
       title: title ?? this.title,
       content: content ?? this.content,
+      color: color ?? this.color,
       link: link ?? this.link,
       tags: tags ?? this.tags,
       createdAt: createdAt,
@@ -132,6 +141,7 @@ class NoteJoinRow {
   final String folderId;
   final String title;
   final String? content;
+  final String? color;
   final int createdAt;
   final int updatedAt;
   final bool isFavorite;
@@ -151,6 +161,7 @@ class NoteJoinRow {
       folderId = map['folder_id'] as String,
       title = map['title'] as String,
       content = map['content'] as String?,
+      color = map['color'] as String?,
       createdAt = map['createdAt'] as int,
       updatedAt = map['updatedAt'] as int,
       isFavorite = map['isFavorite'] == 1,
@@ -169,6 +180,7 @@ class NoteJoinRow {
       n.folderId AS folder_id,
       n.title,
       n.content,
+      n.color,
       n.createdAt,
       n.updatedAt,
       n.isFavorite,

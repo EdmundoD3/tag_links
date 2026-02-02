@@ -1,32 +1,76 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/locate/app_lang.dart';
 import 'package:tag_links/ui/alerts/feedback_alert_confirm.dart';
 
 class ConfirmDialog {
   static Future<void> deleteNote(
     BuildContext context,
+    WidgetRef ref,
     Future<void> Function() onDelete,
   ) {
     return _deleteAction(
       context,
       onDelete,
-      title: 'Eliminar nota',
-      message: '¿Estás seguro de eliminar la nota?',
-      succesText: 'Nota eliminada',
-      errorText: 'Error al eliminar',
+      title: t(ref, 'alertDeleteNoteTitle', fallback: 'Eliminar nota'),
+      message: t(
+        ref,
+        'alertDeleteNote',
+        fallback: '¿Estás seguro de eliminar la nota?',
+      ),
+      succesText: t(ref, 'alertDeleteNoteSucces', fallback: 'Nota eliminada'),
+      errorText: t(ref, 'alertDeleteNoteError', fallback: 'Error al eliminar'),
     );
   }
 
   static Future<void> deleteFolder(
     BuildContext context,
+    WidgetRef ref,
     Future<void> Function() onDelete,
   ) {
     return _deleteAction(
       context,
       onDelete,
-      title: 'Eliminar carpeta',
-      message: '¿Estás seguro de eliminar la carpeta?',
-      succesText: 'Carpeta eliminada',
-      errorText: 'Error al eliminar',
+      title: t(ref, 'alertDeleteFolderTitle', fallback: 'Eliminar carpeta'),
+      message: t(
+        ref,
+        'alertDeleteFolder',
+        fallback: '¿Estás seguro de eliminar la carpeta?',
+      ),
+      succesText: t(
+        ref,
+        'alertDeleteFolderSucces',
+        fallback: 'Carpeta eliminada',
+      ),
+      errorText: t(
+        ref,
+        'alertDeleteFolderError',
+        fallback: 'Error al eliminar',
+      ),
+    );
+  }
+
+  static Future<bool?> moveFolder(BuildContext context, WidgetRef ref) {
+    return showConfirmDialog(
+      context,
+      title: t(ref, 'alertMoveFolderTitle', fallback: 'Cambiar carpeta'),
+      message: t(
+        ref,
+        'alertMoveFolder',
+        fallback: '¿Estás seguro de mover la carpeta?',
+      ),
+    );
+  }
+
+  static Future<bool?> moveNote(BuildContext context, WidgetRef ref) async {
+    return showConfirmDialog(
+      context,
+      title: t(ref, 'alertMoveNoteTitle', fallback: 'Cambiar carpeta'),
+      message: t(
+        ref,
+        'alertMoveNote',
+        fallback: '¿Estás seguro de mover la nota?',
+      ),
     );
   }
 }

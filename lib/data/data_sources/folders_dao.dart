@@ -267,6 +267,7 @@ class FoldersDao {
       title: map['title'],
       description: map['description'],
       image: map['image'],
+      color: map['color'],
       tags: tags,
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt']),
       updatedAt: map['updatedAt'] != null

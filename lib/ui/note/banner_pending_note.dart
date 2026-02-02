@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/locate/app_lang.dart';
 import 'package:tag_links/state/pending_note_provider.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
 import 'package:tag_links/ui/note/note_form_page.dart';
@@ -18,7 +19,7 @@ class BannerPendingNote extends ConsumerWidget {
     if (note == null) return const SizedBox.shrink();
 
     return MaterialBanner(
-      content: const Text('Tienes una nota pendiente de almacenar'),
+      content: Text(t(ref, 'bannerPendingNote', fallback: 'Tienes una nota pendiente de almacenar')),
       actions: [
         // ───────── Almacenar directo
         TextButton(
@@ -27,7 +28,7 @@ class BannerPendingNote extends ConsumerWidget {
                 .read(noteMoveProvider)
                 .move(note: note, toFolderId: toFolderId);
           },
-          child: const Text('Almacenar'),
+          child: Text(t(ref, 'store', fallback: 'Almacenar')),
         ),
 
         // ───────── Editar y luego almacenar
@@ -44,7 +45,7 @@ class BannerPendingNote extends ConsumerWidget {
               ),
             );
           },
-          child: const Text('Editar y almacenar'),
+          child: Text(t(ref, 'editAndStore', fallback: 'Editar y almacenar')),
         ),
 
         // ───────── Descartar
@@ -52,15 +53,15 @@ class BannerPendingNote extends ConsumerWidget {
           onPressed: () async {
             final confirm = await showConfirmDialog(
               context,
-              title: 'No mover la nota',
-              message: '¿Estás seguro de descartar la acción?',
+              title: t(ref, 'bannerNotMove', fallback: 'No mover la nota'),
+              message: t(ref, 'discardAction', fallback: '¿Estás seguro de descartar la acción?'),
             );
 
             if (confirm == true) {
               ref.read(pendingNoteProvider.notifier).clear();
             }
           },
-          child: const Text('Descartar'),
+          child: Text(t(ref, 'discard', fallback: 'Descartar')),
         ),
       ],
     );

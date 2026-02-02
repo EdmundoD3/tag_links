@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/locate/app_lang.dart';
 import 'package:tag_links/models/tag.dart';
 Future<Tag?> showEditTagModal(
   BuildContext context,
+  WidgetRef ref,
   Tag tag,
 ) {
   final nameCtrl = TextEditingController(text: tag.name);
@@ -24,7 +27,7 @@ Future<Tag?> showEditTagModal(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Editar tag',
+                  t(ref, 'editTag', fallback: 'Editar tag'),
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 12),
@@ -32,15 +35,15 @@ Future<Tag?> showEditTagModal(
                 TextField(
                   controller: nameCtrl,
                   autofocus: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Nombre del tag',
+                  decoration: InputDecoration(
+                    labelText: t(ref, 'tagName', fallback: 'Nombre del tag'),
                   ),
                 ),
 
                 const SizedBox(height: 12),
 
                 SwitchListTile(
-                  title: const Text('Marcar como favorito'),
+                  title: Text(t(ref, 'markAsFavorite', fallback: 'Marcar como favorito')),
                   value: isFavorite,
                   onChanged: (value) {
                     setState(() => isFavorite = value);
@@ -57,7 +60,7 @@ Future<Tag?> showEditTagModal(
                   children: [
                     TextButton(
                       onPressed: () => Navigator.pop(context),
-                      child: const Text('Cancelar'),
+                      child: Text(t(ref, 'cancel', fallback: 'Cancelar')),
                     ),
                     const Spacer(),
                     FilledButton(
@@ -70,7 +73,7 @@ Future<Tag?> showEditTagModal(
                           ),
                         );
                       },
-                      child: const Text('Guardar'),
+                      child: Text(t(ref, 'save', fallback: 'Guardar')),
                     ),
                   ],
                 ),
@@ -82,7 +85,7 @@ Future<Tag?> showEditTagModal(
                     foregroundColor: Colors.red,
                   ),
                   icon: const Icon(Icons.delete),
-                  label: const Text('Eliminar tag'),
+                  label: Text(t(ref, 'delete', fallback: 'Eliminar')),
                   onPressed: () {
                     Navigator.pop(context, null); // señal de delete
                   },

@@ -8,6 +8,7 @@ class Folder {
   final List<Tag> tags;
   final String? description;
   final String? image;
+  final String? color;
   final DateTime createdAt;
   final DateTime? updatedAt;
   final bool isFavorite;
@@ -19,6 +20,7 @@ class Folder {
     required this.tags,
     this.description,
     this.image,
+    this.color,
     required this.createdAt,
     this.updatedAt,
     this.isFavorite = false,
@@ -32,6 +34,7 @@ class Folder {
       tags: [],
       description: '',
       image: '',
+      color: '',
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
       isFavorite: false,
@@ -46,6 +49,7 @@ class Folder {
       tags: map['tags'],
       description: map['description'],
       image: map['image'],
+      color: map['color'],
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt']),
       updatedAt: map['updatedAt'] != null
           ? DateTime.fromMillisecondsSinceEpoch(map['updatedAt'])
@@ -61,6 +65,7 @@ class Folder {
       'title': title,
       'description': description,
       'image': image,
+      'color': color,
       'createdAt': createdAt.millisecondsSinceEpoch,
       'updatedAt': updatedAt?.millisecondsSinceEpoch,
       'isFavorite': isFavorite ? 1 : 0,
@@ -74,6 +79,7 @@ class Folder {
     List<Tag>? tags,
     String? description,
     String? image,
+    String? color,
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? isFavorite,
@@ -85,6 +91,7 @@ class Folder {
       tags: tags ?? this.tags,
       description: description ?? this.description,
       image: image ?? this.image,
+      color: color ?? this.color,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isFavorite: isFavorite ?? this.isFavorite,
@@ -106,6 +113,7 @@ String folderTable = '''
             title TEXT NOT NULL,
             description TEXT,
             image TEXT,
+            color TEXT,
             createdAt INTEGER NOT NULL,
             updatedAt INTEGER,
             isFavorite INTEGER NOT NULL DEFAULT 0 CHECK (isFavorite IN (0,1)),

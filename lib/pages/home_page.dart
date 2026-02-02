@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/locate/app_lang.dart';
 import 'package:tag_links/models/note.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/pages/settings_page.dart';
@@ -73,7 +74,8 @@ class _HomePageState extends ConsumerState<HomePage> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: appBar(
-        title: 'Folders',
+        context,
+        title: t(ref, "appName", fallback: 'Tag Links'),
         actions: [
           IconButton(
             onPressed: () => {
@@ -148,7 +150,11 @@ class _HomePageState extends ConsumerState<HomePage> {
       foldersAsync: foldersAsync,
       scrollController: _scrollController,
       notifier: notifier,
-      onDeleteFolder: (id) => notifier.deleteFolder(id),
+      onDeleteFolder: (id) => ConfirmDialog.deleteFolder(
+        context,
+        ref,
+        () => notifier.deleteFolder(id),
+      ),
     );
   }
 
@@ -160,7 +166,11 @@ class _HomePageState extends ConsumerState<HomePage> {
       scrollController: _scrollController,
       goFolder: (Note note) => NoteHelpers.goFolder(context, ref, note),
       isLoadingMore: notifier.isLoadingMore,
-      onDeleteNote: (id) => notifier.deleteNote(id),
+      onDeleteNote: (id) => ConfirmDialog.deleteNote(
+        context,
+        ref,
+        () async => notifier.deleteNote(id),
+      ),
     );
   }
 
@@ -194,12 +204,24 @@ class _HomePageState extends ConsumerState<HomePage> {
   //las notas no pueden estar en la carpeta raiz, por eso aqui solo se permite descartar la nota
   Widget _bannerHasPendingNotes(BuildContext context, WidgetRef ref) {
     return BannerPending(
-      text: 'Elige una carpeta donde almacenar la nota',
+      text: t(
+        ref,
+        'pendingNotesTitle',
+        fallback: 'Elige una carpeta donde almacenar la nota',
+      ),
       onClose: () async {
         final confirm = await showConfirmDialog(
           context,
-          title: 'No almacenar la nota',
-          message: '¿Estás seguro de descartar la nota?',
+          title: t(
+            ref,
+            'pendingNotesConfirmTitle',
+            fallback: 'No almacenar la nota',
+          ),
+          message: t(
+            ref,
+            'pendingNotesConfirMessage',
+            fallback: '¿Estás seguro de descartar la nota?',
+          ),
         );
 
         if (confirm == true) {
