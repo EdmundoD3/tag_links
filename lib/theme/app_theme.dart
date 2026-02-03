@@ -21,9 +21,9 @@ class AppTheme {
   static ThemeData get darkTheme {
     return _generatePalette(
       strongBackground: const Color.fromARGB(92, 50, 21, 78),
-      strongBackgroundText: Colors.white,
-      lighBackground: Colors.black,
-      textColor: Colors.white,
+      strongBackgroundText: Colors.black,
+      lighBackground: Colors.white,
+      textColor: Colors.black,
     );
   }
 }

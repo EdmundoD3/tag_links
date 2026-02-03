@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/locate/lang_selector.dart';
 import 'package:tag_links/state/is_banner_aviable.dart';
 import 'package:tag_links/theme/theme_selector_widget.dart';
-import 'package:tag_links/ui/ads/ad_mob_config.dart';
-
 
 class SupportProjectPage extends ConsumerWidget {
   const SupportProjectPage({super.key});
@@ -143,7 +141,5 @@ void _showRewardedAd(BuildContext context) {
   //   ),
   // );
 }
-
-
   void _launchDonationUrl() {}
 }
