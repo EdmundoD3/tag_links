@@ -14,6 +14,8 @@ class SwitchFolderNote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     // --- Cálculos Proporcionales ---
     final double activeSize = size;
     final double inactiveSize = size * 0.7; // El de atrás es 30% más pequeño
@@ -61,7 +63,7 @@ class SwitchFolderNote extends StatelessWidget {
               child: Icon(
                 isFolder ? Icons.folder : Icons.sticky_note_2,
                 size: activeSize,
-                color: isFolder ?  Colors.deepPurple[400] : Colors.indigo[400],
+                color: isFolder ?  theme.iconTheme.color : theme.badgeTheme.textColor,
               ),
             ),
 

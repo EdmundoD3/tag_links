@@ -13,6 +13,8 @@ class AppTheme {
     return _generatePalette(
       strongBackground: const Color.fromARGB(92, 63, 81, 181),
       strongBackgroundText: Colors.black,
+      icon: Colors.deepPurple,
+      badge: Colors.indigo,
       lighBackground: Colors.white,
       textColor: Colors.black,
     );
@@ -22,7 +24,9 @@ class AppTheme {
     return _generatePalette(
       strongBackground: const Color.fromARGB(92, 50, 21, 78),
       strongBackgroundText: Colors.black,
-      lighBackground: Colors.white,
+      icon: Colors.deepOrangeAccent,
+      badge: Colors.orange,
+      lighBackground: Colors.white70,
       textColor: Colors.black,
     );
   }
@@ -36,6 +40,8 @@ Map<AppPalette, ThemeData> _palettes = {
 ThemeData _generatePalette({
   required Color strongBackground,
   required Color strongBackgroundText,
+  required Color icon,
+  required Color badge,
   required Color lighBackground,
   required Color textColor,
 }) {
@@ -61,14 +67,15 @@ ThemeData _generatePalette({
     // Configuración global de Cards
     cardTheme: CardThemeData(color: lighBackground),
     //button
-    floatingActionButtonTheme: FloatingActionButtonThemeData(
-      backgroundColor: const Color.fromARGB(92, 63, 81, 181),
-      shape: const CircleBorder(),
-      elevation: 0,
-      foregroundColor: Colors.purple[900],
-    ),
+    // floatingActionButtonTheme: FloatingActionButtonThemeData(
+    //   backgroundColor: const Color.fromARGB(92, 63, 81, 181),
+    //   shape: const CircleBorder(),
+    //   elevation: 0,
+    //   foregroundColor: Colors.purple[900],
+    // ),
     //icon
-    iconTheme: IconThemeData(color: Colors.purple[900]),
+    iconTheme: IconThemeData(color: icon),
+    badgeTheme: BadgeThemeData(textColor: badge),
     chipTheme: ChipThemeData(),
   );
 }

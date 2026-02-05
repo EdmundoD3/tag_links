@@ -14,15 +14,16 @@ class FloatingButonBase extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom:50.0),
       child: FloatingActionButton(
-        backgroundColor:  Color.fromARGB(92, 63, 81, 181),
+        backgroundColor:  theme.appBarTheme.backgroundColor?? Color.fromARGB(92, 63, 81, 181),
         shape: CircleBorder(),
         elevation: 0, 
         hoverElevation: 0,
         highlightElevation: 0,
-        foregroundColor: Colors.purple[900],
+        foregroundColor: theme.iconTheme.color?? Colors.deepPurple,
         heroTag: heroTag,
         onPressed: onPressed,
         child: Icon(icon),

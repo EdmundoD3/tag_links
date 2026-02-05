@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/locate/app_lang.dart';
 import 'package:tag_links/models/note.dart';
 import 'package:tag_links/models/tag.dart';
-import 'package:tag_links/pages/settings_page.dart';
 import 'package:tag_links/state/is_folder_provider.dart';
 import 'package:tag_links/state/notes_provider.dart';
 import 'package:tag_links/state/search_query_provider.dart';
@@ -14,6 +13,7 @@ import 'package:tag_links/ui/app_bar/app_bar_folder.dart';
 import 'package:tag_links/ui/ads/small_banner.dart';
 import 'package:tag_links/ui/banners/banner_pending.dart';
 import 'package:tag_links/ui/button/create_new_folder_button.dart';
+import 'package:tag_links/ui/button/go_settings_button.dart';
 import 'package:tag_links/ui/button/switch_favorite.dart';
 import 'package:tag_links/ui/button/switch_folder_note.dart';
 import 'package:tag_links/ui/folder/banner_pending_folder.dart';
@@ -77,15 +77,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         context,
         title: t(ref, "appName", fallback: 'Tag Links'),
         actions: [
-          IconButton(
-            onPressed: () => {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => SupportProjectPage()),
-              ),
-            },
-            icon: Icon(Icons.settings, color: Colors.deepPurple),
-          ),
+          GoSettingsButton(),
           SwitchFolderNote(
             isFolder: isFolder,
             size: 26,
