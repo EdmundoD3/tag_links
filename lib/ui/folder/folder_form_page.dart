@@ -59,6 +59,7 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.isEdit ? 'Editar carpeta' : 'Nueva carpeta'),
@@ -66,13 +67,13 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
           _isFavorite
               ? IconButton(
                   onPressed: _isFavoriteToogle,
-                  icon: const Icon(Icons.star, color: Colors.amber),
+                  icon: const Icon(Icons.favorite, color: Colors.red),
                 )
               : IconButton(
                   onPressed: _isFavoriteToogle,
-                  icon: Icon(Icons.star, color: Colors.grey[600]),
+                  icon: Icon(Icons.favorite_border, color: theme.iconTheme.color?? Colors.grey),
                 ),
-          IconButton(icon: const Icon(Icons.save, color: Colors.deepPurple), onPressed: _onSave)],
+          IconButton(icon: Icon(Icons.save, color:theme.iconTheme.color?? Colors.deepPurple), onPressed: _onSave)],
       ),
       body: Form(
         key: _formKey,
@@ -104,10 +105,16 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
 
   // widgets
   Widget _titleView() {
+    final theme = Theme.of(context);
     return TextFormField(
+      style: TextStyle(color: theme.textTheme.bodyMedium?.color),
       controller: _titleCtrl,
       decoration: InputDecoration(
         labelText: t(ref,'formFolderTitle', fallback: 'Nombre de la carpeta'),
+        labelStyle: TextStyle(color: theme.hintColor),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: theme.focusColor, width: 2),
+        ),
         border: OutlineInputBorder(),
       ),
       validator: (value) {
@@ -120,13 +127,21 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
   }
 
   Widget _descriptionView() {
+    final theme = Theme.of(context);
     return TextFormField(
+      style: TextStyle(color: theme.textTheme.bodyMedium?.color),
       controller: _descriptionCtrl,
       maxLines: 8,
       decoration: InputDecoration(
         labelText: t(ref, 'formFolderDescription', fallback: 'Descripción'),
+        labelStyle: TextStyle(color: theme.hintColor),
         alignLabelWithHint: true,
-        border: OutlineInputBorder(),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: theme.focusColor, width: 2),
+        ),
+        border: OutlineInputBorder(
+          borderSide: BorderSide(color: theme.focusColor, width: 2),
+        ),
       ),
     );
   }
