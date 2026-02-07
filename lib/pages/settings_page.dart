@@ -12,8 +12,9 @@ class SupportProjectPage extends ConsumerWidget {
     // Escuchamos el estado (null al inicio, luego el valor de SharedPreferences)
     final adsActive = ref.watch(isAdsActiveProvider);
 
+    final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text("Apoya Tag Links")),
+      appBar: AppBar(title: Text("Apoya Tag Links", style: TextStyle(color:theme.appBarTheme.foregroundColor))),
       body: _buildBody(context, ref, adsActive),
     );
   }

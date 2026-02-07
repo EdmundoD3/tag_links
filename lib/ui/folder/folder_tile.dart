@@ -79,14 +79,14 @@ class _FolderCard extends StatelessWidget {
       child: ListTile(
         leading: Icon(
           Icons.folder,
-          color: Colors.deepPurple[400],
+          color: Colors.deepPurpleAccent,
         ), // Un toque de color
         title: Text(
           folder.title,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold, color:theme.textTheme.titleMedium?.color),
         ),
         trailing: folder.isFavorite
-            ? const Icon(Icons.star, color: Colors.amber, size: 20)
+            ? Icon(Icons.favorite, color: Colors.red, size: 20)
             : null,
       ),
     );

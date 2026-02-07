@@ -98,21 +98,23 @@ class _SearchInput extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: controller,
       builder: (_, value, _) {
         return TextField(
           controller: controller,
           decoration: InputDecoration(
-            fillColor: const Color.fromARGB(35, 150, 135, 155),
+            fillColor: theme.inputDecorationTheme.fillColor,
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(30),
-              borderSide: const BorderSide(color: Color.fromARGB(92, 63, 81, 181), width: 2),
+              borderSide: BorderSide(color: theme.focusColor, width: 2),
             ),
             filled: true,
             icon: iconLeftButton,
             hintText: t(ref, 'searchHintText', fallback: 'Buscar...'),
-            prefixIcon: const Icon(Icons.search),
+            hintStyle: TextStyle(color: theme.hintColor),
+            prefixIcon: Icon(Icons.search, color: theme.hintColor),
             suffixIcon: value.text.isNotEmpty
                 ? IconButton(
                     icon: const Icon(Icons.clear),
@@ -128,6 +130,7 @@ class _SearchInput extends ConsumerWidget {
             ),
           ),
           onChanged: onChangeText,
+          style: TextStyle(color: theme.textTheme.bodyMedium?.color),
         );
       },
     );
