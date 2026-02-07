@@ -128,10 +128,10 @@ class NoteConfig {
   static final contentMaxLength = 2400;
   static final contentMaxLine = 10;
   static final urlMaxLength = 800;
+  static final urlMaxLine = 1;
   static final tagMaxLength = 36;
   static final maxTags = 10;
 }
-
 String noteTable = '''
           CREATE TABLE notes(
             id TEXT PRIMARY KEY,

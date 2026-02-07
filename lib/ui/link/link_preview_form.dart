@@ -98,6 +98,7 @@ class _LinkPreviewFormState extends State<LinkPreviewForm> {
         TextFormField(
           controller: _urlCtrl,
           maxLength: NoteConfig.urlMaxLength,
+          maxLines: NoteConfig.urlMaxLine,
           decoration: const InputDecoration(
             labelText: 'URL',
             border: OutlineInputBorder(),
