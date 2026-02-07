@@ -33,7 +33,6 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController _titleCtrl;
-  late TextEditingController _descriptionCtrl;
 
   List<Tag> _tags = [];
   bool _isFavorite = false;
@@ -45,9 +44,6 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
     _tags = widget.folder?.tags ?? [];
 
     _titleCtrl = TextEditingController(text: widget.folder?.title ?? '');
-    _descriptionCtrl = TextEditingController(
-      text: widget.folder?.description ?? '',
-    );
     _isFavorite = widget.folder?.isFavorite ?? false;
     if (widget.isRoot) {
       parentId = null;
@@ -59,7 +55,6 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
   @override
   void dispose() {
     _titleCtrl.dispose();
-    _descriptionCtrl.dispose();
     super.dispose();
   }
 
@@ -101,11 +96,6 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
 
             const SizedBox(height: 16),
             _tagSelector(),
-            const SizedBox(height: 16),
-
-            /// Descripción
-            _descriptionView(),
-
             const SizedBox(height: 24),
 
             FilledButton.tonalIcon(
@@ -128,26 +118,6 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
         ref,
         'formFolderTitleRequired',
         fallback: 'El título es obligatorio',
-      ),
-    );
-  }
-
-  Widget _descriptionView() {
-    final theme = Theme.of(context);
-    return TextFormField(
-      style: TextStyle(color: theme.textTheme.bodyMedium?.color),
-      controller: _descriptionCtrl,
-      maxLines: 8,
-      decoration: InputDecoration(
-        labelText: t(ref, 'formFolderDescription', fallback: 'Descripción'),
-        labelStyle: TextStyle(color: theme.hintColor),
-        alignLabelWithHint: true,
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: theme.focusColor, width: 2),
-        ),
-        border: OutlineInputBorder(
-          borderSide: BorderSide(color: theme.focusColor, width: 2),
-        ),
       ),
     );
   }
@@ -184,13 +154,10 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
   Folder _captureFolder() {
     final now = DateTime.now();
 
-    final desc = _descriptionCtrl.text.trim();
-
     final folder = Folder(
       id: widget.folder?.id ?? const Uuid().v4(),
       parentId: parentId,
       title: _titleCtrl.text.trim(),
-      description: desc.isEmpty ? null : desc,
       tags: _tags,
       image: widget.folder?.image,
       createdAt: widget.folder?.createdAt ?? now,
