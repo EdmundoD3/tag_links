@@ -1,18 +1,24 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tag_links/state/premium_provider.dart';
 
-final isAdsActiveProvider =
-    NotifierProvider<IsAdsActiveNotifier, bool?>(IsAdsActiveNotifier.new);
+final isAdsActiveProvider = Provider<bool?>((ref) {
+  final isPremium = ref.watch(premiumProvider);
+  if (isPremium == true) return false;
+  return ref.watch(adsActiveProvider);
+});
+final adsActiveProvider = NotifierProvider<AdsActiveNotifier, bool?>(
+  AdsActiveNotifier.new,
+);
 
-class IsAdsActiveNotifier extends Notifier<bool?> {
-  late final _AdsStorage _storage;
+class AdsActiveNotifier extends Notifier<bool?> {
+  final _AdsStorage _storage = _AdsStorage();
 
   @override
   bool? build() {
-    _storage = _AdsStorage();
     _loadInitialStatus();
     // Importante: retornamos null para indicar que está "cargando" o es desconocido
-    return null; 
+    return null;
   }
 
   Future<void> _loadInitialStatus() async {
@@ -31,7 +37,6 @@ class IsAdsActiveNotifier extends Notifier<bool?> {
     await _storage.saveStatus(newValue);
   }
 }
-
 
 class _AdsStorage {
   static const String _key = 'ads_active_status';

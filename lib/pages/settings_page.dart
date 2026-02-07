@@ -61,7 +61,7 @@ class SupportProjectPage extends ConsumerWidget {
             title: const Text("Banners pequeños"),
             subtitle: const Text("Anuncios discretos que me ayudan económicamente."),
             value: adsActive,
-            onChanged: (val) => ref.read(isAdsActiveProvider.notifier).setStatus(val),
+            onChanged: (val) => ref.read(adsActiveProvider.notifier).setStatus(val),
           ),
 
           ListTile(
@@ -93,7 +93,7 @@ class SupportProjectPage extends ConsumerWidget {
           TextButton(
             onPressed: () {
               // 2. Desactivamos los anuncios por defecto
-              ref.read(isAdsActiveProvider.notifier).setStatus(false);
+              ref.read(adsActiveProvider.notifier).setStatus(false);
               Navigator.pop(context);
             },
             child: Text("¡GRACIAS!"),
