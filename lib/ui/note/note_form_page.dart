@@ -184,6 +184,7 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
   Widget _tituloController() {
     return TextFormField(
       controller: _titleCtrl,
+      maxLength: NoteConfig.titleMaxLength,
       decoration: InputDecoration(
         labelText: t(ref, 'title', fallback: 'Título'),
         border: OutlineInputBorder(),
@@ -200,6 +201,7 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
   Widget _contenidoController() {
     return TextFormField(
       controller: _contentCtrl,
+      maxLength: NoteConfig.contentMaxLength,
       maxLines: 8,
       decoration: InputDecoration(
         labelText: t(ref, 'content', fallback: 'Contenido'),

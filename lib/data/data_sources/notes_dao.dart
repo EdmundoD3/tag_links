@@ -3,6 +3,7 @@ import 'package:tag_links/data/data_sources/link_preview_dao.dart';
 import 'package:tag_links/data/database.dart';
 import 'package:tag_links/models/link_preview.dart';
 import 'package:tag_links/models/note.dart';
+import 'package:tag_links/models/note_join_row.dart';
 import 'package:tag_links/models/search_query.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/utils/paginated_utils.dart';
@@ -583,14 +584,14 @@ class _FetchersNotesDao {
 
   //helpers
 
-  String _buildOrderWhereClause(PaginatedByDate paginated) {
-    return switch (paginated.order) {
-      OrderDate.updatedDesc => 'updatedAt > ?',
-      OrderDate.updatedAsc => 'updatedAt < ?',
-      OrderDate.createdDesc => 'createdAt > ?',
-      OrderDate.createdAsc => 'createdAt < ?',
-    };
-  }
+  // String _buildOrderWhereClause(PaginatedByDate paginated) {
+  //   return switch (paginated.order) {
+  //     OrderDate.updatedDesc => 'updatedAt > ?',
+  //     OrderDate.updatedAsc => 'updatedAt < ?',
+  //     OrderDate.createdDesc => 'createdAt > ?',
+  //     OrderDate.createdAsc => 'createdAt < ?',
+  //   };
+  // }
 
   String _buildOrderField(PaginatedByDate paginated) {
     return switch (paginated.order) {
