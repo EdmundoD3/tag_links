@@ -10,6 +10,7 @@ import 'package:tag_links/state/pending_note_provider.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
 import 'package:tag_links/ui/link/link_preview_form.dart';
 import 'package:tag_links/ui/tags/tags_selector_menu.dart';
+import 'package:tag_links/ui/text/title_controller.dart';
 import 'package:uuid/uuid.dart';
 
 class NoteFormPage extends ConsumerStatefulWidget {
@@ -136,7 +137,7 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _TitleController(
+          TitleController(
             titleCtrl: _titleCtrl,
             label: t(ref, 'title', fallback: 'Título'),
             validatorMsg: t(
@@ -226,35 +227,7 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
   }
 }
 
-class _TitleController extends StatelessWidget {
-  final TextEditingController titleCtrl;
-  final String label;
-  final String validatorMsg;
 
-  const _TitleController({
-    required this.titleCtrl,
-    required this.label,
-    required this.validatorMsg,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return TextFormField(
-      controller: titleCtrl,
-      maxLength: NoteConfig.titleMaxLength,
-      decoration: InputDecoration(
-        labelText: label,
-        border: OutlineInputBorder(),
-      ),
-      validator: (value) {
-        if (value == null || value.trim().isEmpty) {
-          return validatorMsg;
-        }
-        return null;
-      },
-    );
-  }
-}
 
 class _ContentController extends StatelessWidget {
   final TextEditingController contentCtrl;

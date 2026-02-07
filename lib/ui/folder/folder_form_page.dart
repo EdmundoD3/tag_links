@@ -7,14 +7,21 @@ import 'package:tag_links/state/folders_provider.dart';
 import 'package:tag_links/state/pending_folder_provider.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
 import 'package:tag_links/ui/tags/tags_selector_menu.dart';
+import 'package:tag_links/ui/text/title_controller.dart';
 import 'package:uuid/uuid.dart';
 import 'package:tag_links/locate/app_lang.dart';
+
 class FolderFormPage extends ConsumerStatefulWidget {
   final Folder? folder;
   final String? parentFolderId;
   final bool isRoot;
 
-  const FolderFormPage({super.key, this.folder, this.parentFolderId, this.isRoot = false});
+  const FolderFormPage({
+    super.key,
+    this.folder,
+    this.parentFolderId,
+    this.isRoot = false,
+  });
 
   bool get isEdit => folder != null;
 
@@ -47,7 +54,6 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
     } else {
       parentId = widget.parentFolderId ?? widget.folder!.parentId;
     }
-    
   }
 
   @override
@@ -71,9 +77,19 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
                 )
               : IconButton(
                   onPressed: _isFavoriteToogle,
-                  icon: Icon(Icons.favorite_border, color: theme.iconTheme.color?? Colors.grey),
+                  icon: Icon(
+                    Icons.favorite_border,
+                    color: theme.iconTheme.color ?? Colors.grey,
+                  ),
                 ),
-          IconButton(icon: Icon(Icons.save, color:theme.iconTheme.color?? Colors.deepPurple), onPressed: _onSave)],
+          IconButton(
+            icon: Icon(
+              Icons.save,
+              color: theme.iconTheme.color ?? Colors.deepPurple,
+            ),
+            onPressed: _onSave,
+          ),
+        ],
       ),
       body: Form(
         key: _formKey,
@@ -105,24 +121,14 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
 
   // widgets
   Widget _titleView() {
-    final theme = Theme.of(context);
-    return TextFormField(
-      style: TextStyle(color: theme.textTheme.bodyMedium?.color),
-      controller: _titleCtrl,
-      decoration: InputDecoration(
-        labelText: t(ref,'formFolderTitle', fallback: 'Nombre de la carpeta'),
-        labelStyle: TextStyle(color: theme.hintColor),
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: theme.focusColor, width: 2),
-        ),
-        border: OutlineInputBorder(),
+    return TitleController(
+      titleCtrl: _titleCtrl,
+      label: t(ref, 'formFolderTitle', fallback: 'Nombre de la carpeta'),
+      validatorMsg: t(
+        ref,
+        'formFolderTitleRequired',
+        fallback: 'El título es obligatorio',
       ),
-      validator: (value) {
-        if (value == null || value.trim().isEmpty) {
-          return t(ref, 'formFolderTitleRequired', fallback: 'El título es obligatorio');
-        }
-        return null;
-      },
     );
   }
 
@@ -213,10 +219,7 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
   }
 
   Future<void> _onChangeFolder() async {
-    final isConfirm = await ConfirmDialog.moveFolder(
-      context,
-      ref,
-    );
+    final isConfirm = await ConfirmDialog.moveFolder(context, ref);
 
     if (isConfirm != true) return;
 
