@@ -22,6 +22,7 @@ class AppTheme {
       searchInput: Color.fromARGB(35, 150, 135, 155),
       searchInputBorder: Color.fromARGB(92, 63, 81, 181),
       searchIcon: Colors.grey,
+      
     );
   }
 
@@ -97,6 +98,5 @@ ThemeData _generatePalette({
     inputDecorationTheme: InputDecorationThemeData(fillColor: searchInput),
     focusColor: searchInputBorder,
     hintColor: searchIcon,
-
-  );
+    );
 }

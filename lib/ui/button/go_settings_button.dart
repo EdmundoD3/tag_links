@@ -15,7 +15,7 @@ class GoSettingsButton extends StatelessWidget {
           MaterialPageRoute(builder: (_) => SupportProjectPage()),
         ),
       },
-      icon: Icon(Icons.settings, color:theme.appBarTheme.foregroundColor),
+      icon: Icon(Icons.settings, color:theme.iconTheme.color),
     );
   }
 }
