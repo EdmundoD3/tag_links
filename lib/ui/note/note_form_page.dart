@@ -106,64 +106,87 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.isEdit ? _titleCtrl.text : 'Nueva nota'),
-        actions: [
-          _isFavorite
-              ? IconButton(
-                  onPressed: _isFavoriteToogle,
-                  icon: const Icon(Icons.star, color: Colors.amber),
-                )
-              : IconButton(
-                  onPressed: _isFavoriteToogle,
-                  icon: Icon(Icons.star, color: Colors.grey[600]),
-                ),
-          IconButton(
-            icon: const Icon(Icons.save, color: Colors.deepPurple),
-            onPressed: _onSave,
+    return Scaffold(appBar: _appBar(), body: _body());
+  }
+
+  PreferredSizeWidget _appBar() {
+    return AppBar(
+      title: Text(widget.isEdit ? _titleCtrl.text : 'Nueva nota'),
+      actions: [
+        _isFavorite
+            ? IconButton(
+                onPressed: _isFavoriteToogle,
+                icon: const Icon(Icons.star, color: Colors.amber),
+              )
+            : IconButton(
+                onPressed: _isFavoriteToogle,
+                icon: Icon(Icons.star, color: Colors.grey[600]),
+              ),
+        IconButton(
+          icon: const Icon(Icons.save, color: Colors.deepPurple),
+          onPressed: _onSave,
+        ),
+      ],
+    );
+  }
+
+  Widget _body() {
+    return Form(
+      key: _formKey,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _TitleController(
+            titleCtrl: _titleCtrl,
+            label: t(ref, 'title', fallback: 'Título'),
+            validatorMsg: t(
+              ref,
+              'titleRequired',
+              fallback: 'El título es obligatorio',
+            ),
           ),
+          const SizedBox(height: 16),
+          _linkPreviewForm(),
+          const SizedBox(height: 16),
+          _ContentController(
+            contentCtrl: _contentCtrl,
+            label: t(ref, 'content', fallback: 'Contenido'),
+          ),
+          const SizedBox(height: 16),
+          TagsSelectorMenu(
+            tags: _tags,
+            onTagSelected: _onTagSelected,
+            onDeletedTag: _onDeletedTag,
+          ),
+          const SizedBox(height: 8),
+          _moveToFolderButton(),
         ],
       ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            _tituloController(),
-            const SizedBox(height: 16),
-            LinkPreviewForm(
-              noteId: _id,
-              initialLink: _linkPreview,
-              onLinkChanged: (LinkPreview? linkPreview) {
-                if (_linkPreview == linkPreview) return;
-                setState(() {
-                  _linkPreview = linkPreview;
-                });
-              },
-            ),
-            const SizedBox(height: 16),
-            _contenidoController(),
-            const SizedBox(height: 16),
-            TagsSelectorMenu(
-              tags: _tags,
-              onTagSelected: _onTagSelected,
-              onDeletedTag: _onDeletedTag,
-            ),
-            const SizedBox(height: 8),
-            FilledButton.tonalIcon(
-              onPressed: _onChangeFolder,
-              icon: const Icon(Icons.drive_file_move),
-              label: Text(t(ref, 'moveToFolder', fallback: 'Cambiar carpeta')),
-              style: FilledButton.styleFrom(
-                backgroundColor: Colors.deepPurple, // Color de fondo
-                foregroundColor: Colors.white,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
+  }
+
+  Widget _linkPreviewForm() {
+    return LinkPreviewForm(
+      noteId: _id,
+      initialLink: _linkPreview,
+      onLinkChanged: (LinkPreview? linkPreview) {
+        if (_linkPreview == linkPreview) return;
+        setState(() {
+          _linkPreview = linkPreview;
+        });
+      },
+    );
+  }
+  Widget _moveToFolderButton() {
+    return FilledButton.tonalIcon(
+            onPressed: _onChangeFolder,
+            icon: const Icon(Icons.drive_file_move),
+            label: Text(t(ref, 'moveToFolder', fallback: 'Cambiar carpeta')),
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.deepPurple, // Color de fondo
+              foregroundColor: Colors.white,
+            ),
+          );
   }
 
   // controllers
@@ -181,41 +204,8 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
     });
   }
 
-  Widget _tituloController() {
-    return TextFormField(
-      controller: _titleCtrl,
-      maxLength: NoteConfig.titleMaxLength,
-      decoration: InputDecoration(
-        labelText: t(ref, 'title', fallback: 'Título'),
-        border: OutlineInputBorder(),
-      ),
-      validator: (value) {
-        if (value == null || value.trim().isEmpty) {
-          return t(ref, 'titleRequired', fallback: 'El título es obligatorio');
-        }
-        return null;
-      },
-    );
-  }
-
-  Widget _contenidoController() {
-    return TextFormField(
-      controller: _contentCtrl,
-      maxLength: NoteConfig.contentMaxLength,
-      maxLines: 8,
-      decoration: InputDecoration(
-        labelText: t(ref, 'content', fallback: 'Contenido'),
-        alignLabelWithHint: true,
-        border: OutlineInputBorder(),
-      ),
-    );
-  }
-
   Future<void> _onChangeFolder() async {
-    final isConfirm = await ConfirmDialog.moveNote(
-      context,
-      ref,
-    );
+    final isConfirm = await ConfirmDialog.moveNote(context, ref);
 
     if (isConfirm != true) return;
 
@@ -233,5 +223,53 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
     setState(() {
       _isFavorite = !_isFavorite;
     });
+  }
+}
+
+class _TitleController extends StatelessWidget {
+  final TextEditingController titleCtrl;
+  final String label;
+  final String validatorMsg;
+
+  const _TitleController({
+    required this.titleCtrl,
+    required this.label,
+    required this.validatorMsg,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: titleCtrl,
+      maxLength: NoteConfig.titleMaxLength,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(),
+      ),
+      validator: (value) {
+        if (value == null || value.trim().isEmpty) {
+          return validatorMsg;
+        }
+        return null;
+      },
+    );
+  }
+}
+
+class _ContentController extends StatelessWidget {
+  final TextEditingController contentCtrl;
+  final String label;
+  const _ContentController({required this.contentCtrl, required this.label});
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: contentCtrl,
+      maxLength: NoteConfig.contentMaxLength,
+      decoration: InputDecoration(
+        labelText: label,
+        alignLabelWithHint: true,
+        border: OutlineInputBorder(),
+      ),
+    );
   }
 }
