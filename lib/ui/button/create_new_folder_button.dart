@@ -16,7 +16,7 @@ class CreateNewFolderButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return FloatingButonBase(
+    return FloatingButtonBase(
       heroTag: t(ref, 'createFolder', fallback: 'Crear carpeta'),
       icon: Icons.create_new_folder,
       onPressed: () => Navigator.push(

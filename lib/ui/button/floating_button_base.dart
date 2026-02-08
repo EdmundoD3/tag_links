@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-class FloatingButonBase extends StatelessWidget {
+class FloatingButtonBase extends StatelessWidget {
   final String heroTag;
   final IconData icon;
   final void Function() onPressed;
 
-  const FloatingButonBase({
+  const FloatingButtonBase({
     super.key,
     required this.onPressed,
     required this.icon,

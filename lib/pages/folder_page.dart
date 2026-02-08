@@ -17,6 +17,7 @@ import 'package:tag_links/ui/folder/build_folders_list.dart';
 import 'package:tag_links/ui/note/banner_pending_note.dart';
 import 'package:tag_links/ui/note/build_notes_list.dart';
 import 'package:tag_links/ui/form/note_form_page.dart';
+import 'package:tag_links/ui/page_widgets/page_scaffold.dart';
 import 'package:tag_links/utils/paginated_utils.dart';
 
 class FolderPage extends ConsumerStatefulWidget {
@@ -71,7 +72,6 @@ class _FolderPageState extends ConsumerState<FolderPage> {
 
   @override
   Widget build(BuildContext context) {
-    final subFolders = ref.watch(_folderProvider);
     final notes = ref.watch(_notesProvider);
     final preferenceAsync = ref.watch(_foldersPreferenceProvider);
 
@@ -85,27 +85,41 @@ class _FolderPageState extends ConsumerState<FolderPage> {
         if (!showFolders && widget.highlightNoteId != null) {
           _scrollToHighlightedNote(notes);
         }
-
-        return Scaffold(
-          appBar: _appBar(context, ref, showFolders, preference),
-          floatingActionButton: _buildFab(context, showFolders),
-          body: Column(
-            children: [
-              BannerPendingNote(toFolderId: widget.folder.id),
-              BannerPendingFolder(toParentId: widget.folder.id),
-              // if (showFolders) _foldersList(subFolders) else _buildNotes(notes),
-              Expanded(
-                child: showFolders
-                    ? _foldersList(subFolders)
-                    : _buildNotes(notes),
-              ),
-
-              const SmartBannerAd(),
-            ],
-          ),
+        return PageScaffold(
+          appBar: _appBar(showFolders, preference),
+          floatingActionButton: _floatingActionButton(showFolders),
+          body: _body(showFolders, notes),
         );
       },
     );
+  }
+
+  PreferredSizeWidget _appBar(bool showFolders, FolderDefaultView preference) {
+    return AppBarPages(
+      title: widget.folder.title,
+      actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: 8.0),
+          child: SwitchFolderNote(
+            isFolder: showFolders,
+            onTap: () => _toggleView(ref, preference),
+            size: 26,
+          ),
+        ),
+        Padding(padding: EdgeInsetsGeometry.directional(end: 4)),
+      ],
+    );
+  }
+
+  List<Widget> _body(bool showFolders, AsyncValue<List<Note>> notes) {
+    return [
+      BannerPendingNote(toFolderId: widget.folder.id),
+      BannerPendingFolder(toParentId: widget.folder.id),
+      // if (showFolders) _foldersList(subFolders) else _buildNotes(notes),
+      Expanded(child: showFolders ? _foldersList() : _buildNotes(notes)),
+
+      const SmartBannerAd(),
+    ];
   }
 
   /// 🎯 Scroll a la nota resaltada (solo una vez)
@@ -134,28 +148,6 @@ class _FolderPageState extends ConsumerState<FolderPage> {
     });
   }
 
-  PreferredSizeWidget _appBar(
-    BuildContext context,
-    WidgetRef ref,
-    bool showFolders,
-    FolderDefaultView preference,
-  ) {
-    return AppBarPages(
-      title: widget.folder.title,
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 8.0),
-          child: SwitchFolderNote(
-            isFolder: showFolders,
-            onTap: () => _toggleView(ref, preference),
-            size: 26,
-          ),
-        ),
-        Padding(padding: EdgeInsetsGeometry.directional(end: 4)),
-      ],
-    );
-  }
-
   /// 🔁 Cambiar vista y guardar preferencia
   Future<void> _toggleView(WidgetRef ref, FolderDefaultView current) async {
     final repo = ref.read(folderRepositoryProvider);
@@ -168,7 +160,8 @@ class _FolderPageState extends ConsumerState<FolderPage> {
   }
 
   /// 📂 Lista de carpetas
-  Widget _foldersList(AsyncValue<List<Folder>> subFolders) {
+  Widget _foldersList() {
+    final subFolders = ref.watch(_folderProvider);
     final notifier = ref.read(_folderProvider.notifier);
     return BuildFoldersList(
       foldersAsync: subFolders,
@@ -189,21 +182,25 @@ class _FolderPageState extends ConsumerState<FolderPage> {
   }
 
   /// ➕ FAB dinámico
-  Widget _buildFab(BuildContext context, bool showFolders) {
+  Widget _floatingActionButton(bool showFolders) {
     return showFolders
         ? CreateNewFolderButton(isRoot: false, parentFolderId: widget.folder.id)
-        : _fabAddNote(context);
+        : _CreateNewNoteButton(folderId: widget.folder.id);
   }
+}
 
-  Widget _fabAddNote(BuildContext context) {
-    return FloatingButonBase(
-      heroTag: t(ref, 'fabAddNote',fallback: 'Add note'),
+class _CreateNewNoteButton extends ConsumerWidget {
+  final String folderId;
+  const _CreateNewNoteButton({required this.folderId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return FloatingButtonBase(
+      heroTag: t(ref, 'fabAddNote', fallback: 'Add note'),
       icon: Icons.note_add,
       onPressed: () => Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (_) => NoteFormPage(folderId: widget.folder.id),
-        ),
+        MaterialPageRoute(builder: (_) => NoteFormPage(folderId: folderId)),
       ),
     );
   }

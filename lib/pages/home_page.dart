@@ -19,6 +19,7 @@ import 'package:tag_links/ui/button/switch_folder_note.dart';
 import 'package:tag_links/ui/folder/banner_pending_folder.dart';
 import 'package:tag_links/ui/folder/build_folders_list.dart';
 import 'package:tag_links/ui/note/build_notes_list.dart';
+import 'package:tag_links/ui/page_widgets/page_scaffold.dart';
 import 'package:tag_links/ui/search/search_bar.dart';
 import 'package:tag_links/ui/tags/tag_selected_container.dart';
 import 'package:tag_links/utils/note_helpers.dart';
@@ -64,15 +65,10 @@ class _HomePageState extends ConsumerState<HomePage> {
     final bool hasPendingNotes = ref.watch(hasPendingNoteProvider);
     final foldersAsync = ref.watch(foldersViewProvider);
     final bool isFolder = ref.watch(isFolderProvider);
-
-    final notesAsync = ref.watch(
-      notesViewProvider,
-    ); //en este caso como valor inicial o sea cuando no hay parametros de busqueda
-    //que empieze con las notas favoritas
-    final theme = Theme.of(context);
-
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+    
+    //en este caso como valor inicial o sea cuando no hay parametros de busqueda que empieze con las notas favoritas
+    final notesAsync = ref.watch(notesViewProvider);
+    return PageScaffold(
       appBar: AppBarPages(
         title: t(ref, "appName", fallback: 'Tag Links'),
         actions: [
@@ -106,33 +102,29 @@ class _HomePageState extends ConsumerState<HomePage> {
     ref.invalidate(notesProvider(null));
   }
 
-  Widget _body(
+  List<Widget> _body(
     WidgetRef ref,
     bool isFolder,
     bool hasPendingNotes,
     AsyncValue<List<Folder>> foldersAsync,
     AsyncValue<List<Note>> notesAsync,
   ) {
-    return Column(
-      children: [
-        if (hasPendingNotes) _bannerHasPendingNotes(context, ref),
-        BannerPendingFolder(toParentId: null),
-        const SizedBox(height: 16),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: _searchBar(ref, isFolder),
-        ),
-        const SizedBox(height: 16),
-        _selectedIncludeTags(ref),
-        Expanded(
-          child: isFolder
-              ? _buildFolders(foldersAsync)
-              : _buildNotes(notesAsync),
-        ),
+    return [
+      if (hasPendingNotes) _bannerHasPendingNotes(context, ref),
+      BannerPendingFolder(toParentId: null),
+      const SizedBox(height: 16),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: _searchBar(ref, isFolder),
+      ),
+      const SizedBox(height: 16),
+      _selectedIncludeTags(ref),
+      Expanded(
+        child: isFolder ? _buildFolders(foldersAsync) : _buildNotes(notesAsync),
+      ),
 
-        const SmartBannerAd(),
-      ],
-    );
+      const SmartBannerAd(),
+    ];
   }
 
   Widget _buildFolders(AsyncValue<List<Folder>> foldersAsync) {
