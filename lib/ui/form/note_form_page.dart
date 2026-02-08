@@ -10,6 +10,7 @@ import 'package:tag_links/state/pending_note_provider.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
 import 'package:tag_links/ui/form/app_bar_form.dart';
 import 'package:tag_links/ui/form/body_form.dart';
+import 'package:tag_links/ui/form/move_to_folder_button.dart';
 import 'package:tag_links/ui/link/link_preview_form.dart';
 import 'package:tag_links/ui/tags/tags_selector_menu.dart';
 import 'package:tag_links/ui/form/title_form_controller.dart';
@@ -133,7 +134,11 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
         ),
       ),
       const SizedBox(height: 16),
-      _linkPreviewForm(),
+      LinkPreviewForm(
+        noteId: _id,
+        initialLink: _linkPreview,
+        onLinkChanged: _onLinkChanged,
+      ),
       const SizedBox(height: 16),
       _ContentController(
         contentCtrl: _contentCtrl,
@@ -146,33 +151,18 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
         onDeletedTag: _onDeletedTag,
       ),
       const SizedBox(height: 8),
-      _moveToFolderButton(),
+      MoveToFolderButton(
+        onChangeFolder: _onChangeFolder,
+        title: t(ref, 'moveToFolder', fallback: 'Cambiar carpeta'),
+      ),
     ];
   }
 
-  Widget _linkPreviewForm() {
-    return LinkPreviewForm(
-      noteId: _id,
-      initialLink: _linkPreview,
-      onLinkChanged: (LinkPreview? linkPreview) {
-        if (_linkPreview == linkPreview) return;
-        setState(() {
-          _linkPreview = linkPreview;
-        });
-      },
-    );
-  }
-
-  Widget _moveToFolderButton() {
-    return FilledButton.tonalIcon(
-      onPressed: _onChangeFolder,
-      icon: const Icon(Icons.drive_file_move),
-      label: Text(t(ref, 'moveToFolder', fallback: 'Cambiar carpeta')),
-      style: FilledButton.styleFrom(
-        backgroundColor: Colors.deepPurple, // Color de fondo
-        foregroundColor: Colors.white,
-      ),
-    );
+  void _onLinkChanged(LinkPreview? linkPreview) {
+    if (_linkPreview == linkPreview) return;
+    setState(() {
+      _linkPreview = linkPreview;
+    });
   }
 
   // controllers

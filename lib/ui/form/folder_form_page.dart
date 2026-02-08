@@ -8,6 +8,7 @@ import 'package:tag_links/state/pending_folder_provider.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
 import 'package:tag_links/ui/form/app_bar_form.dart';
 import 'package:tag_links/ui/form/body_form.dart';
+import 'package:tag_links/ui/form/move_to_folder_button.dart';
 import 'package:tag_links/ui/tags/tags_selector_menu.dart';
 import 'package:tag_links/ui/form/title_form_controller.dart';
 import 'package:uuid/uuid.dart';
@@ -77,43 +78,29 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
   List<Widget> _body() {
     return [
       /// Título
-      _titleView(),
+      TitleFormController(
+        titleCtrl: _titleCtrl,
+        label: t(ref, 'formFolderTitle', fallback: 'Nombre de la carpeta'),
+        validatorMsg: t(
+          ref,
+          'formFolderTitleRequired',
+          fallback: 'El título es obligatorio',
+        ),
+      ),
 
       const SizedBox(height: 16),
-      _tagSelector(),
+      TagsSelectorMenu(
+        tags: _tags,
+        onTagSelected: _onTagSelected,
+        onDeletedTag: _onDeletedTag,
+      ),
       const SizedBox(height: 24),
 
-      _moveToFolderButton(),
-    ];
-  }
-
-  // widgets
-  Widget _titleView() {
-    return TitleFormController(
-      titleCtrl: _titleCtrl,
-      label: t(ref, 'formFolderTitle', fallback: 'Nombre de la carpeta'),
-      validatorMsg: t(
-        ref,
-        'formFolderTitleRequired',
-        fallback: 'El título es obligatorio',
+      MoveToFolderButton(
+        onChangeFolder: _onChangeFolder,
+        title: t(ref, 'moveToFolder', fallback: 'Cambiar carpeta'),
       ),
-    );
-  }
-
-  Widget _tagSelector() {
-    return TagsSelectorMenu(
-      tags: _tags,
-      onTagSelected: _onTagSelected,
-      onDeletedTag: _onDeletedTag,
-    );
-  }
-
-  Widget _moveToFolderButton() {
-    return FilledButton.tonalIcon(
-      onPressed: _onChangeFolder,
-      icon: const Icon(Icons.drive_file_move),
-      label: Text(t(ref, 'moveToFolder', fallback: 'Cambiar carpeta')),
-    );
+    ];
   }
 
   void _isFavoriteToogle() {
