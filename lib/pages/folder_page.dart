@@ -16,7 +16,7 @@ import 'package:tag_links/ui/folder/banner_pending_folder.dart';
 import 'package:tag_links/ui/folder/build_folders_list.dart';
 import 'package:tag_links/ui/note/banner_pending_note.dart';
 import 'package:tag_links/ui/note/build_notes_list.dart';
-import 'package:tag_links/ui/note/note_form_page.dart';
+import 'package:tag_links/ui/form/note_form_page.dart';
 import 'package:tag_links/utils/paginated_utils.dart';
 
 class FolderPage extends ConsumerStatefulWidget {
@@ -140,8 +140,7 @@ class _FolderPageState extends ConsumerState<FolderPage> {
     bool showFolders,
     FolderDefaultView preference,
   ) {
-    return appBar(
-      context,
+    return AppBarPages(
       title: widget.folder.title,
       actions: [
         Padding(

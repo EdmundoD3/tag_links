@@ -8,9 +8,11 @@ import 'package:tag_links/pages/home_page.dart';
 import 'package:tag_links/state/notes_provider.dart';
 import 'package:tag_links/state/pending_note_provider.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
+import 'package:tag_links/ui/form/app_bar_form.dart';
+import 'package:tag_links/ui/form/body_form.dart';
 import 'package:tag_links/ui/link/link_preview_form.dart';
 import 'package:tag_links/ui/tags/tags_selector_menu.dart';
-import 'package:tag_links/ui/text/title_controller.dart';
+import 'package:tag_links/ui/form/title_form_controller.dart';
 import 'package:uuid/uuid.dart';
 
 class NoteFormPage extends ConsumerStatefulWidget {
@@ -107,63 +109,45 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(appBar: _appBar(), body: _body());
+    return BodyForm(formKey: _formKey, appBar: _appBar(), children: _body());
   }
 
   PreferredSizeWidget _appBar() {
-    return AppBar(
-      title: Text(widget.isEdit ? _titleCtrl.text : 'Nueva nota'),
-      actions: [
-        _isFavorite
-            ? IconButton(
-                onPressed: _isFavoriteToogle,
-                icon: const Icon(Icons.star, color: Colors.amber),
-              )
-            : IconButton(
-                onPressed: _isFavoriteToogle,
-                icon: Icon(Icons.star, color: Colors.grey[600]),
-              ),
-        IconButton(
-          icon: const Icon(Icons.save, color: Colors.deepPurple),
-          onPressed: _onSave,
-        ),
-      ],
+    return AppBarForm(
+      title: widget.isEdit ? _titleCtrl.text : 'Nueva nota',
+      isFavorite: _isFavorite,
+      onFavoriteToogle: _isFavoriteToogle,
+      onSave: _onSave,
     );
   }
 
-  Widget _body() {
-    return Form(
-      key: _formKey,
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          TitleController(
-            titleCtrl: _titleCtrl,
-            label: t(ref, 'title', fallback: 'Título'),
-            validatorMsg: t(
-              ref,
-              'titleRequired',
-              fallback: 'El título es obligatorio',
-            ),
-          ),
-          const SizedBox(height: 16),
-          _linkPreviewForm(),
-          const SizedBox(height: 16),
-          _ContentController(
-            contentCtrl: _contentCtrl,
-            label: t(ref, 'content', fallback: 'Contenido'),
-          ),
-          const SizedBox(height: 16),
-          TagsSelectorMenu(
-            tags: _tags,
-            onTagSelected: _onTagSelected,
-            onDeletedTag: _onDeletedTag,
-          ),
-          const SizedBox(height: 8),
-          _moveToFolderButton(),
-        ],
+  List<Widget> _body() {
+    return [
+      TitleFormController(
+        titleCtrl: _titleCtrl,
+        label: t(ref, 'title', fallback: 'Título'),
+        validatorMsg: t(
+          ref,
+          'titleRequired',
+          fallback: 'El título es obligatorio',
+        ),
       ),
-    );
+      const SizedBox(height: 16),
+      _linkPreviewForm(),
+      const SizedBox(height: 16),
+      _ContentController(
+        contentCtrl: _contentCtrl,
+        label: t(ref, 'content', fallback: 'Contenido'),
+      ),
+      const SizedBox(height: 16),
+      TagsSelectorMenu(
+        tags: _tags,
+        onTagSelected: _onTagSelected,
+        onDeletedTag: _onDeletedTag,
+      ),
+      const SizedBox(height: 8),
+      _moveToFolderButton(),
+    ];
   }
 
   Widget _linkPreviewForm() {
@@ -178,16 +162,17 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
       },
     );
   }
+
   Widget _moveToFolderButton() {
     return FilledButton.tonalIcon(
-            onPressed: _onChangeFolder,
-            icon: const Icon(Icons.drive_file_move),
-            label: Text(t(ref, 'moveToFolder', fallback: 'Cambiar carpeta')),
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.deepPurple, // Color de fondo
-              foregroundColor: Colors.white,
-            ),
-          );
+      onPressed: _onChangeFolder,
+      icon: const Icon(Icons.drive_file_move),
+      label: Text(t(ref, 'moveToFolder', fallback: 'Cambiar carpeta')),
+      style: FilledButton.styleFrom(
+        backgroundColor: Colors.deepPurple, // Color de fondo
+        foregroundColor: Colors.white,
+      ),
+    );
   }
 
   // controllers
@@ -226,8 +211,6 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
     });
   }
 }
-
-
 
 class _ContentController extends StatelessWidget {
   final TextEditingController contentCtrl;

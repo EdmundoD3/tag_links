@@ -6,8 +6,10 @@ import 'package:tag_links/pages/home_page.dart';
 import 'package:tag_links/state/folders_provider.dart';
 import 'package:tag_links/state/pending_folder_provider.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
+import 'package:tag_links/ui/form/app_bar_form.dart';
+import 'package:tag_links/ui/form/body_form.dart';
 import 'package:tag_links/ui/tags/tags_selector_menu.dart';
-import 'package:tag_links/ui/text/title_controller.dart';
+import 'package:tag_links/ui/form/title_form_controller.dart';
 import 'package:uuid/uuid.dart';
 import 'package:tag_links/locate/app_lang.dart';
 
@@ -60,58 +62,34 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.isEdit ? 'Editar carpeta' : 'Nueva carpeta'),
-        actions: [
-          _isFavorite
-              ? IconButton(
-                  onPressed: _isFavoriteToogle,
-                  icon: const Icon(Icons.favorite, color: Colors.red),
-                )
-              : IconButton(
-                  onPressed: _isFavoriteToogle,
-                  icon: Icon(
-                    Icons.favorite_border,
-                    color: theme.iconTheme.color ?? Colors.grey,
-                  ),
-                ),
-          IconButton(
-            icon: Icon(
-              Icons.save,
-              color: theme.iconTheme.color ?? Colors.deepPurple,
-            ),
-            onPressed: _onSave,
-          ),
-        ],
-      ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            /// Título
-            _titleView(),
+    return BodyForm(formKey: _formKey, appBar: _appBar(), children: _body());
+  }
 
-            const SizedBox(height: 16),
-            _tagSelector(),
-            const SizedBox(height: 24),
-
-            FilledButton.tonalIcon(
-              onPressed: _onChangeFolder,
-              icon: const Icon(Icons.drive_file_move),
-              label: Text(t(ref, 'moveToFolder', fallback: 'Cambiar carpeta')),
-            ),
-          ],
-        ),
-      ),
+  PreferredSizeWidget _appBar() {
+    return AppBarForm(
+      title: widget.isEdit ? 'Editar carpeta' : 'Nueva carpeta',
+      isFavorite: _isFavorite,
+      onFavoriteToogle: _isFavoriteToogle,
+      onSave: _onSave,
     );
+  }
+
+  List<Widget> _body() {
+    return [
+      /// Título
+      _titleView(),
+
+      const SizedBox(height: 16),
+      _tagSelector(),
+      const SizedBox(height: 24),
+
+      _moveToFolderButton(),
+    ];
   }
 
   // widgets
   Widget _titleView() {
-    return TitleController(
+    return TitleFormController(
       titleCtrl: _titleCtrl,
       label: t(ref, 'formFolderTitle', fallback: 'Nombre de la carpeta'),
       validatorMsg: t(
@@ -127,6 +105,14 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
       tags: _tags,
       onTagSelected: _onTagSelected,
       onDeletedTag: _onDeletedTag,
+    );
+  }
+
+  Widget _moveToFolderButton() {
+    return FilledButton.tonalIcon(
+      onPressed: _onChangeFolder,
+      icon: const Icon(Icons.drive_file_move),
+      label: Text(t(ref, 'moveToFolder', fallback: 'Cambiar carpeta')),
     );
   }
 

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/locate/app_lang.dart';
 import 'package:tag_links/models/folder.dart';
-import 'package:tag_links/ui/folder/folder_form_page.dart';
+import 'package:tag_links/ui/form/folder_form_page.dart';
 import 'package:tag_links/ui/menu/menu_container.dart';
 
 class FolderTile extends ConsumerWidget {

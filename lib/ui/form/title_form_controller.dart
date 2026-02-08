@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:tag_links/models/note.dart';
 
-class TitleController extends StatelessWidget {
+class TitleFormController extends StatelessWidget {
   final TextEditingController titleCtrl;
   final String label;
   final String validatorMsg;
 
-  const TitleController({super.key, 
+  const TitleFormController({super.key, 
     required this.titleCtrl,
     required this.label,
     required this.validatorMsg,

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/locate/app_lang.dart';
 import 'package:tag_links/state/pending_note_provider.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
-import 'package:tag_links/ui/note/note_form_page.dart';
+import 'package:tag_links/ui/form/note_form_page.dart';
 
 class BannerPendingNote extends ConsumerWidget {
   const BannerPendingNote({

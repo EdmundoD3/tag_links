@@ -5,7 +5,7 @@ import 'package:tag_links/locate/app_lang.dart';
 import 'package:tag_links/models/note.dart';
 import 'package:tag_links/ui/link/link_preview_widget.dart';
 import 'package:tag_links/ui/menu/menu_container.dart';
-import 'package:tag_links/ui/note/note_form_page.dart';
+import 'package:tag_links/ui/form/note_form_page.dart';
 import 'package:tag_links/ui/text/decorated_text.dart';
 import 'package:tag_links/utils/color_utils.dart';
 import 'package:url_launcher/url_launcher.dart';

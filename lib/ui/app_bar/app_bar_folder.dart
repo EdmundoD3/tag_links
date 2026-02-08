@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 
-PreferredSizeWidget appBar(BuildContext context,{
-  required String title,
-  List<Widget>? actions,
-}) {
-  final theme = Theme.of(context);
+class AppBarPages  extends StatelessWidget implements PreferredSizeWidget {
+  final String title;
+  final List<Widget>? actions;
+
+  const AppBarPages({
+    super.key,
+    required this.title,
+    this.actions,
+  });
+    @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
 
   return AppBar(
     title: Text(
@@ -16,4 +23,7 @@ PreferredSizeWidget appBar(BuildContext context,{
     backgroundColor: theme.appBarTheme.backgroundColor ?? const Color.fromARGB(92, 63, 81, 181),
     actions: actions,
   );
+  }
+    @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }

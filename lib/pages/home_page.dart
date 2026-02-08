@@ -73,8 +73,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: appBar(
-        context,
+      appBar: AppBarPages(
         title: t(ref, "appName", fallback: 'Tag Links'),
         actions: [
           GoSettingsButton(),
