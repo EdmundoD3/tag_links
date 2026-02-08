@@ -52,7 +52,6 @@ String _payload(Note note, String key) {
     'updatedAt': note.updatedAt.millisecondsSinceEpoch,
     'isFavorite': note.isFavorite,
   };
-  ;
   final json = jsonEncode(raw);
 final encrypted = encripter(json, key);
 

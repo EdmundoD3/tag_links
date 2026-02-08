@@ -1,14 +1,20 @@
+import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 
 bool isPremium = false;
 
 // https://pub.dev/packages/in_app_purchase
 class InAppPurchaseManager {
+  static final Set<String> kPremiumIds = <String>{
+    'premium_monthly',
+    'premium_yearly',
+  };
+
   static void listenToPurchaseUpdated(List<PurchaseDetails> purchases) async {
     for (final purchase in purchases) {
       if (purchase.status == PurchaseStatus.purchased ||
           purchase.status == PurchaseStatus.restored) {
-        if (purchase.productID == 'premium_monthly') {
+        if (includesPremium(purchase.productID)) {
           isPremium = true; // 🎉 PREMIUM ACTIVO
         }
       }
@@ -20,21 +26,19 @@ class InAppPurchaseManager {
   }
 
   static Future<bool> getPremiumStatus() async {
-    const Set<String> kIds = <String>{'product1', 'product2'};
-    final response = await InAppPurchase.instance.queryProductDetails(kIds);
+    final bool available = await InAppPurchase.instance.isAvailable();
+    if (!available) {
+      // La tienda no está disponible (ej. emulador sin Play Store), asumimos no premium.
+      return false;
+    }
+    
+    // CORRECCIÓN: queryProductDetails solo sirve para ver precios/títulos, NO para ver si se compró.
+    // El estado de compra real llega a través del stream (listenToPurchaseUpdated).
+    // Aquí retornamos el valor actual que haya procesado el stream.
+    return isPremium;
+  }
 
-    if (response.notFoundIDs.isNotEmpty) {
-      // Handle the error.
-    }
-    List<ProductDetails> products = response.productDetails;
-    for (ProductDetails product in products) {
-      if (product.id == 'premium_monthly') {
-        return true;
-      }
-      if (product.id == 'premium_yearly') {
-        return true;
-      }
-    }
-    return false;
+  static bool includesPremium(String productId) {
+    return kPremiumIds.contains(productId);
   }
 }

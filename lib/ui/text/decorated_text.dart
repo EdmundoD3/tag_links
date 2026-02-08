@@ -79,7 +79,7 @@ class DecoratedText extends StatelessWidget {
   Widget build(BuildContext context) {
     final matches = _tokenRegex.allMatches(text);
     final onlyEmojis = RegExp(
-      r'^[\p{Emoji}\s]+$',
+      r'^[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\s]+$',
       unicode: true,
     ).hasMatch(text);
 

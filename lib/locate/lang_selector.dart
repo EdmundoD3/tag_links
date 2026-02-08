@@ -20,18 +20,22 @@ class LangSelector extends ConsumerWidget {
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
         ),
-        ...AppLang.values.map((lang) {
-          return RadioListTile<AppLang>(
-            title: Text(lang.label),
-            value: lang,
-            groupValue: current,
-            onChanged: (val) {
-              if (val != null) {
-                ref.read(langProvider.notifier).set(val);
-              }
-            },
-          );
-        }),
+        RadioGroup<AppLang>(
+          groupValue: current,
+          onChanged: (val) {
+            if (val != null) {
+              ref.read(langProvider.notifier).set(val);
+            }
+          },
+          child: Column(
+            children: AppLang.values.map((lang) {
+              return RadioListTile<AppLang>(
+                title: Text(lang.label),
+                value: lang,
+              );
+            }).toList(),
+          ),
+        ),
       ],
     );
   }

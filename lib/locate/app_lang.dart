@@ -2,10 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/locate/translations.dart';
 import 'package:tag_links/state/lang_provider.dart';
 
-enum AppLang {
-  es,
-  en,
-}
+enum AppLang { es, en }
 
 extension AppLangX on AppLang {
   String get label {
@@ -18,15 +15,8 @@ extension AppLangX on AppLang {
   }
 }
 
-String t(
-  WidgetRef ref,
-  String key, {
-  String fallback = '',
-}) {
+String t(WidgetRef ref, String key, {String fallback = ''}) {
   final lang = ref.watch(langProvider);
 
-  return translations[key]?[lang]
-      ?? translations[key]?[AppLang.es]
-      ?? fallback
-      ?? key;
+  return translations[key]?[lang] ?? translations[key]?[AppLang.es] ?? fallback;
 }

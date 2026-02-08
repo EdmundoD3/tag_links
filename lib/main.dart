@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:share_handler/share_handler.dart';
 import 'package:tag_links/app_purchases/listen_to_purchase_update.dart';
+import 'package:tag_links/state/premium_provider.dart';
 import 'package:tag_links/state/theme_provider.dart';
 import 'package:tag_links/state/url_provider.dart';
 import 'package:tag_links/theme/app_theme.dart';
@@ -26,7 +27,7 @@ class MyApp extends ConsumerStatefulWidget {
 
 class _MyAppState extends ConsumerState<MyApp> {
   late final StreamSubscription _subHandleUrl;
-  late StreamSubscription<List<PurchaseDetails>> _subscription;
+  StreamSubscription<List<PurchaseDetails>>? _subscription;
 
 
   @override
@@ -35,26 +36,39 @@ class _MyAppState extends ConsumerState<MyApp> {
 
     _subHandleUrl = ShareListener.stream.listen(_handleMedia);
 
-    _subscription = InAppPurchase.instance.purchaseStream.listen(
-    _listenToPurchaseUpdated,
-    onDone: () => _subscription.cancel(),
-    onError: (error) {
-      // manejar error
-    },
-  );
+    _initPurchaseStream();
 
     ShareListener.getInitial().then(_handleMedia);
   }
   void _handleMedia(SharedMedia? media) {
     return handleMedia(media, ref);
   }
+
+  Future<void> _initPurchaseStream() async {
+    // Verificamos disponibilidad ANTES de escuchar el stream.
+    // Esto evita el bucle infinito de intentos de conexión y logs en emuladores rotos.
+    final bool available = await InAppPurchase.instance.isAvailable();
+    if (!available || !mounted) return;
+
+    _subscription = InAppPurchase.instance.purchaseStream.listen(
+      _listenToPurchaseUpdated,
+      onDone: () => _subscription?.cancel(),
+      onError: (error) {
+        // manejar error
+      },
+    );
+  }
+
   void _listenToPurchaseUpdated(List<PurchaseDetails> purchaseDetailsList) {
-    return InAppPurchaseManager.listenToPurchaseUpdated(purchaseDetailsList);
+    InAppPurchaseManager.listenToPurchaseUpdated(purchaseDetailsList);
+    // Si llega una compra o restauración, recargamos el provider para actualizar la UI
+    ref.read(premiumProvider.notifier).reload();
   }
 
   @override
   void dispose() {
     _subHandleUrl.cancel();
+    _subscription?.cancel();
     super.dispose();
   }
 
