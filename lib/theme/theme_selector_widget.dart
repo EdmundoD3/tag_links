@@ -9,16 +9,16 @@ class ThemeSelector extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final current = ref.watch(paletteProvider);
-
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 12),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
             'Tema',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.textTheme.titleLarge?.color),
           ),
         ),
         const SizedBox(height: 12),
@@ -48,7 +48,7 @@ class ThemeSelector extends ConsumerWidget {
                   border: Border.all(
                     color: selected
                         ? Theme.of(context).colorScheme.primary
-                        : Colors.grey.shade300,
+                        : Colors.transparent,
                     width: selected ? 2 : 1,
                   ),
                 ),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class SwitchFavorite extends StatelessWidget {
   final bool? isFavorite;
-  final VoidCallback onChanged;
+  final void Function() onChanged;
 
   const SwitchFavorite({
     super.key,

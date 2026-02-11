@@ -117,7 +117,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: _searchBar(ref, isFolder),
       ),
-      const SizedBox(height: 16),
+      const SizedBox(height: 32),
       _selectedIncludeTags(ref),
       Expanded(
         child: isFolder ? _buildFolders(foldersAsync) : _buildNotes(notesAsync),

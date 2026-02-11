@@ -9,15 +9,15 @@ class LangSelector extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final current = ref.watch(langProvider);
-
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.all(16),
+        Padding(
+          padding: const EdgeInsets.all(16),
           child: Text(
             'Idioma',
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(fontWeight: FontWeight.bold, color: theme.textTheme.bodyMedium?.color,fontSize: 18),
           ),
         ),
         RadioGroup<AppLang>(
@@ -30,7 +30,7 @@ class LangSelector extends ConsumerWidget {
           child: Column(
             children: AppLang.values.map((lang) {
               return RadioListTile<AppLang>(
-                title: Text(lang.label),
+                title: Text(lang.label, style: TextStyle(color: theme.textTheme.bodyMedium?.color)),
                 value: lang,
               );
             }).toList(),

@@ -6,7 +6,7 @@ import 'package:uuid/uuid.dart';
 
 Future<Tag?> showCreateTagModal(BuildContext context, WidgetRef ref) {
   final controller = TextEditingController();
-
+  final theme = Theme.of(context);
   return showModalBottomSheet<Tag>(
     context: context,
     isScrollControlled: true,
@@ -27,7 +27,7 @@ Future<Tag?> showCreateTagModal(BuildContext context, WidgetRef ref) {
           children: [
             Text(
               t(ref, 'createTag', fallback: 'Crear tag'),
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.hintColor),
             ),
             const SizedBox(height: 12),
 
@@ -36,7 +36,11 @@ Future<Tag?> showCreateTagModal(BuildContext context, WidgetRef ref) {
               autofocus: true,
               decoration: InputDecoration(
                 labelText: t(ref, 'tagName', fallback: 'Nombre del tag'),
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
+                labelStyle: TextStyle(color: theme.hintColor),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: theme.focusColor, width: 2),
+                ),
               ),
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => _submit(context, controller),
@@ -62,11 +66,5 @@ void _submit(BuildContext context, TextEditingController controller) {
   final name = controller.text.trim();
   if (name.isEmpty) return;
 
-  Navigator.pop(
-    context,
-    Tag(
-      id: const Uuid().v4(),
-      name: name,
-    ),
-  );
+  Navigator.pop(context, Tag(id: const Uuid().v4(), name: name));
 }

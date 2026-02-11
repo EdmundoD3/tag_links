@@ -208,13 +208,19 @@ class _ContentController extends StatelessWidget {
   const _ContentController({required this.contentCtrl, required this.label});
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return TextFormField(
+      style: TextStyle(color: theme.textTheme.bodyMedium?.color),
       controller: contentCtrl,
       maxLength: NoteConfig.contentMaxLength,
       decoration: InputDecoration(
         labelText: label,
         alignLabelWithHint: true,
-        border: OutlineInputBorder(),
+        border: const OutlineInputBorder(),
+            labelStyle: TextStyle(color: theme.hintColor),
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: theme.focusColor, width: 2),
+        ),
       ),
     );
   }

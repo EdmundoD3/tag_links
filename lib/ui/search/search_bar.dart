@@ -163,18 +163,19 @@ class _TagsSuggestionList extends StatelessWidget {
     }
     return ConstrainedBox(
       constraints: const BoxConstraints(maxHeight: 240),
-      child: _listTags(tags),
+      child: Builder(builder: (context) => _listTags(tags, context)),
     );
   }
 
-  Widget _listTags(List<Tag> tags) {
+  Widget _listTags(List<Tag> tags, BuildContext context) {
+    final theme = Theme.of(context);
     return ListView(
       shrinkWrap: true,
       physics: const BouncingScrollPhysics(),
       children: [
         for (final tag in tags)
           ListTile(
-            title: Text(tag.name),
+            title: Text(tag.name, style: TextStyle(color: theme.hintColor)),
             onTap: () {
               onTagSelected(tag);
             },

@@ -92,18 +92,24 @@ class _LinkPreviewFormState extends State<LinkPreviewForm> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         TextFormField(
+          style: TextStyle(color: theme.textTheme.bodyMedium?.color),
           controller: _urlCtrl,
           maxLength: NoteConfig.urlMaxLength,
           maxLines: NoteConfig.urlMaxLine,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'URL',
-            border: OutlineInputBorder(),
-            prefixIcon: Icon(Icons.link),
+            prefixIcon: const Icon(Icons.link),
             hintText: 'https://...',
+            border: const OutlineInputBorder(),
+            labelStyle: TextStyle(color: theme.hintColor),
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: theme.focusColor, width: 2),
+        ),
           ),
           keyboardType: TextInputType.url,
           textInputAction: TextInputAction.done,

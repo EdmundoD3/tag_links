@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:tag_links/data/data_sources/link_preview_dao.dart';
 import 'package:tag_links/data/database.dart';
@@ -17,12 +18,20 @@ class NotesDao {
     required PaginatedByDate paginated,
     String? folderId,
   }) async {
-    final rows = await _fetch.searchByQuery(
+    try {
+      final rows = await _fetch.searchByQuery(
       query,
       folderId: folderId,
       paginated: paginated,
     );
     return _hydrate(rows);
+    } catch (e) {
+      debugPrint("NotesDao.searchByQuery:\n ${e.toString()}");
+      if(query.isFavorite){
+        return getFavorites(pagination: paginated);
+      }
+      return [];
+    }
   }
 
   Future<void> insert(Note note) async {

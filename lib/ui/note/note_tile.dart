@@ -213,7 +213,7 @@ class _NoteTileCard extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        if (note.isFavorite) Icon(Icons.star, color: Colors.amber, size: 20),
+        if (note.isFavorite) Icon(Icons.favorite, color: Colors.red, size: 20),
       ],
     );
   }

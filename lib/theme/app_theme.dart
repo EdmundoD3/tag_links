@@ -32,12 +32,12 @@ class AppTheme {
       strongBackgroundText: Colors.white,
       icon: Colors.white70,
       badge: Color(0xFFBBDEFB),
-      lighBackground: Color.fromARGB(200, 255, 255, 255),
+      lighBackground: Color.fromARGB(255, 240, 241, 248),
       titleColor: Colors.white,
       textColor: Colors.white,
       scaffoldBackgroundColor: Colors.black,
       searchInput: Color.fromARGB(96, 199, 179, 206),
-      searchInputBorder: Colors.white,
+      searchInputBorder: Color(0xFFEDE7F6),
       searchIcon: Colors.grey,
     );
   }
@@ -79,6 +79,7 @@ ThemeData _generatePalette({
     textTheme: TextTheme(
       bodyMedium: TextStyle(color: textColor),
       titleLarge: TextStyle(color: textColor),
+      bodySmall: TextStyle(color: searchIcon),
     ),
 
     // Configuración global de Cards

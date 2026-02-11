@@ -23,7 +23,7 @@ class SearchQuery {
       text: text ?? this.text,
       includeTags: includeTags ?? this.includeTags,
       excludeTags: excludeTags ?? this.excludeTags,
-      isFavorite: isFavorite??this.isFavorite,
+      isFavorite: isFavorite?? this.isFavorite,
     );
   }
 

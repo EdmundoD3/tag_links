@@ -23,7 +23,7 @@ class SupportProjectPage extends ConsumerWidget {
     // 1. Mientras el estado es null, mostramos la opción de "Quitar Publicidad" 
     //    o un loader si prefieres esperar a que SharedPreferences responda.
     //    En este caso, asumimos que si es null, es porque nunca ha decidido.
-    
+    final theme = Theme.of(context);
     return ListView(
       children: [
         ThemeSelector(),
@@ -31,10 +31,10 @@ class SupportProjectPage extends ConsumerWidget {
         if (adsActive == null) ...[
           const SizedBox(height: 20),
           ListTile(
-            leading: const Icon(Icons.card_giftcard, color: Colors.red, size: 40),
-            title: const Text("¡Tengo un regalo para ti!", 
-              style: TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: const Text("Haz clic aquí para ver de qué se trata."),
+            leading: const Icon(Icons.card_giftcard, color: Colors.blueAccent, size: 40),
+            title: Text("¡Tengo un regalo para ti!", 
+              style: TextStyle(fontWeight: FontWeight.bold, color: theme.textTheme.bodyMedium?.color)),
+            subtitle: Text("Haz clic aquí para ver de qué se trata.", style: TextStyle(color: theme.hintColor),),
             onTap: () => _showFreeAdsDialog(context, ref),
           ),
         ],

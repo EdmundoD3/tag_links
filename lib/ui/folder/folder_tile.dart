@@ -68,10 +68,7 @@ class _FolderCard extends StatelessWidget {
     final theme = Theme.of(context);
     return Card(
       elevation: 3, // La sombra que le da profundidad
-      margin: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 6,
-      ), // Margen exterior
+      margin: const EdgeInsets.only(top: 16, left: 12, right: 12), // Margen exterior
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
       ), // Bordes redondeados

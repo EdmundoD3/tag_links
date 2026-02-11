@@ -111,13 +111,14 @@ Future<bool?> showConfirmDialog(
   String confirmText = 'Confirmar',
   String cancelText = 'Cancelar',
 }) {
+  final theme = Theme.of(context);
   return showDialog<bool>(
     context: context,
     barrierDismissible: false, // obliga a elegir opción
     builder: (context) {
       return AlertDialog(
         title: Text(title),
-        content: Text(message),
+        content: Text(message, style: TextStyle(color: theme.hintColor)), 
         actions: [
           TextButton(
             onPressed: () {

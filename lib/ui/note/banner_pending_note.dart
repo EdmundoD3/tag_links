@@ -6,27 +6,30 @@ import 'package:tag_links/ui/alerts/confirm_dialog.dart';
 import 'package:tag_links/ui/form/note_form_page.dart';
 
 class BannerPendingNote extends ConsumerWidget {
-  const BannerPendingNote({
-    super.key,
-    required this.toFolderId,
-  });
+  const BannerPendingNote({super.key, required this.toFolderId});
 
   final String toFolderId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final note = ref.watch(pendingNoteProvider);
+    final theme = Theme.of(context);
     if (note == null) return const SizedBox.shrink();
 
     return MaterialBanner(
-      content: Text(t(ref, 'bannerPendingNote', fallback: 'Tienes una nota pendiente de almacenar')),
+      content: Text(
+        t(
+          ref,
+          'bannerPendingNote',
+          fallback: 'Tienes una nota pendiente de almacenar',
+        ),
+        style: TextStyle(color: theme.hintColor),
+      ),
       actions: [
         // ───────── Almacenar directo
         TextButton(
           onPressed: () {
-            ref
-                .read(noteMoveProvider)
-                .move(note: note, toFolderId: toFolderId);
+            ref.read(noteMoveProvider).move(note: note, toFolderId: toFolderId);
           },
           child: Text(t(ref, 'store', fallback: 'Almacenar')),
         ),
@@ -54,7 +57,11 @@ class BannerPendingNote extends ConsumerWidget {
             final confirm = await showConfirmDialog(
               context,
               title: t(ref, 'bannerNotMove', fallback: 'No mover la nota'),
-              message: t(ref, 'discardAction', fallback: '¿Estás seguro de descartar la acción?'),
+              message: t(
+                ref,
+                'discardAction',
+                fallback: '¿Estás seguro de descartar la acción?',
+              ),
             );
 
             if (confirm == true) {

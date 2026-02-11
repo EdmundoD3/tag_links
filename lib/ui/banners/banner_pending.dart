@@ -11,18 +11,19 @@ class BannerPending extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Card(
       margin: const EdgeInsets.all(12),
-      color: Theme.of(context).colorScheme.secondaryContainer,
+      color: theme.cardTheme.color,
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
           children: [
-            Expanded(child: Text(text)),
+            Expanded(child: Text(text, style: TextStyle(color: theme.hintColor))),
             if (onClose != null)
               IconButton(
                 onPressed: () => onClose!(),
-                icon: const Icon(Icons.close),
+                icon: Icon(Icons.close, color: theme.hintColor),
               ),
           ],
         ),
