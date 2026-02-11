@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 // import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:tag_links/state/is_banner_aviable.dart';
+import 'package:tag_links/state/ads_disable_provider.dart';
 
 class SmartBannerAd extends ConsumerStatefulWidget {
   const SmartBannerAd({super.key});

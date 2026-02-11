@@ -125,9 +125,9 @@ class Note {
 class NoteConfig {
   static final titleMaxLength = 120;
   static final titleMaxLine = 1;
-  static final contentMaxLength = 2400;
+  static final contentMaxLength = 4800;
   static final contentMaxLine = 10;
-  static final urlMaxLength = 800;
+  static final urlMaxLength = 500;
   static final urlMaxLine = 1;
   static final tagMaxLength = 36;
   static final maxTags = 10;
