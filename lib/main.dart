@@ -29,7 +29,6 @@ class _MyAppState extends ConsumerState<MyApp> {
   late final StreamSubscription _subHandleUrl;
   StreamSubscription<List<PurchaseDetails>>? _subscription;
 
-
   @override
   void initState() {
     super.initState();
@@ -40,30 +39,40 @@ class _MyAppState extends ConsumerState<MyApp> {
 
     ShareListener.getInitial().then(_handleMedia);
   }
+
   void _handleMedia(SharedMedia? media) {
     return handleMedia(media, ref);
   }
 
   Future<void> _initPurchaseStream() async {
-    // Verificamos disponibilidad ANTES de escuchar el stream.
-    // Esto evita el bucle infinito de intentos de conexión y logs en emuladores rotos.
-    final bool available = await InAppPurchase.instance.isAvailable();
+    if (_subscription != null) return;
+
+    final available = await InAppPurchase.instance.isAvailable();
     if (!available || !mounted) return;
 
     _subscription = InAppPurchase.instance.purchaseStream.listen(
       _listenToPurchaseUpdated,
       onDone: () => _subscription?.cancel(),
-      onError: (error) {
-        // manejar error
+      onError: (error, stack) {
+        debugPrint('Purchase stream error: $error');
       },
     );
+
+    // IMPORTANTE: Pedimos a la tienda que nos envíe las compras activas
+    // para actualizar la fecha de expiración (Heartbeat).
+    await InAppPurchase.instance.restorePurchases();
   }
 
-  void _listenToPurchaseUpdated(List<PurchaseDetails> purchaseDetailsList) {
-    InAppPurchaseManager.listenToPurchaseUpdated(purchaseDetailsList);
-    // Si llega una compra o restauración, recargamos el provider para actualizar la UI
-    ref.read(premiumProvider.notifier).reload();
-  }
+void _listenToPurchaseUpdated(List<PurchaseDetails> list) {
+  assert(() {
+    debugPrint('Purchase update: ${list.length}');
+    return true;
+  }());
+
+  InAppPurchaseManager.listenToPurchaseUpdated(list);
+  ref.read(premiumProvider.notifier).reload();
+}
+
 
   @override
   void dispose() {
@@ -71,8 +80,6 @@ class _MyAppState extends ConsumerState<MyApp> {
     _subscription?.cancel();
     super.dispose();
   }
-
-
 
   @override
   Widget build(BuildContext context) {

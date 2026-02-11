@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/locate/lang_selector.dart';
-import 'package:tag_links/state/is_banner_aviable.dart';
+import 'package:tag_links/state/ads_disable_provider.dart';
 import 'package:tag_links/theme/theme_selector_widget.dart';
 
 class SupportProjectPage extends ConsumerWidget {
@@ -14,16 +14,22 @@ class SupportProjectPage extends ConsumerWidget {
 
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text("Apoya Tag Links", style: TextStyle(color:theme.appBarTheme.foregroundColor))),
+      appBar: AppBar(
+        title: Text(
+          "Apoya Tag Links",
+          style: TextStyle(color: theme.appBarTheme.foregroundColor),
+        ),
+      ),
       body: _buildBody(context, ref, adsActive),
     );
   }
 
   Widget _buildBody(BuildContext context, WidgetRef ref, bool? adsActive) {
-    // 1. Mientras el estado es null, mostramos la opción de "Quitar Publicidad" 
+    // 1. Mientras el estado es null, mostramos la opción de "Quitar Publicidad"
     //    o un loader si prefieres esperar a que SharedPreferences responda.
     //    En este caso, asumimos que si es null, es porque nunca ha decidido.
     final theme = Theme.of(context);
+
     return ListView(
       children: [
         ThemeSelector(),
@@ -43,10 +49,12 @@ class SupportProjectPage extends ConsumerWidget {
         if (adsActive != null) ...[
           const Padding(
             padding: EdgeInsets.all(16.0),
-            child: Text("¿Cómo quieres apoyar el proyecto?", 
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            child: Text(
+              "¿Cómo quieres apoyar el proyecto?",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
           ),
-          
+
           ListTile(
             leading: const Icon(Icons.coffee, color: Colors.brown),
             title: const Text("Invítame un café"),
@@ -59,9 +67,13 @@ class SupportProjectPage extends ConsumerWidget {
           SwitchListTile(
             secondary: const Icon(Icons.ads_click, color: Colors.blue),
             title: const Text("Banners pequeños"),
-            subtitle: const Text("Anuncios discretos que me ayudan económicamente."),
+            subtitle: const Text(
+              "Anuncios discretos que me ayudan económicamente.",
+            ),
             value: adsActive,
-            onChanged: (val) => ref.read(adsActiveProvider.notifier).setStatus(val),
+            onChanged: (val) =>{
+              // ref.read(adsDisabledUntilProvider.notifier).setStatus(val),
+            }
           ),
 
           ListTile(
@@ -70,11 +82,13 @@ class SupportProjectPage extends ConsumerWidget {
             subtitle: const Text("Una ayuda rápida y gratuita."),
             onTap: () => _showRewardedAd(context),
           ),
-          
+
           const SizedBox(height: 40),
           const Center(
-            child: Text("¡Gracias por usar la App!", 
-              style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)),
+            child: Text(
+              "¡Gracias por usar la App!",
+              style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
+            ),
           ),
         ],
       ],
@@ -93,7 +107,7 @@ class SupportProjectPage extends ConsumerWidget {
           TextButton(
             onPressed: () {
               // 2. Desactivamos los anuncios por defecto
-              ref.read(adsActiveProvider.notifier).setStatus(false);
+              // ref.read(adsDisabledUntilProvider.notifier).setStatus(false);
               Navigator.pop(context);
             },
             child: Text("¡GRACIAS!"),
@@ -103,44 +117,44 @@ class SupportProjectPage extends ConsumerWidget {
     );
   }
 
-void _showRewardedAd(BuildContext context) {
-  // RewardedAd.load(
-  //   adUnitId: AdMobConfig.rewardedAdUnitId,
-  //   request: const AdRequest(),
-  //   rewardedAdLoadCallback: RewardedAdLoadCallback(
-  //     onAdLoaded: (RewardedAd ad) {
-  //       ad.show(
-  //         onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
-  //           ScaffoldMessenger.of(context).showSnackBar(
-  //             const SnackBar(
-  //               content: Text(
-  //                 "¡Muchas gracias! Tu apoyo mantiene este proyecto vivo ❤️",
-  //               ),
-  //               backgroundColor: Colors.green,
-  //             ),
-  //           );
-  //         },
-  //       );
+  void _showRewardedAd(BuildContext context) {
+    // RewardedAd.load(
+    //   adUnitId: AdMobConfig.rewardedAdUnitId,
+    //   request: const AdRequest(),
+    //   rewardedAdLoadCallback: RewardedAdLoadCallback(
+    //     onAdLoaded: (RewardedAd ad) {
+    //       ad.show(
+    //         onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
+    //           ScaffoldMessenger.of(context).showSnackBar(
+    //             const SnackBar(
+    //               content: Text(
+    //                 "¡Muchas gracias! Tu apoyo mantiene este proyecto vivo ❤️",
+    //               ),
+    //               backgroundColor: Colors.green,
+    //             ),
+    //           );
+    //         },
+    //       );
 
-  //       ad.fullScreenContentCallback = FullScreenContentCallback(
-  //         onAdDismissedFullScreenContent: (ad) {
-  //           ad.dispose();
-  //         },
-  //         onAdFailedToShowFullScreenContent: (ad, error) {
-  //           ad.dispose();
-  //         },
-  //       );
-  //     },
-  //     onAdFailedToLoad: (LoadAdError error) {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         const SnackBar(
-  //           content: Text("No se pudo cargar el anuncio 😥"),
-  //           backgroundColor: Colors.red,
-  //         ),
-  //       );
-  //     },
-  //   ),
-  // );
-}
+    //       ad.fullScreenContentCallback = FullScreenContentCallback(
+    //         onAdDismissedFullScreenContent: (ad) {
+    //           ad.dispose();
+    //         },
+    //         onAdFailedToShowFullScreenContent: (ad, error) {
+    //           ad.dispose();
+    //         },
+    //       );
+    //     },
+    //     onAdFailedToLoad: (LoadAdError error) {
+    //       ScaffoldMessenger.of(context).showSnackBar(
+    //         const SnackBar(
+    //           content: Text("No se pudo cargar el anuncio 😥"),
+    //           backgroundColor: Colors.red,
+    //         ),
+    //       );
+    //     },
+    //   ),
+    // );
+  }
   void _launchDonationUrl() {}
 }

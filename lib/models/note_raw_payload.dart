@@ -8,7 +8,7 @@ import 'package:tag_links/models/tag.dart';
 class NoteRawPayload {
   final String id;
   final String payload;
-  final String updatedAt;
+  final int updatedAt;
 
   NoteRawPayload({
     required this.id,
@@ -19,7 +19,7 @@ class NoteRawPayload {
     return NoteRawPayload(
       id: note.id,
       payload: _payload(note, key),
-      updatedAt: note.createdAt.millisecondsSinceEpoch.toString(),
+      updatedAt: note.updatedAt.millisecondsSinceEpoch,
     );
   }
   static Note toNote(Map<String, dynamic> json) {
