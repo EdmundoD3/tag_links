@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/locate/translations.dart';
+import 'package:tag_links/core/locate/translations.dart';
 import 'package:tag_links/state/lang_provider.dart';
 
 enum AppLang { es, en }

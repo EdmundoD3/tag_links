@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
-import 'package:tag_links/app_purchases/products_provider.dart';
+import 'package:tag_links/core/app_purchases/products_provider.dart';
 
 class PremiumPaywall extends ConsumerWidget {
   const PremiumPaywall({super.key});

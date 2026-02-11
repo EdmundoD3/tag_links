@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/locate/app_lang.dart';
+import 'package:tag_links/core/locate/app_lang.dart';
 import 'package:tag_links/state/lang_provider.dart';
 
 class LangSelector extends ConsumerWidget {

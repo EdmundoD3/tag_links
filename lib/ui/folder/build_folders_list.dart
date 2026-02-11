@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/locate/app_lang.dart';
+import 'package:tag_links/core/locate/app_lang.dart';
 import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/pages/folder_page.dart';
 import 'package:tag_links/state/folders_provider.dart';

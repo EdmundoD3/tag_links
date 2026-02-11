@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:share_handler/share_handler.dart';
-import 'package:tag_links/app_purchases/listen_to_purchase_update.dart';
+import 'package:tag_links/core/app_purchases/listen_to_purchase_update.dart';
 import 'package:tag_links/state/premium_provider.dart';
 import 'package:tag_links/state/theme_provider.dart';
 import 'package:tag_links/state/url_provider.dart';

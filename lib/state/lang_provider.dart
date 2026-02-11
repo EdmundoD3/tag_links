@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tag_links/locate/app_lang.dart';
+import 'package:tag_links/core/locate/app_lang.dart';
 
 final langProvider = NotifierProvider<LangNotifier, AppLang>(LangNotifier.new);
 

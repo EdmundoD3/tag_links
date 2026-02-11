@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/locate/app_lang.dart';
+import 'package:tag_links/core/locate/app_lang.dart';
 import 'package:tag_links/state/pending_note_provider.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
 import 'package:tag_links/ui/form/note_form_page.dart';

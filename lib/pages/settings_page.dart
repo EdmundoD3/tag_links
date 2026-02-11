@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/locate/lang_selector.dart';
+import 'package:tag_links/core/locate/lang_selector.dart';
 import 'package:tag_links/state/ads_disable_provider.dart';
 import 'package:tag_links/theme/theme_selector_widget.dart';
 

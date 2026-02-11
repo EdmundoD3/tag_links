@@ -1,4 +1,4 @@
-import 'package:tag_links/locate/app_lang.dart';
+import 'package:tag_links/core/locate/app_lang.dart';
 
 final Map<String, Map<AppLang, String>> translations = {
   //homePage

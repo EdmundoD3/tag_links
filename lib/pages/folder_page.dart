@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/locate/app_lang.dart';
+import 'package:tag_links/core/locate/app_lang.dart';
 import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/models/folder_preference.dart';
 import 'package:tag_links/models/note.dart';
@@ -8,7 +8,7 @@ import 'package:tag_links/repository/folder_repository.dart';
 import 'package:tag_links/state/folders_provider.dart';
 import 'package:tag_links/state/notes_provider.dart';
 import 'package:tag_links/ui/app_bar/app_bar_folder.dart';
-import 'package:tag_links/ui/ads/small_banner.dart';
+import 'package:tag_links/core/ads/small_banner.dart';
 import 'package:tag_links/ui/button/create_new_folder_button.dart';
 import 'package:tag_links/ui/button/floating_button_base.dart';
 import 'package:tag_links/ui/button/switch_folder_note.dart';

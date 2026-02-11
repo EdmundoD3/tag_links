@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/locate/app_lang.dart';
+import 'package:tag_links/core/locate/app_lang.dart';
 import 'package:tag_links/ui/button/floating_button_base.dart';
 import 'package:tag_links/ui/form/folder_form_page.dart';
 

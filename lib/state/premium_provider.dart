@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/app_purchases/listen_to_purchase_update.dart';
+import 'package:tag_links/core/app_purchases/listen_to_purchase_update.dart';
 
 final premiumProvider =
     NotifierProvider<PremiumNotifier, bool>(

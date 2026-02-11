@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/locate/app_lang.dart';
+import 'package:tag_links/core/locate/app_lang.dart';
 import 'package:tag_links/models/note.dart';
 import 'package:tag_links/ui/menu/menu_container.dart';
 import 'package:tag_links/ui/note/note_tile.dart';
