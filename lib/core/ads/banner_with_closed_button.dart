@@ -25,8 +25,8 @@ class BannerWithCloseButton extends StatelessWidget {
 
           if (showClose)
             Positioned(
-              top: 6,
-              right: 6,
+              top: 3,
+              right: 5,
               child: _CloseButton(onTap: onCloseTap),
             ),
         ],
@@ -76,14 +76,14 @@ class _CloseButtonState extends State<_CloseButton>
       child: GestureDetector(
         onTap: widget.onTap,
         behavior: HitTestBehavior.opaque,
-        child: Container(
-          width: 22,
-          height: 22,
-          decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.6),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(Icons.close, size: 14, color: Colors.white),
+        child: SizedBox(
+          width: 15,
+          height: 15,
+          // decoration: BoxDecoration(
+          //   color: Colors.black.withOpacity(0.6),
+          //   shape: BoxShape.circle,
+          // ),
+          child: const Icon(Icons.cancel_presentation, size: 16, color: Colors.blue),
         ),
       ),
     );

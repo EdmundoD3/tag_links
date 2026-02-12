@@ -16,7 +16,7 @@ void showAdManagementMenu(
     ),
     builder: (context) {
       bool isLoading = false;
-
+      final theme = Theme.of(context);
       return StatefulBuilder(
         builder: (context, setState) {
           return Padding(
@@ -24,18 +24,19 @@ void showAdManagementMenu(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
+                Text(
                   "¿Te estorba la publicidad?",
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
+                    color: Colors.black
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   "Puedes quitar los anuncios viendo un video o apoyar el proyecto.",
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey),
+                  style: TextStyle(color: theme.hintColor),
                 ),
                 const SizedBox(height: 24),
 
@@ -104,7 +105,7 @@ void showAdManagementMenu(
                   onPressed: () => Navigator.pop(context),
                   child: const Text(
                     "Tal vez luego",
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(),
                   ),
                 ),
               ],
