@@ -14,6 +14,7 @@ class PageScaffold extends StatelessWidget {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: appBar,
       floatingActionButton: floatingActionButton,
+      
       body: Column(children: body),
     );
   }

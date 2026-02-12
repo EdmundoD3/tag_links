@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/core/ads/ad_service.dart';
 // import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:tag_links/state/ads_disable_provider.dart';
+import 'package:tag_links/core/ads/ads_disable_provider.dart';
+import 'package:tag_links/core/ads/banner_with_closed_button.dart';
+import 'package:tag_links/core/ads/show_ad_management_menu.dart';
 
 class SmartBannerAd extends ConsumerStatefulWidget {
   const SmartBannerAd({super.key});
@@ -44,26 +47,29 @@ class _SmartBannerAdState extends ConsumerState<SmartBannerAd> {
 
   @override
   Widget build(BuildContext context) {
-    final showAds = ref.watch(isAdsActiveProvider) ?? true;
+    final showAds = ref.watch(isAdsActiveProvider);
 
     // if (!showAds || !_isLoaded || _bannerAd == null) {
     if (!showAds) {
       return const SizedBox.shrink();
     }
-    return Container(
-      width: MediaQuery.of(context).size.width,
-      height: 50,
-      color: Colors.grey[300],
-      alignment: Alignment.center,
-      child: const Text('Banner de Publicidad'),
+    return BannerWithCloseButton(
+      onCloseTap: () => showAdManagementMenu(
+        context,
+        ref,
+        showRewardedAd: () => AdService().showRewardedAd(),
+        processPurchase: () async {
+          // TODO: Implement purchase logic
+          debugPrint("SmartBannerAd: processPurchase falta implementar");
+        }
+      ),
+      child: Container(
+        width: MediaQuery.of(context).size.width,
+        height: 50,
+        color: Colors.grey[300],
+        alignment: Alignment.center,
+        child: const Text('Banner de Publicidad'),
+      ),
     );
-
-
-    // return SizedBox(
-    //   width: _bannerAd!.size.width.toDouble(),
-    //   height: _bannerAd!.size.height.toDouble(),
-    //   child: const Text(data)
-    //   //AdWidget(ad: _bannerAd!),
-    // );
   }
 }

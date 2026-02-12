@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/core/ads/small_banner.dart';
 import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/pages/home_page.dart';
@@ -100,6 +101,7 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
         onChangeFolder: _onChangeFolder,
         title: t(ref, 'moveToFolder', fallback: 'Cambiar carpeta'),
       ),
+      const SmartBannerAd(),
     ];
   }
 
