@@ -37,10 +37,22 @@ class SupportProjectPage extends ConsumerWidget {
         if (adsActive == null) ...[
           const SizedBox(height: 20),
           ListTile(
-            leading: const Icon(Icons.card_giftcard, color: Colors.blueAccent, size: 40),
-            title: Text("¡Tengo un regalo para ti!", 
-              style: TextStyle(fontWeight: FontWeight.bold, color: theme.textTheme.bodyMedium?.color)),
-            subtitle: Text("Haz clic aquí para ver de qué se trata.", style: TextStyle(color: theme.hintColor),),
+            leading: const Icon(
+              Icons.card_giftcard,
+              color: Colors.blueAccent,
+              size: 40,
+            ),
+            title: Text(
+              "¡Tengo un regalo para ti!",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: theme.textTheme.bodyMedium?.color,
+              ),
+            ),
+            subtitle: Text(
+              "Haz clic aquí para ver de qué se trata.",
+              style: TextStyle(color: theme.hintColor),
+            ),
             onTap: () => _showFreeAdsDialog(context, ref),
           ),
         ],
@@ -57,37 +69,58 @@ class SupportProjectPage extends ConsumerWidget {
 
           ListTile(
             leading: const Icon(Icons.coffee, color: Colors.brown),
-            title: const Text("Invítame un café"),
-            subtitle: const Text("Apoyo externo para el desarrollo."),
+            title: Text(
+              "Invítame un café",
+              style: TextStyle(color: theme.textTheme.bodyMedium?.color),
+            ),
+            subtitle: Text(
+              "Apoyo externo para el desarrollo.",
+              style: TextStyle(color: theme.hintColor),
+            ),
             onTap: _launchDonationUrl,
           ),
 
-          const Divider(),
+          const Divider(
+            color: Colors.grey,
+            thickness: 1,
+            indent: 10,
+            endIndent: 10,
+          ),
 
           SwitchListTile(
             secondary: const Icon(Icons.ads_click, color: Colors.blue),
-            title: const Text("Banners pequeños"),
-            subtitle: const Text(
+            title: Text(
+              "Banners pequeños",
+              style: TextStyle(color: theme.textTheme.bodyMedium?.color),
+            ),
+            subtitle: Text(
               "Anuncios discretos que me ayudan económicamente.",
+              style: TextStyle(color: theme.hintColor),
             ),
             value: adsActive,
-            onChanged: (val) =>{
+            onChanged: (val) => {
               // ref.read(adsDisabledUntilProvider.notifier).setStatus(val),
-            }
+            },
           ),
 
           ListTile(
             leading: const Icon(Icons.video_library, color: Colors.orange),
-            title: const Text("Ver un anuncio grande"),
-            subtitle: const Text("Una ayuda rápida y gratuita."),
+            title: Text(
+              "Ver un anuncio grande",
+              style: TextStyle(color: theme.textTheme.bodyMedium?.color),
+            ),
+            subtitle: Text(
+              "Una ayuda rápida y gratuita.",
+              style: TextStyle(color: theme.hintColor),
+            ),
             onTap: () => _showRewardedAd(context),
           ),
 
           const SizedBox(height: 40),
-          const Center(
+          Center(
             child: Text(
               "¡Gracias por usar la App!",
-              style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
+              style: TextStyle(color: theme.appBarTheme.backgroundColor, fontStyle: FontStyle.italic),
             ),
           ),
         ],
