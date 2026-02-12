@@ -18,7 +18,7 @@ class BodyForm extends StatelessWidget {
       appBar: appBar,
       body: Form(
         key: formKey,
-        child: ListView(padding: const EdgeInsets.all(16), children: children),
+        child: ListView(padding: const EdgeInsets.all(8), children: children),
       ),
     );
   }

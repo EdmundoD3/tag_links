@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/core/debug/go_debug_page_buton.dart';
 import 'package:tag_links/core/locate/app_lang.dart';
 import 'package:tag_links/models/note.dart';
 import 'package:tag_links/models/tag.dart';
@@ -69,9 +71,22 @@ class _HomePageState extends ConsumerState<HomePage> {
     //en este caso como valor inicial o sea cuando no hay parametros de busqueda que empieze con las notas favoritas
     final notesAsync = ref.watch(notesViewProvider);
     return PageScaffold(
-      appBar: AppBarPages(
+      appBar: _appBar(ref, isFolder),
+      floatingActionButton: CreateNewFolderButton(
+        isRoot: true,
+        parentFolderId: null,
+      ),
+      body: _body(ref, isFolder, hasPendingNotes, foldersAsync, notesAsync),
+    );
+  }
+
+
+
+  PreferredSizeWidget _appBar(WidgetRef ref, bool isFolder) {
+    return AppBarPages(
         title: t(ref, "appName", fallback: 'Tag Links'),
         actions: [
+          if (kDebugMode) GoDebugPageButon(),
           GoSettingsButton(),
           SwitchFolderNote(
             isFolder: isFolder,
@@ -84,24 +99,8 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
           Padding(padding: EdgeInsetsGeometry.directional(end: 4)),
         ],
-      ),
-      floatingActionButton: CreateNewFolderButton(
-        isRoot: true,
-        parentFolderId: null,
-      ),
-      body: _body(ref, isFolder, hasPendingNotes, foldersAsync, notesAsync),
-    );
+      );
   }
-
-  void _onChangeText(WidgetRef ref, String text) {
-    ref.read(searchQueryProvider.notifier).setText(text);
-    ref.read(tagSearchTextProvider.notifier).state = text;
-
-    // 🔁 fuerza rebuild limpio
-    ref.invalidate(foldersProvider(null));
-    ref.invalidate(notesProvider(null));
-  }
-
   List<Widget> _body(
     WidgetRef ref,
     bool isFolder,
@@ -114,7 +113,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       BannerPendingFolder(toParentId: null),
       const SizedBox(height: 16),
       Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 4),
         child: _searchBar(ref, isFolder),
       ),
       const SizedBox(height: 32),
@@ -212,5 +211,13 @@ class _HomePageState extends ConsumerState<HomePage> {
         }
       },
     );
+  }
+    void _onChangeText(WidgetRef ref, String text) {
+    ref.read(searchQueryProvider.notifier).setText(text);
+    ref.read(tagSearchTextProvider.notifier).state = text;
+
+    // 🔁 fuerza rebuild limpio
+    ref.invalidate(foldersProvider(null));
+    ref.invalidate(notesProvider(null));
   }
 }

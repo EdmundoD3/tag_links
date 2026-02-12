@@ -12,18 +12,25 @@ class FolderTile extends ConsumerWidget {
   final void Function() onDeleteFolder;
   final GlobalKey _tileKey = GlobalKey();
 
-  FolderTile({super.key, required this.folder, required this.actionsItems, required this.onDeleteFolder, required this.goFolder});
+  FolderTile({
+    super.key,
+    required this.folder,
+    required this.actionsItems,
+    required this.onDeleteFolder,
+    required this.goFolder,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-        return InkWell(
+    return InkWell(
       key: _tileKey,
       onTap: () => goFolder(),
       onLongPress: () => _actionsMenu(context, ref),
       child: _FolderCard(folder: folder),
     );
   }
-    void _actionsMenu(BuildContext context, WidgetRef ref) {
+
+  void _actionsMenu(BuildContext context, WidgetRef ref) {
     final box = _tileKey.currentContext!.findRenderObject() as RenderBox;
 
     final position = box.localToGlobal(Offset.zero);
@@ -43,7 +50,7 @@ class FolderTile extends ConsumerWidget {
         ActionMenuItem(
           icon: Icons.delete,
           label: t(ref, 'delete', fallback: 'Eliminar'),
-          onTap: () => onDeleteFolder()
+          onTap: () => onDeleteFolder(),
         ),
         ...actionsItems,
       ],
@@ -68,19 +75,27 @@ class _FolderCard extends StatelessWidget {
     final theme = Theme.of(context);
     return Card(
       elevation: 3, // La sombra que le da profundidad
-      margin: const EdgeInsets.only(top: 16, left: 12, right: 12), // Margen exterior
+      margin: const EdgeInsets.only(
+        top: 10,
+        left: 12,
+        right: 12,
+      ), // Margen exterior
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(8),
       ), // Bordes redondeados
       color: theme.cardTheme.color,
       child: ListTile(
+        contentPadding: EdgeInsetsDirectional.only(start: 16.0, end: 24.0,top: 2.0, bottom: 2.0),
         leading: Icon(
           Icons.folder,
           color: Colors.deepPurpleAccent,
         ), // Un toque de color
         title: Text(
           folder.title,
-          style: TextStyle(fontWeight: FontWeight.bold, color:theme.textTheme.titleMedium?.color),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: theme.textTheme.titleMedium?.color,
+          ),
         ),
         trailing: folder.isFavorite
             ? Icon(Icons.favorite, color: Colors.red, size: 20)

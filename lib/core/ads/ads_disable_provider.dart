@@ -2,52 +2,56 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tag_links/state/premium_provider.dart';
 
-final isAdsActiveProvider = Provider<bool?>((ref) {
+final isAdsActiveProvider = Provider<bool>((ref) {
   final isPremium = ref.watch(premiumProvider);
   if (isPremium == true) return false;
 
-  final disabledUntil = ref.watch(adsDisabledUntilProvider);
-  if (disabledUntil == null) return true;
+  final asyncValue = ref.watch(adsDisabledUntilProvider);
 
-  return DateTime.now().isAfter(disabledUntil);
+  return asyncValue.when(
+    loading: () => false, // mientras carga no mostrar
+    error: (_, __) => true, // si algo falla, mejor mostrar
+    data: (disabledUntil) {
+      if (disabledUntil == null) return true;
+      return DateTime.now().isAfter(disabledUntil);
+    },
+  );
 });
-final adsDisabledUntilProvider =
-    NotifierProvider<AdsDisabledNotifier, DateTime?>(
-  AdsDisabledNotifier.new,
-);
 
-class AdsDisabledNotifier extends Notifier<DateTime?> {
+final adsDisabledUntilProvider =
+    AsyncNotifierProvider<AdsDisabledNotifier, DateTime?>(
+      AdsDisabledNotifier.new,
+    );
+
+class AdsDisabledNotifier extends AsyncNotifier<DateTime?> {
   final _AdsStorage _storage = _AdsStorage();
 
   @override
-  DateTime? build() {
-    _load();
-    return null; // loading
-  }
-
-  Future<void> _load() async {
+  Future<DateTime?> build() async {
     final stored = await _storage.getDisabledUntil();
 
     if (stored != null && DateTime.now().isAfter(stored)) {
-      // Ya expiró → limpiamos
-      state = null;
       await _storage.clear();
-    } else {
-      state = stored;
+      return null;
     }
+
+    return stored;
   }
 
-  /// Desactiva ads por X horas
   Future<void> disableForHours(int hours) async {
     final until = DateTime.now().add(Duration(hours: hours));
-    state = until;
+    state = AsyncData(until);
     await _storage.saveDisabledUntil(until);
   }
 
-  /// Fuerza reactivar ads
   Future<void> enableAds() async {
-    state = null;
+    state = const AsyncData(null);
     await _storage.clear();
+  }
+  /// Reset manual (debug/testing)
+  Future<void> reset() async {
+    _storage.clear();
+    state = const AsyncData(null);
   }
 }
 
