@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/ads/small_banner.dart';
 import 'package:tag_links/core/locate/lang_selector.dart';
 import 'package:tag_links/core/ads/ads_disable_provider.dart';
-import 'package:tag_links/theme/theme_selector_widget.dart';
+import 'package:tag_links/core/theme/theme_selector_widget.dart';
 
 class SupportProjectPage extends ConsumerWidget {
   const SupportProjectPage({super.key});

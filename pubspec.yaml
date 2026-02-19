@@ -46,6 +46,7 @@ dependencies:
   html: ^0.15.6
   in_app_purchase: ^3.2.3
   google_sign_in: ^7.2.0
+  cryptography: ^2.9.0
   # google_mobile_ads: ^7.0.0
 
 dev_dependencies:

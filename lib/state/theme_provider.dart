@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tag_links/theme/app_theme.dart';
+import 'package:tag_links/core/theme/app_theme.dart';
 
 final paletteProvider =
     NotifierProvider<PaletteNotifier, AppPalette>(

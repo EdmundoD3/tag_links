@@ -8,7 +8,7 @@ import 'package:tag_links/core/app_purchases/listen_to_purchase_update.dart';
 import 'package:tag_links/state/premium_provider.dart';
 import 'package:tag_links/state/theme_provider.dart';
 import 'package:tag_links/state/url_provider.dart';
-import 'package:tag_links/theme/app_theme.dart';
+import 'package:tag_links/core/theme/app_theme.dart';
 import 'package:tag_links/utils/handle_media_in_coming_url.dart';
 import 'pages/home_page.dart';
 

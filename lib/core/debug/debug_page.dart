@@ -5,7 +5,7 @@ import 'package:tag_links/core/locate/lang_selector.dart';
 import 'package:tag_links/core/ads/ads_disable_provider.dart';
 import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/models/note.dart';
-import 'package:tag_links/theme/theme_selector_widget.dart';
+import 'package:tag_links/core/theme/theme_selector_widget.dart';
 import 'package:tag_links/ui/folder/folder_tile.dart';
 import 'package:tag_links/ui/note/note_tile.dart';
 

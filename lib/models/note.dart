@@ -125,11 +125,11 @@ class Note {
 class NoteConfig {
   static final titleMaxLength = 120;
   static final titleMaxLine = 1;
-  static final contentMaxLength = 4800;
+  static final contentMaxLength = 1200;
   static final contentMaxLine = 10;
   static final urlMaxLength = 500;
   static final urlMaxLine = 1;
-  static final tagMaxLength = 36;
+  static final tagMaxLength = 42;
   static final maxTags = 10;
 }
 String noteTable = '''
