@@ -69,7 +69,7 @@ class SupportProjectPage extends ConsumerWidget {
           ),
 
           ListTile(
-            leading: const Icon(Icons.coffee, color: Colors.brown),
+            leading: const Icon(Icons.coffee, color: Color(0xFFBB9457)),
             title: Text(
               "Invítame un café",
               style: TextStyle(color: theme.textTheme.bodyMedium?.color),
@@ -121,7 +121,10 @@ class SupportProjectPage extends ConsumerWidget {
           Center(
             child: Text(
               "¡Gracias por usar la App!",
-              style: TextStyle(color: theme.appBarTheme.backgroundColor, fontStyle: FontStyle.italic),
+              style: TextStyle(
+                color: theme.appBarTheme.backgroundColor,
+                fontStyle: FontStyle.italic,
+              ),
             ),
           ),
           const SmartBannerAd(),

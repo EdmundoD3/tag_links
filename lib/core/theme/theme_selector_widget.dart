@@ -72,7 +72,7 @@ class ThemeSelector extends ConsumerWidget {
                       ),
                     ),
                     if (selected)
-                      const Icon(Icons.check, size: 16),
+                      const Icon(Icons.check, size: 16, weight: 400),
                   ],
                 ),
               ),
