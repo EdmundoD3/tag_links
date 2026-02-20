@@ -45,9 +45,11 @@ class ThemeSelector extends ConsumerWidget {
                 duration: const Duration(milliseconds: 200),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
+                  color: Theme.of(context).cardColor,
                   border: Border.all(
+
                     color: selected
-                        ? Theme.of(context).colorScheme.primary
+                        ? Colors.deepPurpleAccent
                         : Colors.transparent,
                     width: selected ? 2 : 1,
                   ),
@@ -67,12 +69,14 @@ class ThemeSelector extends ConsumerWidget {
                     Text(
                       palette.name.toUpperCase(),
                       style: TextStyle(
+                        color: theme.textTheme.titleSmall?.color,
+                        fontStyle: selected ? FontStyle.italic : FontStyle.normal,
                         fontWeight:
                             selected ? FontWeight.bold : FontWeight.normal,
                       ),
                     ),
                     if (selected)
-                      const Icon(Icons.check, size: 16, weight: 400),
+                      Icon(Icons.check, size: 16, weight: 400, color: theme.textTheme.titleSmall?.color),
                   ],
                 ),
               ),

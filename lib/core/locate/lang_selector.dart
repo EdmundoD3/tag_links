@@ -30,6 +30,7 @@ class LangSelector extends ConsumerWidget {
           child: Column(
             children: AppLang.values.map((lang) {
               return RadioListTile<AppLang>(
+                activeColor: theme.textTheme.titleSmall?.color,
                 title: Text(lang.label, style: TextStyle(color: theme.textTheme.bodyMedium?.color)),
                 value: lang,
               );

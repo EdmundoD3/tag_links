@@ -29,7 +29,7 @@ void showAdManagementMenu(
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black
+                    color: Colors.black,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -72,8 +72,11 @@ void showAdManagementMenu(
                     icon: const Icon(Icons.play_circle_fill),
                     label: const Text("Quitar anuncios por 24h"),
                     style: ElevatedButton.styleFrom(
-                      padding:
-                          const EdgeInsets.symmetric(vertical: 15),
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      backgroundColor: Colors.purple[900], // Fondo oscuro
+                      foregroundColor: Colors.white, // Texto blanco
+                      elevation: 5, // Sombra moderada
+                      shadowColor: Colors.indigo[200],
                     ),
                   ),
                 ),
@@ -83,18 +86,20 @@ void showAdManagementMenu(
                 /// 💎 PREMIUM
                 SizedBox(
                   width: double.infinity,
-                  child: OutlinedButton(
+                  child: ElevatedButton.icon(
                     onPressed: () async {
                       Navigator.pop(context);
                       await processPurchase();
                     },
-                    style: OutlinedButton.styleFrom(
-                      padding:
-                          const EdgeInsets.symmetric(vertical: 15),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      backgroundColor: Colors.purple[900], // Fondo oscuro
+                      foregroundColor: Colors.white, // Texto blanco
+                      elevation: 5, // Sombra moderada
+                      shadowColor: Colors.indigo[200],
                     ),
-                    child: const Text(
-                      "Plan sin anuncios - \$2.50 / año",
-                    ),
+                    icon: const Icon(Icons.diamond),
+                    label: const Text("Plan sin anuncios - \$2.50 / año"),
                   ),
                 ),
 
@@ -103,10 +108,7 @@ void showAdManagementMenu(
                 /// ❌ CLOSE
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text(
-                    "Tal vez luego",
-                    style: TextStyle(),
-                  ),
+                  child: const Text("Tal vez luego", style: TextStyle()),
                 ),
               ],
             ),

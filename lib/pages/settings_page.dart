@@ -17,7 +17,7 @@ class SupportProjectPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          "Apoya Tag Links",
+          "Settings",
           style: TextStyle(color: theme.appBarTheme.foregroundColor),
         ),
       ),
@@ -88,22 +88,6 @@ class SupportProjectPage extends ConsumerWidget {
             endIndent: 10,
           ),
 
-          SwitchListTile(
-            secondary: const Icon(Icons.ads_click, color: Colors.blue),
-            title: Text(
-              "Banners pequeños",
-              style: TextStyle(color: theme.textTheme.bodyMedium?.color),
-            ),
-            subtitle: Text(
-              "Anuncios discretos que me ayudan económicamente.",
-              style: TextStyle(color: theme.hintColor),
-            ),
-            value: adsActive,
-            onChanged: (val) => {
-              // ref.read(adsDisabledUntilProvider.notifier).setStatus(val),
-            },
-          ),
-
           ListTile(
             leading: const Icon(Icons.video_library, color: Colors.orange),
             title: Text(
@@ -111,7 +95,7 @@ class SupportProjectPage extends ConsumerWidget {
               style: TextStyle(color: theme.textTheme.bodyMedium?.color),
             ),
             subtitle: Text(
-              "Una ayuda rápida y gratuita.",
+              "Se desactiva por un día la publicidad.",
               style: TextStyle(color: theme.hintColor),
             ),
             onTap: () => _showRewardedAd(context),
@@ -122,7 +106,7 @@ class SupportProjectPage extends ConsumerWidget {
             child: Text(
               "¡Gracias por usar la App!",
               style: TextStyle(
-                color: theme.appBarTheme.backgroundColor,
+                color: theme.textTheme.titleMedium?.color,
                 fontStyle: FontStyle.italic,
               ),
             ),
