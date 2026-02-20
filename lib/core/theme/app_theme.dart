@@ -88,7 +88,7 @@ ThemeData _generatePalette({
     ),
     textTheme: TextTheme(
       bodyMedium: TextStyle(color: textColor),
-      titleLarge: TextStyle(color: textColor),
+      titleLarge: TextStyle(color: textColor, fontWeight: FontWeight.bold),
       bodySmall: TextStyle(color: searchIcon),
       titleSmall: TextStyle(color: thirdTextColor),
       titleMedium: TextStyle(color: secondTextColor),
