@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:tag_links/core/auth/auth_response.dart';
-import 'package:tag_links/core/auth/data_key.dart';
 
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key});
