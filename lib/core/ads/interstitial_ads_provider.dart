@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tag_links/core/ads/ad_mob_config.dart';
-import 'package:tag_links/state/premium_provider.dart';
+import 'package:tag_links/core/app_purchases/premium_provider.dart';
 
 final showInterstitialAdsProvider = Provider<bool>((ref) {
   final isPremium = ref.watch(premiumProvider);
