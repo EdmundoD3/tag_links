@@ -1,4 +1,25 @@
   import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/core/locate/app_lang.dart';
+
+class FeedbackAlertConfirm {
+  static ScaffoldMessengerState thanksForRewardedAd(BuildContext context, WidgetRef ref) {
+    return feedbackAlertConfirm(
+      context,
+      t(ref, 'thanksForRewardedAd', fallback: 'Gracias!'),
+      backgroundColor: Colors.green,
+      duration: const Duration(seconds: 4),
+    );
+  }
+  static ScaffoldMessengerState errorForRewardedAd(BuildContext context, WidgetRef ref) {
+    return feedbackAlertConfirm(
+      context,
+      t(ref, 'errorForRewardedAd', fallback: 'Error al mostrar el anuncio, inténtalo de nuevo más tarde.'),
+      backgroundColor: Colors.red,
+      duration: const Duration(seconds: 4),
+    );
+  }
+}
 
 ScaffoldMessengerState feedbackAlertConfirm(
     BuildContext context,

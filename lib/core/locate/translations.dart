@@ -73,7 +73,7 @@ final Map<String, Map<AppLang, String>> translations = {
   //helpers Folder
   'fabAddFolder': {AppLang.es: 'Agregar carpeta', AppLang.en: 'Add folder'},
   'createFolder': {AppLang.es: 'Crear carpeta', AppLang.en: 'Create folder'},
-  
+
   'alertDeleteFolderTitle': {
     AppLang.es: 'Eliminar carpeta',
     AppLang.en: 'Delete folder',
@@ -99,10 +99,7 @@ final Map<String, Map<AppLang, String>> translations = {
     AppLang.en: 'You have a folder pending to move',
   },
 
-  'noFolders': {
-    AppLang.es: 'No hay carpetas',
-    AppLang.en: 'No folders',
-  },
+  'noFolders': {AppLang.es: 'No hay carpetas', AppLang.en: 'No folders'},
   //tags
   'tagsTitle': {AppLang.es: 'Etiquetas', AppLang.en: 'Tags'},
   'tagName': {AppLang.es: 'Nombre del tag', AppLang.en: 'Tag name'},
@@ -131,19 +128,13 @@ final Map<String, Map<AppLang, String>> translations = {
   'copyText': {AppLang.es: 'Copiar', AppLang.en: 'Copy'},
   'delete': {AppLang.es: 'Eliminar', AppLang.en: 'Delete'},
   'cancel': {AppLang.es: 'Cancelar', AppLang.en: 'Cancel'},
-  'discard':{
-    AppLang.es: 'Descartar',
-    AppLang.en: 'Discard',
-  },
-  'store':{
-    AppLang.es: 'Almacenar',
-    AppLang.en: 'Store',
-  },
+  'discard': {AppLang.es: 'Descartar', AppLang.en: 'Discard'},
+  'store': {AppLang.es: 'Almacenar', AppLang.en: 'Store'},
   'editAndStore': {
     AppLang.es: 'Editar y almacenar',
     AppLang.en: 'Edit and store',
   },
-  
+
   'markAsFavorite': {
     AppLang.es: 'Marcar como favorito',
     AppLang.en: 'Mark as favorite',
@@ -158,12 +149,18 @@ final Map<String, Map<AppLang, String>> translations = {
     AppLang.es: 'Tienes una nota pendiente de almacenar',
     AppLang.en: 'You have a note pending to store',
   },
-  'bannerNotMove': {
-    AppLang.es: 'No mover',
-    AppLang.en: 'Don\'t move',
-  },
-  'discardAction':{
+  'bannerNotMove': {AppLang.es: 'No mover', AppLang.en: 'Don\'t move'},
+  'discardAction': {
     AppLang.es: '¿Estás seguro de descartar la acción?',
     AppLang.en: 'Are you sure you want to discard the action?',
-  }
+  },
+  //thanks
+  'thanksForRewardedAd': {
+    AppLang.es: 'Gracias!',
+    AppLang.en: 'Thank you!',
+  },
+  'errorForRewardedAd': {
+    AppLang.es: 'Error al mostrar el anuncio, inténtalo de nuevo más tarde.',
+    AppLang.en: 'Error showing ad, try again later.',
+  },
 };

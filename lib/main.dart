@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:share_handler/share_handler.dart';
+import 'package:tag_links/core/ads/ads_service_provider.dart';
 import 'package:tag_links/core/app_purchases/listen_to_purchase_update.dart';
 import 'package:tag_links/core/app_purchases/premium_provider.dart';
 import 'package:tag_links/core/theme/theme_provider.dart';
@@ -20,7 +21,7 @@ void main() {
 
 class MyApp extends ConsumerStatefulWidget {
   const MyApp({super.key});
-  
+
   @override
   ConsumerState<MyApp> createState() => _MyAppState();
 }
@@ -38,7 +39,12 @@ class _MyAppState extends ConsumerState<MyApp> {
     _initPurchaseStream();
 
     ShareListener.getInitial().then(_handleMedia);
-
+    // 2. Cargamos el primer anuncio de video apenas la app esté lista
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Esto hace que el video se descargue en silencio
+      // para que esté listo cuando el usuario abra el menú de ads
+      ref.read(adServiceProvider).loadRewardedAd();
+    });
   }
 
   void _handleMedia(SharedMedia? media) {
@@ -64,16 +70,15 @@ class _MyAppState extends ConsumerState<MyApp> {
     await InAppPurchase.instance.restorePurchases();
   }
 
-void _listenToPurchaseUpdated(List<PurchaseDetails> list) {
-  assert(() {
-    debugPrint('Purchase update: ${list.length}');
-    return true;
-  }());
+  void _listenToPurchaseUpdated(List<PurchaseDetails> list) {
+    assert(() {
+      debugPrint('Purchase update: ${list.length}');
+      return true;
+    }());
 
-  InAppPurchaseManager.listenToPurchaseUpdated(list);
-  ref.read(premiumNotifierProvider.notifier).reload();
-}
-
+    InAppPurchaseManager.listenToPurchaseUpdated(list);
+    ref.read(premiumNotifierProvider.notifier).reload();
+  }
 
   @override
   void dispose() {
@@ -85,7 +90,7 @@ void _listenToPurchaseUpdated(List<PurchaseDetails> list) {
   @override
   Widget build(BuildContext context) {
     final palette = ref.watch(paletteProvider);
-    
+
     return MaterialApp(
       theme: getPalette(palette: palette),
       home: const HomePage(),

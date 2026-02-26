@@ -107,7 +107,7 @@ Future<void> _deleteAction(
 Future<bool?> showConfirmDialog(
   BuildContext context, {
   required String title,
-  required String message,
+  required String? message,
   String confirmText = 'Confirmar',
   String cancelText = 'Cancelar',
 }) {
@@ -118,7 +118,9 @@ Future<bool?> showConfirmDialog(
     builder: (context) {
       return AlertDialog(
         title: Text(title),
-        content: Text(message, style: TextStyle(color: theme.hintColor)), 
+        content: message != null
+            ? Text(message, style: TextStyle(color: theme.hintColor))
+            : null,
         actions: [
           TextButton(
             onPressed: () {

@@ -35,6 +35,12 @@ enum SyncManagerStatus {
   notConectionServer,
 }
 
+class _PerformSyncStatus {
+  final SyncManagerStatus status;
+  final bool? isPremium;
+
+  _PerformSyncStatus({required this.status, required this.isPremium});
+}
 class SyncManager {
   static bool _isSyncing = false;
   final _tokenStorage = TokenStorage();
@@ -48,7 +54,7 @@ class SyncManager {
   );
   final ConnectionService _connectionService = ConnectionService();
 
-  Future<SyncManagerStatus> sync() async {
+  Future<SyncManagerStatus> sync(void Function(bool) onUpdateIsPremium) async {
     if (_isSyncing) return SyncManagerStatus.alreadyRunning;
     _isSyncing = true;
     try {
@@ -61,7 +67,9 @@ class SyncManager {
 
       final accessToken = await _tokenStorage.get();
       if (accessToken == null) return SyncManagerStatus.notHasAccessToken;
-      return await _performSync(accessToken: accessToken);
+      final status = await _performSync(accessToken: accessToken);
+      if (status.isPremium != null) onUpdateIsPremium?.call(status.isPremium!);
+      return status.status;
     } catch (e) {
       debugPrint('Sync Error: $e');
       return SyncManagerStatus.notOk;
@@ -70,7 +78,7 @@ class SyncManager {
     }
   }
 
-  Future<SyncManagerStatus> _performSync({required String accessToken}) async {
+  Future<_PerformSyncStatus> _performSync({required String accessToken}) async {
     int? lastPulledAt = await _syncStorage.getLastPulledAt();
     int? lastPushedAt = await _syncStorage.getLastPushedAt();
 
@@ -79,6 +87,7 @@ class SyncManager {
     bool hasMoreLocal = true;
     bool hasMoreRemote = true;
     int safetyCounter = 0;
+    bool? isPremium;
     while ((hasMoreLocal || hasMoreRemote) && safetyCounter < 50) {
       safetyCounter++;
       // 1. Obtener datos locales (Notas y Carpetas)
@@ -100,14 +109,15 @@ class SyncManager {
       );
 
       if (!response.isOk) {
+        isPremium=response.data?.isPremium;
         switch (response.status) {
           case SyncApiStatus.limitStorageReached:
-            return SyncManagerStatus.limitStorageReached;
+            return _PerformSyncStatus(status: SyncManagerStatus.limitStorageReached, isPremium: isPremium);
           case SyncApiStatus.unauthorized:
-            return SyncManagerStatus.notHasAccessToken;
+            return _PerformSyncStatus(status: SyncManagerStatus.notHasAccessToken, isPremium: isPremium);
           case SyncApiStatus.failed:
           default:
-            return SyncManagerStatus.notOk;
+            return _PerformSyncStatus(status: SyncManagerStatus.notOk, isPremium: isPremium);
         }
       }
       final syncRes = response.data!.sync;
@@ -159,8 +169,10 @@ class SyncManager {
       } else {
         hasMoreRemote = false;
       }
+      isPremium=response.data?.isPremium;
     }
-    return SyncManagerStatus.ok;
+
+    return _PerformSyncStatus(status: SyncManagerStatus.ok, isPremium: isPremium);
   }
 
   Future<void> _processRemoteData(PullData pullData) async {

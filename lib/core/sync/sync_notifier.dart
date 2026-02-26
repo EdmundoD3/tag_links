@@ -39,7 +39,9 @@ class SyncNotifier extends AsyncNotifier<SyncResultStatus> {
     state = const AsyncLoading();
 
     // 3. Ejecutar sincronización
-    final result = await _syncManager.sync();
+    final result = await _syncManager.sync(
+      (isPremium) => ref.read(premiumNotifierProvider.notifier).state = isPremium,
+    );
 
     if (result == SyncManagerStatus.ok) {
       state = const AsyncData(SyncResultStatus.ok);

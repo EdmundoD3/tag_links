@@ -87,19 +87,19 @@ class SupportProjectPage extends ConsumerWidget {
             indent: 10,
             endIndent: 10,
           ),
-
-          ListTile(
-            leading: const Icon(Icons.video_library, color: Colors.orange),
-            title: Text(
-              "Ver un anuncio grande",
-              style: TextStyle(color: theme.textTheme.bodyMedium?.color),
+          if (ref.read(isAdsActiveProvider))
+            ListTile(
+              leading: const Icon(Icons.video_library, color: Colors.orange),
+              title: Text(
+                "Ver un anuncio grande",
+                style: TextStyle(color: theme.textTheme.bodyMedium?.color),
+              ),
+              subtitle: Text(
+                "Se desactiva por un día la publicidad.",
+                style: TextStyle(color: theme.hintColor),
+              ),
+              onTap: () => _showRewardedAd(context),
             ),
-            subtitle: Text(
-              "Se desactiva por un día la publicidad.",
-              style: TextStyle(color: theme.hintColor),
-            ),
-            onTap: () => _showRewardedAd(context),
-          ),
 
           const SizedBox(height: 40),
           Center(

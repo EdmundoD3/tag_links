@@ -1,9 +1,11 @@
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tag_links/core/app_purchases/premium_provider.dart';
 
 final isAdsActiveProvider = Provider<bool>((ref) {
   final isPremium = ref.watch(premiumNotifierProvider);
+  debugPrint('isPremium: $isPremium');
   if (isPremium == true) return false;
 
   final asyncValue = ref.watch(adsDisabledUntilProvider);
