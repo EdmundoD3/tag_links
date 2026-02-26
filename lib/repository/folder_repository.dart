@@ -1,3 +1,4 @@
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/sync/folder_raw_sync.dart';
 import 'package:tag_links/core/sync/sync_manager.dart';
@@ -35,6 +36,8 @@ class FolderRepository {
   }
 
   Future<void> update(Folder folder) {
+    debugPrint(folder.parentId);
+
     final folderToUpdate = folder.ensureForInsert();
     return _dao.update(folderToUpdate);
   }

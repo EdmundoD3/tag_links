@@ -77,6 +77,7 @@ class DecoratedText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final matches = _tokenRegex.allMatches(text);
     final onlyEmojis = RegExp(
       r'^[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\s]+$',
@@ -86,7 +87,7 @@ class DecoratedText extends StatelessWidget {
     return RichText(
       text: TextSpan(
         style: TextStyle(
-          color: Colors.black87,
+          color: theme.textTheme.bodyMedium?.color,
           fontSize: onlyEmojis ? 32 : 14,
           
         ),

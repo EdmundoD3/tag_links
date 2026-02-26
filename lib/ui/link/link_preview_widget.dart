@@ -9,6 +9,7 @@ class LinkPreviewWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     if (preview.url.isEmpty) return const SizedBox.shrink();
 
     return Row(
@@ -16,7 +17,7 @@ class LinkPreviewWidget extends StatelessWidget {
         if (preview.image != null)
           CachedNetworkImage(
             imageUrl: preview.image!,
-            width: 80,
+            width: 100,
             height: 80,
             fit: BoxFit.cover,
           )
@@ -27,6 +28,7 @@ class LinkPreviewWidget extends StatelessWidget {
 
         Expanded(
           child: Column(
+            
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
@@ -34,7 +36,7 @@ class LinkPreviewWidget extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: Colors.grey[800],
+                  color: theme.textTheme.labelSmall?.color,
                   fontWeight: FontWeight.w500,
                 ),
               ),

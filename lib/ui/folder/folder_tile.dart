@@ -75,6 +75,8 @@ class _FolderCard extends StatelessWidget {
     final theme = Theme.of(context);
     return Card(
       elevation: 3, // La sombra que le da profundidad
+      surfaceTintColor: Colors.transparent, // Color de fondo
+      shadowColor: Colors.white.withValues(alpha: 0.5),
       margin: const EdgeInsets.only(
         top: 10,
         left: 12,
@@ -88,7 +90,7 @@ class _FolderCard extends StatelessWidget {
         contentPadding: EdgeInsetsDirectional.only(start: 16.0, end: 24.0,top: 2.0, bottom: 2.0),
         leading: Icon(
           Icons.folder,
-          color: Colors.deepPurpleAccent,
+          color: theme.iconTheme.color,
         ), // Un toque de color
         title: Text(
           folder.title,

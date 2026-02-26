@@ -107,7 +107,6 @@ Future<void> addFolder(Folder folder) async {
   }
 
   Future<void> deleteFolder(String id) async {
-    await _repo.delete(id);
     ref.read(syncNotifierProvider.notifier).performSync(); // 🔥 Agregado
     removeFolder(id);
     ref.invalidateSelf();

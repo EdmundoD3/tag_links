@@ -18,12 +18,12 @@ class FloatingButtonBase extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom:50.0),
       child: FloatingActionButton(
-        backgroundColor:  theme.appBarTheme.backgroundColor?? Color.fromARGB(92, 63, 81, 181),
+        backgroundColor:  theme.appBarTheme.backgroundColor,
         shape: CircleBorder(),
         elevation: 0, 
         hoverElevation: 0,
         highlightElevation: 0,
-        foregroundColor: theme.iconTheme.color?? Colors.deepPurple,
+        foregroundColor: theme.iconTheme.color,
         heroTag: heroTag,
         onPressed: onPressed,
         child: Icon(icon),

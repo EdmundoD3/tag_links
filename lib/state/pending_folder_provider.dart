@@ -36,17 +36,13 @@ class FolderMoveService {
       updatedAt: DateTime.now(),
     );
 
-    // UI optimista
     ref
         .read(foldersProvider(fromParentId).notifier)
         .removeFolder(folder.id);
 
     ref
         .read(foldersProvider(toParentId).notifier)
-        .addFolder(moved);
-
-    // persistencia
-    await ref.read(folderRepositoryProvider).update(moved);
+        .updateFolder(moved);
 
     // limpiar estado temporal
     ref.read(pendingFolderProvider.notifier).clear();

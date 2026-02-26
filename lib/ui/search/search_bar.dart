@@ -113,7 +113,7 @@ class _SearchInput extends ConsumerWidget {
             filled: true,
             icon: iconLeftButton,
             hintText: t(ref, 'searchHintText', fallback: 'Buscar...'),
-            hintStyle: TextStyle(color: theme.hintColor),
+            hintStyle: TextStyle(color: theme.textTheme.labelSmall?.color),
             prefixIcon: Icon(Icons.search, color: theme.hintColor),
             suffixIcon: value.text.isNotEmpty
                 ? IconButton(
@@ -175,7 +175,7 @@ class _TagsSuggestionList extends StatelessWidget {
       children: [
         for (final tag in tags)
           ListTile(
-            title: Text(tag.name, style: TextStyle(color: theme.hintColor)),
+            title: Text(tag.name, style: TextStyle(color: theme.textTheme.labelSmall?.color)),
             onTap: () {
               onTagSelected(tag);
             },
