@@ -1,18 +1,9 @@
-class DataKey {
-  final String ciphertext;
-  final String nonce;
-  final String mac;
-  final String salt;
 
-  DataKey({required this.ciphertext, required this.nonce, required this.mac, required this.salt});
-  
-}
+import 'package:tag_links/core/encypt/encrypted_datakey_model.dart';
+
 class AuthResponse {
   final String token;
-  final DataKey encryptedKey;
+  final EncryptedDataKey encryptedKey;
 
   AuthResponse({required this.token, required this.encryptedKey});
-}
-extension AuthResponseX on AuthResponse {
-  bool get isFirstLogin => encryptedKey == null;
 }

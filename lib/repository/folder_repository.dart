@@ -1,4 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/core/sync/folder_raw_sync.dart';
+import 'package:tag_links/core/sync/sync_manager.dart';
+import 'package:tag_links/data/data_sources/deleted_dao.dart';
 import 'package:tag_links/data/data_sources/folder_preferences_dao.dart';
 import 'package:tag_links/data/data_sources/folders_dao.dart';
 import 'package:tag_links/models/folder.dart';
@@ -8,6 +11,7 @@ import 'package:tag_links/utils/paginated_utils.dart';
 
 class FolderRepository {
   final FoldersDao _dao;
+  final DeletedFoldersDao _deletedDao = DeletedFoldersDao();
   final FolderPreferencesDao _preferencesDao;
 
   FolderRepository(this._dao, this._preferencesDao);
@@ -17,6 +21,12 @@ class FolderRepository {
     required PaginatedByDate paginated,
   }) async {
     return _dao.searchByQuery(query, paginated: paginated);
+  }
+  Future<void> upsertAll(List<Folder> folders) {
+    return _dao.upsertAll(folders);
+  }
+  Future<void> deleteByIds(List<String> ids) {
+    return _dao.deleteByIds(ids);
   }
 
   Future<void> create(Folder folder) async {
@@ -55,6 +65,27 @@ class FolderRepository {
   Future<void> savePreference(String folderId, FolderDefaultView view) async {
     await _preferencesDao.save(
       FolderPreference(folderId: folderId, defaultView: view),
+    );
+  }
+    Future<SyncData<FolderRawSync>> getForSync(int? deletedAt) async {
+      final limit = 450;
+    final deletedData = await _deletedDao.getBatch(
+      limit: limit,
+    );
+
+    final deletedDataRaw = deletedData.map(FolderRawSync.fromDeleted).toList();
+
+    final data = await _dao.getByLastUpdate(
+      lastUpdate: deletedAt,
+      limit: limit - deletedData.length,
+    );
+    final lastDate = data.reduce((a, b) => a.updatedAt.isAfter(b.updatedAt)? a : b).updatedAt.millisecondsSinceEpoch;
+    final dataRaw = await Future.wait(data.map(FolderRawSync.fromFolder));
+
+    return SyncData(
+      data: [...deletedDataRaw, ...dataRaw],
+      lastDate: lastDate,
+      hasMore: data.length + deletedData.length >= limit,
     );
   }
 }

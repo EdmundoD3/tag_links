@@ -1,74 +1,103 @@
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tag_links/api/api_services.dart';
+import 'package:tag_links/core/auth/token_storage.dart';
+import 'package:tag_links/core/encypt/encrypt_storage.dart';
+import 'package:tag_links/core/encypt/encrypted_datakey_model.dart';
+import 'package:tag_links/core/encypt/encypter_services.dart';
 
+class AuthData {
+  final EncryptedDataKey? dataKey;
+  final String? token;
+
+  AuthData({required this.dataKey, required this.token});
+}
 class AuthManager {
-  static final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
-  static bool _initialized = false;
+  static final EncryptionService _encryptionService = EncryptionService();
+  static final TokenStorage _tokenStorage = TokenStorage();
+  static final EncryptStorage _encryptStorage = EncryptStorage();
 
-  static Future<void> init() async {
-    if (_initialized) return;
+  static Future<void> loginFlow({
+    required Future<String> Function() askPin,
+  }) async {
 
-    await _googleSignIn.initialize();
-    _initialized = true;
-  }
-
-  static Future<String?> getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('session_token');
-  }
-
-  static Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('session_token');
-    await _googleSignIn.signOut();
-  }
-
-  /// Login interactivo (botón)
-  static Future<ApiLoginStatus?> interactiveLogin() async {
-    try {
-      final account = await _googleSignIn.authenticate();
-      final auth = account.authentication;
-      return await _exchangeWithBackend(auth.idToken);
-    } catch (_) {
-      return null;
+    // 1️⃣ Google login obligatorio
+    final idToken = await _interactiveGoogleLogin();
+    if (idToken == null) {
+      throw Exception("Google login cancelado");
     }
-  }
 
-  /// 🔥 Login silencioso (para refresh mensual)
-  static Future<ApiLoginStatus?> silentReLogin() async {
-    try {
-      final account = await _googleSignIn.attemptLightweightAuthentication();
-
-      if (account == null) {
-        return null; // No hay sesión Google activa
-      }
-
-      final auth = account.authentication;
-      return await _exchangeWithBackend(auth.idToken);
-    } catch (_) {
-      return null;
-    }
-  }
-
-  /// Guarda JWT de tu backend
-  static Future<void> _saveToken(String token) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('session_token', token);
-  }
-
-  /// Envía idToken a tu backend
-  static Future<ApiLoginStatus?> _exchangeWithBackend(
-    String? idToken,
-  ) async {
-    if (idToken == null) return null;
+    // 2️⃣ Login en API
     final response = await ApiServices.login(idToken: idToken);
-
-    if (!response.isSucces) {
-      return response.status;
+    if (response.data == null) {
+      throw Exception("Login fallido");
     }
 
-    await _saveToken(response.data!.token);
-    return ApiLoginStatus.ok;
+    final token = response.data!.token;
+    final encryptedKey = response.data!.encryptedKey;
+
+    if (token != null) {
+      await _tokenStorage.save(token);
+    }
+
+    if (encryptedKey == null) {
+      await _firstLoginFlow(idToken:idToken, token: token!,askPin:askPin);
+    } else {
+      await _normalLoginFlow(encryptedKey, askPin);
+    }
+  }
+
+  // -----------------------------------------------------
+
+  static Future<void> _firstLoginFlow(
+    {required String idToken,
+    required String token,
+     required Future<String> Function() askPin,}
+  ) async {
+
+    final pin = await askPin();
+
+    // Generar nueva DataKey
+    final encryptedDataKey =
+        await _encryptionService.generateDataKey(pin);
+
+    // Guardar localmente
+    await _encryptStorage.set(encryptedDataKey);
+
+    // Registrar encryptedKey en servidor
+    await ApiServices.registerEncryptedKey(encryptedKey:encryptedDataKey, accessToken: token);
+
+    // Cache en memoria
+    await _encryptionService.unlock(pin);
+  }
+
+  // -----------------------------------------------------
+
+  static Future<void> _normalLoginFlow(
+    EncryptedDataKey encryptedKey,
+    Future<String> Function() askPin,
+  ) async {
+
+    // Guardar encryptedKey del servidor
+    await _encryptStorage.set(encryptedKey);
+
+    final pin = await askPin();
+
+    try {
+      await _encryptionService.unlock(pin);
+    } catch (_) {
+      throw Exception("PIN incorrecto");
+    }
+  }
+
+  // -----------------------------------------------------
+
+  static Future<String?> _interactiveGoogleLogin() async {
+    final googleSignIn = GoogleSignIn.instance;
+    final account = await googleSignIn.authenticate();
+
+    if (account == null) return null;
+
+    final auth = account.authentication;
+    return auth.idToken;
   }
 }

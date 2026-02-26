@@ -1,26 +1,33 @@
+import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/rendering.dart';
 import 'package:http/http.dart' as http;
 import 'package:tag_links/api/login_response.dart';
+import 'package:tag_links/core/encypt/encrypted_datakey_model.dart';
+import 'package:tag_links/core/sync/folder_raw_sync.dart';
+import 'package:tag_links/core/sync/note_raw_sync.dart';
 import 'package:tag_links/service/env.dart';
 
 class _ApiUrls {
   final login = '${Env.apiBaseUrl}/api/v1/login';
   final sync = '${Env.apiBaseUrl}/api/v1/sync';
+  final encryptionKey = '${Env.apiBaseUrl}/api/v1/user/encryption-key';
 }
 
-class SyncResponseModel {
+class SaveResult {
   final bool ok;
-  final String? reason;
-  final bool isPremium;
-  final Map<String, dynamic> sync;
-  final int serverTime;
+  final String? error;
+  final String? message;
 
-  SyncResponseModel.fromJson(Map<String, dynamic> json)
-    : ok = json['ok'],
-      reason = json['reason'],
-      isPremium = json['isPremium'],
-      sync = json['sync'],
-      serverTime = json['serverTime'];
+  SaveResult({required this.ok, this.error, this.message});
+
+  factory SaveResult.fromJson(Map<String, dynamic> json) {
+    return SaveResult(
+      ok: json['ok'] as bool,
+      error: json['error'] as String?,
+      message: json['message'] as String?,
+    );
+  }
 }
 
 class ApiServices {
@@ -29,7 +36,7 @@ class ApiServices {
   static Future<LoginApi> login({
     required String idToken,
     String? userName,
-    Map<String, dynamic>? encryptedKey,
+    EncryptedDataKey? encryptedKey,
   }) async {
     final response = await http.post(
       Uri.parse(_paths.login),
@@ -37,7 +44,7 @@ class ApiServices {
       body: jsonEncode({
         'idToken': idToken,
         if (userName != null) 'userName': userName,
-        if (encryptedKey != null) 'encryptedKey': encryptedKey,
+        if (encryptedKey != null) 'encryptedKey': encryptedKey.toJson(),
       }),
     );
 
@@ -58,44 +65,96 @@ class ApiServices {
     return LoginApi(status: ApiLoginStatus.loginFailed, data: null);
   }
 
-  static Future<SyncApi> sync({
+  static Future<SaveResult> registerEncryptedKey({
     required String accessToken,
-    required List<Map<String, dynamic>> notes,
-    required List<Map<String, dynamic>> folders,
-    required int lastSync,
+    required EncryptedDataKey encryptedKey,
   }) async {
     final response = await http.post(
-      Uri.parse(_paths.sync),
+      Uri.parse(_paths.encryptionKey),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $accessToken',
       },
-      body: jsonEncode({
-        'notes': notes,
-        'folders': folders,
-        'lastSync': lastSync,
-      }),
+      body: jsonEncode(encryptedKey.toJson()),
     );
 
     final body = jsonDecode(response.body);
 
-    if (response.statusCode == 401) {
-      return SyncApi(status: SyncStatus.unauthorized);
+    if (response.statusCode == 200) {
+      return SaveResult(ok: true, message: body['data']?['message']);
     }
+
+    return SaveResult(ok: false, error: body['error'] ?? 'Unknown error');
+  }
+
+  static Future<SyncApi> sync({
+    required String accessToken,
+    required List<NoteRawSync> notes,
+    required List<FolderRawSync> folders,
+    required int? lastPulledAt,
+    required String lastId,
+  }) async {
+    try {
+      return await _performSync(
+        accessToken: accessToken,
+        notes: notes,
+        folders: folders,
+        lastPulledAt: lastPulledAt,
+        lastId: lastId,
+      );
+    } on TimeoutException catch (_) {
+      // 2. Manejo específico si el servidor tarda mucho (Cloudflare Worker frío o mala señal)
+      debugPrint('Sync Timeout: El servidor no respondió a tiempo');
+      return SyncApi(
+        status: SyncApiStatus.failed,
+      ); // O podrías crear un status 'timeout'
+    } on Exception catch (e) {
+      // 3. Manejo de errores de red (Sin internet, DNS error, etc)
+      debugPrint('Sync Network Error: $e');
+      return SyncApi(status: SyncApiStatus.failed);
+    }
+  }
+
+  static Future<SyncApi> _performSync({
+    required String accessToken,
+    required List<NoteRawSync> notes,
+    required List<FolderRawSync> folders,
+    required int? lastPulledAt,
+    required String lastId,
+  }) async {
+    final response = await http
+        .post(
+          Uri.parse(_paths.sync),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $accessToken',
+          },
+          body: jsonEncode({
+            'notes': notes.map((e) => e.toJson()).toList(),
+            'folders': folders.map((e) => e.toJson()).toList(),
+            'lastPulledAt': lastPulledAt ?? 0,
+            'lastId': lastId,
+          }),
+        )
+        .timeout(
+          const Duration(seconds: 30), // 1. Tiempo límite de espera
+        );
+
+    if (response.statusCode == 401) {
+      return SyncApi(status: SyncApiStatus.unauthorized);
+    }
+
+    final body = jsonDecode(response.body);
 
     if (response.statusCode == 200 || response.statusCode == 403) {
       final data = SyncResponseModel.fromJson(body['data']);
-
-      if (data is Map<String, dynamic>) {
-        if (data.ok == true) {
-          return SyncApi(status: SyncStatus.ok, data: data);
-        } else {
-          return SyncApi(status: SyncStatus.limitStorageReached, data: data);
-        }
-      }
+      return SyncApi(
+        status: data.ok ? SyncApiStatus.ok : SyncApiStatus.limitStorageReached,
+        data: data,
+      );
     }
 
-    return SyncApi(status: SyncStatus.failed);
+    return SyncApi(status: SyncApiStatus.failed);
   }
 }
 
@@ -111,13 +170,106 @@ class LoginApi {
 }
 
 // sync
-enum SyncStatus { ok, unauthorized, limitStorageReached, failed }
+enum SyncApiStatus { ok, unauthorized, limitStorageReached, failed }
 
 class SyncApi {
-  final SyncStatus status;
+  final SyncApiStatus status;
   final SyncResponseModel? data;
 
   SyncApi({required this.status, this.data});
 
-  bool get isOk => status == SyncStatus.ok;
+  bool get isOk => status == SyncApiStatus.ok;
+}
+
+// ==========================================
+// MODELOS DE RESPUESTA (DATA TRANSFER OBJECTS)
+// ==========================================
+
+class PullData {
+  final List<NoteRawSync> notes;
+  final List<FolderRawSync> folders;
+
+  PullData({required this.notes, required this.folders});
+
+  factory PullData.fromJson(Map<String, dynamic> json) {
+    return PullData(
+      // Usamos el factory fromJson que creamos en NoteRawSync/FolderRawSync
+      notes: (json['notes'] as List? ?? [])
+          .map((n) => NoteRawSync.fromJson(n as Map<String, dynamic>))
+          .toList(),
+      folders: (json['folders'] as List? ?? [])
+          .map((f) => FolderRawSync.fromJson(f as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+}
+
+class PullResult {
+  final bool ok;
+  final String? error;
+  final PullData? data;
+  final int? cursor;
+  final bool hasMore;
+
+  PullResult({
+    required this.ok,
+    this.error,
+    this.data,
+    this.cursor,
+    required this.hasMore,
+  });
+
+  factory PullResult.fromJson(Map<String, dynamic> json) {
+    final isOk = json['ok'] as bool;
+    if (!isOk) {
+      return PullResult(ok: false, error: json['error'], hasMore: false);
+    }
+
+    return PullResult(
+      ok: true,
+      data: PullData.fromJson(json['data']),
+      cursor: json['cursor'] as int?,
+      hasMore: json['hasMore'] as bool? ?? false,
+    );
+  }
+}
+
+class SyncResult {
+  final SaveResult save;
+  final PullResult pull;
+
+  SyncResult({required this.save, required this.pull});
+
+  factory SyncResult.fromJson(Map<String, dynamic> json) {
+    return SyncResult(
+      save: SaveResult.fromJson(json['save']),
+      pull: PullResult.fromJson(json['pull']),
+    );
+  }
+}
+
+class SyncResponseModel {
+  final bool ok;
+  final String? reason;
+  final bool isPremium;
+  final SyncResult sync;
+  final int serverTime;
+
+  SyncResponseModel({
+    required this.ok,
+    required this.reason,
+    required this.isPremium,
+    required this.sync,
+    required this.serverTime,
+  });
+
+  factory SyncResponseModel.fromJson(Map<String, dynamic> json) {
+    return SyncResponseModel(
+      ok: json['ok'] as bool,
+      reason: json['reason'] as String?,
+      isPremium: json['isPremium'] as bool,
+      sync: SyncResult.fromJson(json['sync']),
+      serverTime: json['serverTime'] as int,
+    );
+  }
 }

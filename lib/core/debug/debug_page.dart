@@ -56,6 +56,7 @@ class DebugPage extends ConsumerWidget {
             title: "Carpeta de prueba",
             tags: [],
             createdAt: DateTime.now(),
+            updatedAt: DateTime.now()
           ),
           actionsItems: [],
           onDeleteFolder: () {

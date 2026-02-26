@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/core/sync/sync_notifier.dart';
 import 'package:tag_links/models/link_preview.dart';
 import 'package:tag_links/models/search_query.dart';
 import 'package:tag_links/repository/link_preview_repository.dart';
@@ -117,6 +118,8 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
   // CRUD
   Future<void> addNote(Note note) async {
     await _repo.create(note);
+    // Disparamos el sync sin esperar (await) su respuesta aquí
+    unawaited(ref.read(syncNotifierProvider.notifier).performSync());
     ref.invalidateSelf();
   }
 
@@ -135,6 +138,7 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
 
   Future<void> updateNote(Note note) async {
     await _repo.update(note);
+    unawaited(ref.read(syncNotifierProvider.notifier).performSync());
     ref.invalidateSelf();
   }
 
@@ -146,6 +150,7 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
 
     try {
       await _repo.delete(id);
+      ref.read(syncNotifierProvider.notifier).performSync();
     } catch (e) {
       // ❌ rollback si falla
       state = AsyncValue.data(current);

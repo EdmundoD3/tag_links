@@ -1,6 +1,8 @@
+import 'package:tag_links/core/encypt/encrypted_datakey_model.dart';
+
 class LoginResponse {
   final String token;
-  final Map<String, dynamic>? encryptedKey;
+  final EncryptedDataKey? encryptedKey;
   final int? premiumUntil;
   final String? userName;
 
@@ -14,7 +16,7 @@ class LoginResponse {
   factory LoginResponse.fromJson(Map<String, dynamic> json) {
     return LoginResponse(
       token: json['token'],
-      encryptedKey: json['encryptedKey'],
+      encryptedKey: json['encryptedKey']? EncryptedDataKey.fromJson(json['encryptedKey']):null,
       premiumUntil: json['premiumUntil'],
       userName: json['userName'],
     );

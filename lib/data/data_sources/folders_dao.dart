@@ -8,6 +8,26 @@ import 'package:tag_links/utils/paginated_utils.dart';
 class FoldersDao {
   Future<Database> get _db async => AppDatabase().database;
 
+  Future<List<Folder>> getByLastUpdate({
+    required int? lastUpdate,
+    int limit = 500,
+  }) async {
+    final db = await _db;
+    final hasLastUpdate = lastUpdate != null;
+    final where = hasLastUpdate ? "WHERE updatedAt > ?" : "";
+    final args = hasLastUpdate ? [lastUpdate, limit] : [limit];
+    final sql =
+        '''
+        SELECT *
+        FROM folders
+        $where
+        ORDER BY updatedAt DESC
+        LIMIT ?
+      ''';
+    final result = await db.rawQuery(sql, args);
+    return Future.wait(result.map((f) => _mapFolderWithTags(db, f)));
+  }
+
   Future<List<Folder>> searchByQuery(
     SearchQuery searchQuery, {
     required PaginatedByDate paginated,
@@ -22,7 +42,7 @@ class FoldersDao {
       args.add('%${searchQuery.text}%');
       args.add('%${searchQuery.text}%');
     }
-    if(searchQuery.isFavorite == true){
+    if (searchQuery.isFavorite == true) {
       where.add('isFavorite = 1');
     }
 
@@ -63,7 +83,8 @@ class FoldersDao {
 
     return Future.wait(result.map((f) => _mapFolderWithTags(db, f)));
   }
-    /// FAVORITES
+
+  /// FAVORITES
   Future<List<Folder>> getFavorites({
     required PaginatedByDate paginated,
   }) async {
@@ -83,34 +104,27 @@ class FoldersDao {
   /// INSERT
   Future<void> insert(Folder folder) async {
     final db = await _db;
-
     await db.transaction((txn) async {
-      await txn.insert('folders', folder.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+      await txn.insert(
+        'folders',
+        folder.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
 
       for (final tag in folder.tags) {
         await txn.insert('folder_tags', {
           'folderId': folder.id,
           'tagId': tag.id,
         }, conflictAlgorithm: ConflictAlgorithm.ignore);
-
-        // 🔥 Incrementar uso del tag
-        await txn.rawUpdate(
-          '''
-          UPDATE tags
-          SET usageCount = usageCount + 1
-          WHERE id = ?
-        ''',
-          [tag.id],
-        );
+        // El trigger tr_folder_tags_insert hace el resto
       }
     });
   }
 
+  /// UPDATE
   Future<void> update(Folder folder) async {
     final db = await _db;
-
     await db.transaction((txn) async {
-      // 1️⃣ Update datos base
       await txn.update(
         'folders',
         folder.toMap(),
@@ -118,88 +132,71 @@ class FoldersDao {
         whereArgs: [folder.id],
       );
 
-      // 2️⃣ Obtener tags actuales
-      final currentTagRows = await txn.rawQuery(
-        '''
-      SELECT tagId FROM folder_tags
-      WHERE folderId = ?
-    ''',
-        [folder.id],
+      // Sincronización de tags
+      final currentTagRows = await txn.query(
+        'folder_tags',
+        columns: ['tagId'],
+        where: 'folderId = ?',
+        whereArgs: [folder.id],
       );
-
       final currentTagIds = currentTagRows
           .map((e) => e['tagId'] as String)
           .toSet();
-
       final newTagIds = folder.tags.map((t) => t.id).toSet();
 
-      // 3️⃣ Calcular diferencias
       final tagsToAdd = newTagIds.difference(currentTagIds);
       final tagsToRemove = currentTagIds.difference(newTagIds);
 
-      // 4️⃣ Agregar nuevos tags
       for (final tagId in tagsToAdd) {
         await txn.insert('folder_tags', {
           'folderId': folder.id,
           'tagId': tagId,
-        }, conflictAlgorithm: ConflictAlgorithm.ignore);
-
-        await txn.rawUpdate(
-          '''
-        UPDATE tags
-        SET usageCount = usageCount + 1
-        WHERE id = ?
-      ''',
-          [tagId],
-        );
+        });
       }
-
-      // 5️⃣ Eliminar tags removidos
       for (final tagId in tagsToRemove) {
         await txn.delete(
           'folder_tags',
           where: 'folderId = ? AND tagId = ?',
           whereArgs: [folder.id, tagId],
         );
-
-        await txn.rawUpdate(
-          '''
-        UPDATE tags
-        SET usageCount = MAX(usageCount - 1, 0)
-        WHERE id = ?
-      ''',
-          [tagId],
-        );
       }
     });
   }
 
-  /// DELETE
-  Future<void> delete(String id) async {
+/// UPSERT ALL
+  Future<void> upsertAll(List<Folder> folders) async {
     final db = await _db;
-
     await db.transaction((txn) async {
-      // obtener tags usados antes de borrar
-      final tagRows = await txn.rawQuery(
-        '''
-        SELECT tagId FROM folder_tags WHERE folderId = ?
-      ''',
-        [id],
-      );
+      for (final folder in folders) {
+        await txn.insert('folders', folder.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
 
-      await txn.delete('folders', where: 'id = ?', whereArgs: [id]);
+        final currentTagRows = await txn.query('folder_tags', columns: ['tagId'], where: 'folderId = ?', whereArgs: [folder.id]);
+        final currentTagIds = currentTagRows.map((e) => e['tagId'] as String).toSet();
+        final newTagIds = folder.tags.map((t) => t.id).toSet();
 
-      for (final row in tagRows) {
-        await txn.rawUpdate(
-          '''
-          UPDATE tags
-          SET usageCount = MAX(usageCount - 1, 0)
-          WHERE id = ?
-        ''',
-          [row['tagId']],
-        );
+        for (final tagId in newTagIds.difference(currentTagIds)) {
+          await txn.insert('folder_tags', {'folderId': folder.id, 'tagId': tagId});
+        }
+        for (final tagId in currentTagIds.difference(newTagIds)) {
+          await txn.delete('folder_tags', where: 'folderId = ? AND tagId = ?', whereArgs: [folder.id, tagId]);
+        }
       }
     });
+  }
+
+Future<void> deleteByIds(List<String> ids) async {
+    if (ids.isEmpty) return;
+    final db = await _db;
+    final placeholders = List.filled(ids.length, '?').join(',');
+    await db.delete('folders', where: 'id IN ($placeholders)', whereArgs: ids);
+  }
+
+/// DELETE
+  Future<void> delete(String id) async {
+    final db = await _db;
+    // Gracias al ON DELETE CASCADE en folder_tags, al borrar la carpeta
+    // se borran sus relaciones y el trigger descuenta el usageCount.
+    await db.delete('folders', where: 'id = ?', whereArgs: [id]);
   }
 
   /// GET BY ID
@@ -270,9 +267,7 @@ class FoldersDao {
       color: map['color'],
       tags: tags,
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt']),
-      updatedAt: map['updatedAt'] != null
-          ? DateTime.fromMillisecondsSinceEpoch(map['updatedAt'])
-          : null,
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(map['updatedAt']),
       isFavorite: map['isFavorite'] == 1,
     );
   }
@@ -292,5 +287,3 @@ class FoldersDao {
     return result.map(Tag.fromMap).toList();
   }
 }
-
-

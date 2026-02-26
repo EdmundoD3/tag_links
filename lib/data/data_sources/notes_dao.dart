@@ -20,18 +20,29 @@ class NotesDao {
   }) async {
     try {
       final rows = await _fetch.searchByQuery(
-      query,
-      folderId: folderId,
-      paginated: paginated,
-    );
-    return _hydrate(rows);
+        query,
+        folderId: folderId,
+        paginated: paginated,
+      );
+      return _hydrate(rows);
     } catch (e) {
       debugPrint("NotesDao.searchByQuery:\n ${e.toString()}");
-      if(query.isFavorite){
+      if (query.isFavorite) {
         return getFavorites(pagination: paginated);
       }
       return [];
     }
+  }
+
+  Future<List<Note>> getByLastUpdate({
+    required int? lastUpdate,
+    int limit = 500,
+  }) async {
+    final rows = await _fetch.getByLastUpdate(
+      lastUpdate: lastUpdate,
+      limit: limit,
+    );
+    return _hydrate(rows);
   }
 
   Future<void> insert(Note note) async {
@@ -44,6 +55,14 @@ class NotesDao {
 
   Future<void> delete(String noteId) async {
     await _fetch.delete(noteId);
+  }
+
+  Future<void> upsertAll(List<Note> notes) async {
+    await _fetch.upsertAll(notes);
+  }
+
+  Future<void> deleteByIds(List<String> ids) async {
+    await _fetch.deleteByIds(ids);
   }
 
   Future<Note?> getById(String id) async {
@@ -109,38 +128,57 @@ class NotesDao {
   }
 
   /* ----------------------------- HYDRATION ----------------------------- */
-  List<Note> _hydrate(List<NoteJoinRow> rows) {
+List<Note> _hydrate(List<NoteJoinRow> rows) {
+    // 1. Mapa principal de notas (el que ya tenías)
     final Map<String, Note> map = {};
 
+    // 2. Mapa auxiliar de Sets para que la búsqueda de etiquetas sea instantánea O(1)
+    // Esto evita usar el .any() que hace lento el proceso con muchos datos
+    final Map<String, Set<String>> tagsTracker = {};
+
     for (final row in rows) {
+      // Intentamos obtener o crear la nota
       final note = map.putIfAbsent(
         row.noteId,
-        () => Note(
-          id: row.noteId,
-          folderId: row.folderId,
-          title: row.title,
-          content: row.content ?? '',
-          color: row.color,
-          createdAt: DateTime.fromMillisecondsSinceEpoch(row.createdAt),
-          updatedAt: DateTime.fromMillisecondsSinceEpoch(row.updatedAt),
-          isFavorite: row.isFavorite,
-          tags: [],
-          link: row.linkId == null
-              ? null
-              : LinkPreview(
-                  id: row.linkId!,
-                  noteId: row.noteId,
-                  url: row.linkUrl!,
-                  title: row.linkTitle,
-                  description: row.linkDescription,
-                  image: row.linkImage,
-                  siteName: row.linkSiteName,
-                ),
-        ),
+        () {
+          // Si la nota es nueva en el mapa, también inicializamos su set de rastreo
+          tagsTracker[row.noteId] = {};
+          
+          return Note(
+            id: row.noteId,
+            folderId: row.folderId,
+            title: row.title,
+            content: row.content ?? '',
+            color: row.color,
+            createdAt: DateTime.fromMillisecondsSinceEpoch(row.createdAt),
+            updatedAt: DateTime.fromMillisecondsSinceEpoch(row.updatedAt),
+            isFavorite: row.isFavorite,
+            tags: [], // Lista vacía que iremos llenando
+            link: row.linkId == null
+                ? null
+                : LinkPreview(
+                    id: row.linkId!,
+                    noteId: row.noteId,
+                    url: row.linkUrl!,
+                    title: row.linkTitle,
+                    description: row.linkDescription,
+                    image: row.linkImage,
+                    siteName: row.linkSiteName,
+                  ),
+          );
+        },
       );
 
-      if (row.tagId != null && !note.tags.any((t) => t.id == row.tagId)) {
-        note.tags.add(Tag(id: row.tagId!, name: row.tagName!));
+      // 3. Lógica optimizada para etiquetas
+      if (row.tagId != null) {
+        // Obtenemos el set de IDs de etiquetas ya procesadas para esta nota
+        final processedTags = tagsTracker[row.noteId]!;
+
+        // .add() intenta agregar el ID al Set. Si ya existía, devuelve false.
+        // Si no existía, devuelve true y lo agrega. Todo en un solo paso súper rápido.
+        if (processedTags.add(row.tagId!)) {
+          note.tags.add(Tag(id: row.tagId!, name: row.tagName!));
+        }
       }
     }
 
@@ -177,6 +215,26 @@ class _FetchersNotesDao {
   ''';
 
     final result = await db.rawQuery(sql, ids);
+    return result.map(NoteJoinRow.fromMap).toList();
+  }
+
+  Future<List<NoteJoinRow>> getByLastUpdate({
+    required int? lastUpdate,
+    required int limit,
+  }) async {
+    final db = await _db;
+    final hasLastUpdate = lastUpdate != null;
+    final where = hasLastUpdate ? "WHERE updatedAt > ?" : "";
+    final args = hasLastUpdate ? [lastUpdate, limit] : [limit];
+    final sql =
+        '''
+        SELECT *
+        FROM notes
+        $where
+        ORDER BY updatedAt DESC
+        LIMIT ?
+      ''';
+    final result = await db.rawQuery(sql, args);
     return result.map(NoteJoinRow.fromMap).toList();
   }
 
@@ -460,9 +518,8 @@ class _FetchersNotesDao {
    * INSERT
    * -------------------------------------------------------------------- */
 
-  Future<void> insert(Note note) async {
+Future<void> insert(Note note) async {
     final db = await _db;
-
     await db.transaction((txn) async {
       // 1️⃣ Insert note
       await txn.insert(
@@ -471,25 +528,15 @@ class _FetchersNotesDao {
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
 
-      // 2️⃣ Insert tags
+      // 2️⃣ Insert tags (El Trigger se encarga del usageCount automáticamente)
       for (final tag in note.tags) {
         await txn.insert('note_tags', {
           'noteId': note.id,
           'tagId': tag.id,
         }, conflictAlgorithm: ConflictAlgorithm.ignore);
-
-        // incrementar uso
-        await txn.rawUpdate(
-          '''
-          UPDATE tags
-          SET usageCount = usageCount + 1
-          WHERE id = ?
-          ''',
-          [tag.id],
-        );
       }
 
-      // 3️⃣ Insert link (si existe)
+      // 3️⃣ Link
       if (note.link != null) {
         _linkDao.insert(txn, note.id, note.link!);
       }
@@ -500,10 +547,10 @@ class _FetchersNotesDao {
    * UPDATE
    * -------------------------------------------------------------------- */
 
-  Future<void> update(Note note) async {
+Future<void> update(Note note) async {
     final db = await _db;
     await db.transaction((txn) async {
-      // 1️⃣ Update note
+      // 1️⃣ Update base note
       await txn.update(
         'notes',
         note.copyWith(updatedAt: DateTime.now()).toMap(),
@@ -511,45 +558,19 @@ class _FetchersNotesDao {
         whereArgs: [note.id],
       );
 
-      // 2️⃣ Tags: borrar y recrear
-      final oldTags = await txn.query(
-        'note_tags',
-        columns: ['tagId'],
-        where: 'noteId = ?',
-        whereArgs: [note.id],
-      );
-
-      // decrement usageCount
-      for (final row in oldTags) {
-        await txn.rawUpdate(
-          '''
-          UPDATE tags
-          SET usageCount = MAX(usageCount - 1, 0)
-          WHERE id = ?
-          ''',
-          [row['tagId']],
-        );
-      }
-
+      // 2️⃣ Tags: Borrar y Recrear. 
+      // Al borrar de 'note_tags', el Trigger decrementa usageCount.
+      // Al insertar en 'note_tags', el Trigger incrementa usageCount.
       await txn.delete('note_tags', where: 'noteId = ?', whereArgs: [note.id]);
-
+      
       for (final tag in note.tags) {
         await txn.insert('note_tags', {
           'noteId': note.id,
           'tagId': tag.id,
         }, conflictAlgorithm: ConflictAlgorithm.ignore);
-
-        await txn.rawUpdate(
-          '''
-          UPDATE tags
-          SET usageCount = usageCount + 1
-          WHERE id = ?
-          ''',
-          [tag.id],
-        );
       }
 
-      // 3️⃣ Links: borrar y recrear
+      // 3️⃣ Links
       if (note.link != null) {
         await _linkDao.replace(txn: txn, noteId: note.id, link: note.link);
       } else {
@@ -558,38 +579,74 @@ class _FetchersNotesDao {
     });
   }
 
+Future<void> upsertAll(List<Note> notes) async {
+  if (notes.isEmpty) return;
+  final db = await _db;
+
+  await db.transaction((txn) async {
+    final batch = txn.batch(); // 👈 Iniciamos el Batch
+
+    for (final note in notes) {
+      // 1. Upsert de la Nota
+      batch.insert(
+        'notes',
+        note.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+
+      // 2. Gestión de Tags: Borramos todos y re-insertamos (más rápido en batch)
+      batch.delete('note_tags', where: 'noteId = ?', whereArgs: [note.id]);
+      for (final tag in note.tags) {
+        batch.insert('note_tags', {
+          'noteId': note.id,
+          'tagId': tag.id,
+        });
+        // Si tienes una tabla maestra de tags, podrías hacer upsert del tag aquí también
+      }
+
+      // 3. Gestión de Links
+      if (note.link != null) {
+          await _linkDao.replace(txn: txn, noteId: note.id, link: note.link!);
+        } else {
+          await _linkDao.delete(txn, note.id);
+        }
+    }
+
+    // Ejecutamos todo de un solo golpe
+    await batch.commit(noResult: true); 
+  });
+}
+
   /* ----------------------------------------------------------------------
    * DELETE
    * -------------------------------------------------------------------- */
 
-  Future<void> delete(String noteId) async {
+Future<void> delete(String noteId) async {
     final db = await _db;
-
-    await db.transaction((txn) async {
-      // 1️⃣ Obtener tags asociados
-      final tags = await txn.query(
-        'note_tags',
-        columns: ['tagId'],
-        where: 'noteId = ?',
-        whereArgs: [noteId],
-      );
-
-      // 2️⃣ Decrementar usageCount
-      for (final row in tags) {
-        await txn.rawUpdate(
-          '''
-          UPDATE tags
-          SET usageCount = MAX(usageCount - 1, 0)
-          WHERE id = ?
-          ''',
-          [row['tagId']],
-        );
-      }
-
-      // 3️⃣ Borrar note (cascade se encarga del resto)
-      await txn.delete('notes', where: 'id = ?', whereArgs: [noteId]);
-    });
+    // Con ON DELETE CASCADE en la tabla note_tags y link_previews,
+    // solo necesitas borrar la nota. Los triggers se dispararán solos.
+    await db.delete('notes', where: 'id = ?', whereArgs: [noteId]);
   }
+
+Future<void> deleteByIds(List<String> ids) async {
+  if (ids.isEmpty) return;
+  final db = await _db;
+  
+  // Dividir en trozos de 500 si la lista es enorme (Opcional, pero robusto)
+  final placeholders = List.filled(ids.length, '?').join(',');
+  
+  await db.transaction((txn) async {
+    // Si no tienes "ON DELETE CASCADE" en tu base de datos, 
+    // debes borrar manualmente los hijos aquí también en el mismo batch.
+    final batch = txn.batch();
+    
+    batch.delete('note_tags', where: 'noteId IN ($placeholders)', whereArgs: ids);
+    batch.delete('links', where: 'noteId IN ($placeholders)', whereArgs: ids);
+    batch.delete('notes', where: 'id IN ($placeholders)', whereArgs: ids);
+    
+    await batch.commit(noResult: true);
+  });
+}
 
   //helpers
 

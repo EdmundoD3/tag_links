@@ -1,5 +1,6 @@
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:tag_links/data/data_sources/deleted_dao.dart';
 import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/models/folder_preference.dart';
 import 'package:tag_links/models/folder_tag.dart';
@@ -30,6 +31,33 @@ class AppDatabase {
         CREATE INDEX idx_link_noteId
         ON link_previews(noteId);
 ''';
+static String triggers = '''
+  -- TRIGGERS PARA NOTAS
+  CREATE TRIGGER IF NOT EXISTS tr_note_tags_insert
+  AFTER INSERT ON note_tags
+  BEGIN
+    UPDATE tags SET usageCount = usageCount + 1 WHERE id = NEW.tagId;
+  END;
+
+  CREATE TRIGGER IF NOT EXISTS tr_note_tags_delete
+  AFTER DELETE ON note_tags
+  BEGIN
+    UPDATE tags SET usageCount = MAX(usageCount - 1, 0) WHERE id = OLD.tagId;
+  END;
+
+  -- TRIGGERS PARA CARPETAS (NUEVOS)
+  CREATE TRIGGER IF NOT EXISTS tr_folder_tags_insert
+  AFTER INSERT ON folder_tags
+  BEGIN
+    UPDATE tags SET usageCount = usageCount + 1 WHERE id = NEW.tagId;
+  END;
+
+  CREATE TRIGGER IF NOT EXISTS tr_folder_tags_delete
+  AFTER DELETE ON folder_tags
+  BEGIN
+    UPDATE tags SET usageCount = MAX(usageCount - 1, 0) WHERE id = OLD.tagId;
+  END;
+''';
 
   Future<Database> get database async {
     if (_db != null) return _db!;
@@ -46,6 +74,7 @@ class AppDatabase {
       onCreate: (db, version) async {
         await db.execute('PRAGMA foreign_keys = ON');
 
+        //tablas
         await db.execute(folderTable);
         await db.execute(tagTable);
         await db.execute(noteTable);
@@ -53,6 +82,11 @@ class AppDatabase {
         await db.execute(folderTagTable);
         await db.execute(noteTagTable);
         await db.execute(folderPreferencesTable);
+        await db.execute(DeletedTables.deletedFoldersTable);
+        await db.execute(DeletedTables.deletedNotesTable);
+
+        //triggers
+        await db.execute(triggers);
 
         await db.execute(indexes);
       },

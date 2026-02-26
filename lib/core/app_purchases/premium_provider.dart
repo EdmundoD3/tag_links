@@ -1,13 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/app_purchases/listen_to_purchase_update.dart';
 
-final premiumProvider =
+final premiumNotifierProvider =
     NotifierProvider<PremiumNotifier, bool>(
   PremiumNotifier.new,
 );
 
 class PremiumNotifier extends Notifier<bool> {
-
   @override
   bool build() {
     _load();

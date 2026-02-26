@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:tag_links/models/tag.dart';
 import 'package:uuid/uuid.dart';
 
@@ -10,7 +12,7 @@ class Folder {
   final String? image;
   final String? color;
   final DateTime createdAt;
-  final DateTime? updatedAt;
+  final DateTime updatedAt;
   final bool isFavorite;
 
   Folder({
@@ -22,7 +24,7 @@ class Folder {
     this.image,
     this.color,
     required this.createdAt,
-    this.updatedAt,
+    required this.updatedAt,
     this.isFavorite = false,
   });
 
@@ -41,7 +43,8 @@ class Folder {
     );
     return folder.ensureForInsert();
   }
-  static Folder fromMap(Map<String, dynamic> map) {
+
+    static Folder fromMap(Map<String, dynamic> map) {
     return Folder(
       id: map['id'],
       parentId: map['parentId'],
@@ -51,9 +54,7 @@ class Folder {
       image: map['image'],
       color: map['color'],
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt']),
-      updatedAt: map['updatedAt'] != null
-          ? DateTime.fromMillisecondsSinceEpoch(map['updatedAt'])
-          : null,
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(map['updatedAt']),
       isFavorite: map['isFavorite'] == 1,
     );
   }
@@ -67,7 +68,7 @@ class Folder {
       'image': image,
       'color': color,
       'createdAt': createdAt.millisecondsSinceEpoch,
-      'updatedAt': updatedAt?.millisecondsSinceEpoch,
+      'updatedAt': updatedAt.millisecondsSinceEpoch,
       'isFavorite': isFavorite ? 1 : 0,
     };
   }
@@ -102,6 +103,27 @@ class Folder {
       id: id.isEmpty ? const Uuid().v4() : id,
       createdAt: createdAt,
       updatedAt: DateTime.now(),
+    );
+  }
+  static Folder fromDecryptedJson(String id, String decryptedPayload) {
+    final Map<String, dynamic> json = jsonDecode(decryptedPayload);
+    final List<dynamic> tagsRaw = json['tags'] ?? [];
+
+    return Folder(
+      id: id,
+      parentId: json['parentId'] as String?, // Por si implementas subcarpetas
+      title: json['title'] as String,
+      description: json['description'] as String?,
+      image: json['image'] as String?,
+      color: json['color'] as String?,
+      tags: tagsRaw
+          .map((t) => Tag(id: t['id'] as String, name: t['name'] as String))
+          .toList(),
+      createdAt: DateTime.fromMillisecondsSinceEpoch(json['createdAt'] as int),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(
+        (json['updatedAt'] ?? json['createdAt']) as int,
+      ),
+      isFavorite: json['isFavorite'] as bool? ?? false,
     );
   }
 }

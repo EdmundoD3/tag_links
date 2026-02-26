@@ -1,9 +1,8 @@
 import 'dart:convert';
-import 'package:tag_links/core/sync/encripter.dart';
+import 'package:tag_links/core/encypt/encripter.dart';
+import 'package:tag_links/data/data_sources/deleted_dao.dart';
 import 'package:tag_links/models/folder.dart';
-import 'package:tag_links/models/tag.dart';
 
-// El userId lo asigna el servidor
 class FolderRawSync {
   final String id;
   final String payload;
@@ -12,78 +11,51 @@ class FolderRawSync {
   FolderRawSync({
     required this.id,
     required this.payload,
-    required this.deletedAt,
+    this.deletedAt,
   });
 
-  static FolderRawSync fromFolder(
-    Folder folder,
-    String key,
-    int? deletedAt,
-  ) {
+  static FolderRawSync fromDeleted(DeletedData deletedData) {
+    return FolderRawSync(
+      id: deletedData.id,
+      payload: "",
+      deletedAt: deletedData.deletedAt,
+    );
+  }
+
+  static Future<FolderRawSync> fromFolder(Folder folder) async {
     return FolderRawSync(
       id: folder.id,
-      payload: _buildPayload(folder, key),
-      deletedAt: deletedAt,
+      payload: await _buildFolderPayload(folder),
+      deletedAt: null,
     );
   }
 
-  static Folder toFolderFromPayload({
-    required String id,
-    required String encryptedPayload,
-    required String key,
-  }) {
-    final decrypted = decripter(encryptedPayload, key);
-
-    final Map<String, dynamic> json =
-        jsonDecode(decrypted) as Map<String, dynamic>;
-
-    final List<dynamic> tagsRaw =
-        (json['tags'] as List<dynamic>?) ?? [];
-
-    return Folder(
-      id: id,
-      title: json['title'] as String,
-      description: json['description'] as String?,
-      image: json['image'] as String?, // ahora sí lo soportamos
-      tags: tagsRaw
-          .map((t) => Tag(
-                id: t['id'] as String,
-                name: t['name'] as String,
-              ))
-          .toList(),
-      color: json['color'] as String?,
-      createdAt: DateTime.fromMillisecondsSinceEpoch(
-        json['createdAt'] as int,
-      ),
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.fromMillisecondsSinceEpoch(
-              json['updatedAt'] as int,
-            )
-          : null,
-      isFavorite: json['isFavorite'] as bool? ?? false,
+  factory FolderRawSync.fromJson(Map<String, dynamic> json) {
+    return FolderRawSync(
+      id: json['id'] as String,
+      payload: json['payload'] as String? ?? "",
+      deletedAt: json['deletedAt'] as int?,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'payload': payload,
+    'deletedAt': deletedAt,
+  };
 }
 
-String _buildPayload(Folder folder, String key) {
-  final raw = <String, dynamic>{
+Future<String> _buildFolderPayload(Folder folder) {
+  final raw = {
     'v': 1,
     'title': folder.title,
     'description': folder.description,
-    'image': folder.image, // ahora consistente
-    'tags': folder.tags
-        .map((t) => {
-              'id': t.id,
-              'name': t.name,
-            })
-        .toList(),
+    'image': folder.image,
+    'tags': folder.tags.map((t) => {'id': t.id, 'name': t.name}).toList(),
     'color': folder.color,
     'createdAt': folder.createdAt.millisecondsSinceEpoch,
-    'updatedAt': (folder.updatedAt ?? folder.createdAt)
-        .millisecondsSinceEpoch,
+    'updatedAt': folder.updatedAt.millisecondsSinceEpoch,
     'isFavorite': folder.isFavorite,
   };
-
-  final json = jsonEncode(raw);
-  return encripter(json, key);
+  return encripter(jsonEncode(raw));
 }

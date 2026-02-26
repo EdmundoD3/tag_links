@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:tag_links/models/link_preview.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:uuid/uuid.dart';
@@ -26,25 +28,6 @@ class Note {
     required this.updatedAt,
     this.isFavorite = false,
   });
-  static Note fromMap(Map<String, dynamic> map) {
-    return Note(
-      id: map['id'],
-      folderId: map['folderId'],
-      title: map['title'],
-      content: map['content'],
-      color: map['color'],
-      link: null, // luego lo conectas si aplica
-      tags: const [], // se cargan después
-      createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt']),
-      updatedAt: DateTime.fromMillisecondsSinceEpoch(map['updatedAt']),
-      isFavorite: map['isFavorite'] == 1,
-    );
-  }
-  String copyText() {
-    final String link = this.link?.url ?? '';
-    return '$title\n\n$link\n$content';
-  }
-
   factory Note.baseNote({
     String? id,
     String? title,
@@ -70,6 +53,27 @@ class Note {
       isFavorite: isFavorite,
     );
   }
+
+  static Note fromMap(Map<String, dynamic> map) {
+    return Note(
+      id: map['id'],
+      folderId: map['folderId'],
+      title: map['title'],
+      content: map['content'],
+      color: map['color'],
+      link: null, // luego lo conectas si aplica
+      tags: const [], // se cargan después
+      createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt']),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(map['updatedAt']),
+      isFavorite: map['isFavorite'] == 1,
+    );
+  }
+  String copyText() {
+    final String link = this.link?.url ?? '';
+    return '$title\n\n$link\n$content';
+  }
+
+
 
   Map<String, dynamic> toMap() {
     return {
@@ -120,12 +124,35 @@ class Note {
 
     return copyWith(updatedAt: DateTime.now());
   }
-}
+  static Note fromDecryptedJson(String id, String decryptedPayload) {
+    final Map<String, dynamic> json = jsonDecode(decryptedPayload);
+    final List<dynamic> tagsRaw = json['tags'] ?? [];
 
+    return Note(
+      id: id,
+      folderId: json['folderId'] as String,
+      title: json['title'] as String,
+      content: json['content'] as String,
+      color: json['color'] as String?,
+      // El link se reconstruye si existe la URL en el JSON
+      link: json['url'] != null 
+          ? LinkPreview.create(url: json['url'] as String, noteId: id) 
+          : null,
+      tags: tagsRaw
+          .map((t) => Tag(id: t['id'] as String, name: t['name'] as String))
+          .toList(),
+      createdAt: DateTime.fromMillisecondsSinceEpoch(json['createdAt'] as int),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(
+        (json['updatedAt'] ?? json['createdAt']) as int,
+      ),
+      isFavorite: json['isFavorite'] as bool? ?? false,
+    );
+  }
+}
 class NoteConfig {
   static final titleMaxLength = 120;
   static final titleMaxLine = 1;
-  static final contentMaxLength = 1200;
+  static final contentMaxLength = 3000;
   static final contentMaxLine = 10;
   static final urlMaxLength = 500;
   static final urlMaxLine = 1;

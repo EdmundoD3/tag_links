@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/core/sync/sync_notifier.dart';
 import 'package:tag_links/models/folder_preference.dart';
 import 'package:tag_links/models/search_query.dart';
 import 'package:tag_links/repository/folder_repository.dart';
@@ -93,18 +94,21 @@ class FoldersNotifier extends AsyncNotifier<List<Folder>> {
 
   // ───────────── CRUD ─────────────
 
-  Future<void> addFolder(Folder folder) async {
+Future<void> addFolder(Folder folder) async {
     await _repo.create(folder);
+    ref.read(syncNotifierProvider.notifier).performSync(); // 🔥 Agregado
     ref.invalidateSelf();
   }
 
   Future<void> updateFolder(Folder folder) async {
     await _repo.update(folder);
+    ref.read(syncNotifierProvider.notifier).performSync(); // 🔥 Agregado
     ref.invalidateSelf();
   }
 
   Future<void> deleteFolder(String id) async {
     await _repo.delete(id);
+    ref.read(syncNotifierProvider.notifier).performSync(); // 🔥 Agregado
     removeFolder(id);
     ref.invalidateSelf();
   }

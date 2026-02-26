@@ -20,7 +20,7 @@ void main() {
 
 class MyApp extends ConsumerStatefulWidget {
   const MyApp({super.key});
-
+  
   @override
   ConsumerState<MyApp> createState() => _MyAppState();
 }
@@ -38,6 +38,7 @@ class _MyAppState extends ConsumerState<MyApp> {
     _initPurchaseStream();
 
     ShareListener.getInitial().then(_handleMedia);
+
   }
 
   void _handleMedia(SharedMedia? media) {
@@ -70,7 +71,7 @@ void _listenToPurchaseUpdated(List<PurchaseDetails> list) {
   }());
 
   InAppPurchaseManager.listenToPurchaseUpdated(list);
-  ref.read(premiumProvider.notifier).reload();
+  ref.read(premiumNotifierProvider.notifier).reload();
 }
 
 
@@ -84,6 +85,7 @@ void _listenToPurchaseUpdated(List<PurchaseDetails> list) {
   @override
   Widget build(BuildContext context) {
     final palette = ref.watch(paletteProvider);
+    
     return MaterialApp(
       theme: getPalette(palette: palette),
       home: const HomePage(),
