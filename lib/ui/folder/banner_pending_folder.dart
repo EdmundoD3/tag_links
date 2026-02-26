@@ -11,6 +11,7 @@ class BannerPendingFolder extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     final folder = ref.watch(pendingFolderProvider);
     if (folder == null) return const SizedBox.shrink();
 
@@ -23,7 +24,7 @@ class BannerPendingFolder extends ConsumerWidget {
                 .read(folderMoveProvider)
                 .move(folder: folder, toParentId: toParentId);
           },
-          child: Text(t(ref, 'store', fallback: 'Almacenar')),
+          child: Text(t(ref, 'store', fallback: 'Almacenar'), style: TextStyle(color: theme.textTheme.bodySmall?.color)),
         ),
         TextButton(
           onPressed: () async {
@@ -37,7 +38,7 @@ class BannerPendingFolder extends ConsumerWidget {
               ref.read(pendingFolderProvider.notifier).clear();
             }
           },
-          child: Text(t(ref, 'discard', fallback: 'Descartar')),
+          child: Text(t(ref, 'discard', fallback: 'Descartar'), style: TextStyle(color: theme.textTheme.bodySmall?.color)),
         ),
       ],
     );

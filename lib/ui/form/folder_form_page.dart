@@ -169,9 +169,6 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
     ref.read(pendingFolderProvider.notifier).set(folder);
 
     if (!mounted) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const HomePage()),
-    );
+    Navigator.pop(context);
   }
 }

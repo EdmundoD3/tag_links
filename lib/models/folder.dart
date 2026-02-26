@@ -86,7 +86,7 @@ class Folder {
   }) {
     return Folder(
       id: id ?? this.id,
-      parentId: parentId ?? this.parentId,
+      parentId: parentId, //puede ser null asi que sin this o no podran ser folder de la raiz
       title: title ?? this.title,
       tags: tags ?? this.tags,
       description: description ?? this.description,

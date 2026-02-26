@@ -191,10 +191,7 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
     ref.read(pendingNoteProvider.notifier).set(note);
 
     if (!mounted) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const HomePage()),
-    );
+    Navigator.pop(context);
   }
 
   void _isFavoriteToogle() {

@@ -29,10 +29,10 @@ class ThemeSelector extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           itemCount: AppPalette.values.length,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
+            crossAxisCount: 4,
             mainAxisSpacing: 12,
             crossAxisSpacing: 12,
-            childAspectRatio: 0.9,
+            childAspectRatio: 1,
           ),
           itemBuilder: (context, index) {
             final palette = AppPalette.values[index];
@@ -45,11 +45,11 @@ class ThemeSelector extends ConsumerWidget {
                 duration: const Duration(milliseconds: 200),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  color: Theme.of(context).cardColor,
+                  color: Color.fromARGB(40, 142, 145, 153),
                   border: Border.all(
 
                     color: selected
-                        ? Colors.deepPurpleAccent
+                        ? Color(0xFF8E9199)
                         : Colors.transparent,
                     width: selected ? 2 : 1,
                   ),
@@ -66,17 +66,17 @@ class ThemeSelector extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      palette.name.toUpperCase(),
-                      style: TextStyle(
-                        color: theme.textTheme.titleSmall?.color,
-                        fontStyle: selected ? FontStyle.italic : FontStyle.normal,
-                        fontWeight:
-                            selected ? FontWeight.bold : FontWeight.normal,
-                      ),
-                    ),
+                    // Text(
+                    //   palette.name.toUpperCase(),
+                    //   style: TextStyle(
+                    //     color: theme.textTheme.titleSmall?.color,
+                    //     fontStyle: selected ? FontStyle.italic : FontStyle.normal, fontSize: 14,
+                    //     fontWeight:
+                    //         selected ? FontWeight.bold : FontWeight.normal,
+                    //   ),
+                    // ),
                     if (selected)
-                      Icon(Icons.check, size: 16, weight: 400, color: theme.textTheme.titleSmall?.color),
+                      Icon(Icons.check, size: 16, weight: 400, color: theme.iconTheme.color),
                   ],
                 ),
               ),

@@ -182,7 +182,7 @@ class _NoteTileCard extends StatelessWidget {
       margin: const EdgeInsets.only(top: 16, left: 12, right: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: theme.cardTheme.color ?? Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(5),
         boxShadow: const [
           BoxShadow(blurRadius: 4, color: Colors.black12, offset: Offset(0, 1)),
@@ -220,7 +220,6 @@ class _NoteTileCard extends StatelessWidget {
 
   List<Widget> _linkPreviewWidget(ThemeData theme, Note note) {
     if (note.link == null) return [];
-
     return [
       const SizedBox(height: 4),
       LinkPreviewWidget(preview: note.link!),
