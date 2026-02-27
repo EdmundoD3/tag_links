@@ -24,7 +24,8 @@ class FolderRepository {
     return _dao.searchByQuery(query, paginated: paginated);
   }
   Future<void> upsertAll(List<Folder> folders) {
-    return _dao.upsertAll(folders);
+    final enshuredFolders = folders.map((f) => f.ensureForInsert()).toList();
+    return _dao.upsertAll(enshuredFolders);
   }
   Future<void> deleteByIds(List<String> ids) {
     return _dao.deleteByIds(ids);
@@ -59,6 +60,9 @@ class FolderRepository {
 
   Future<FolderDefaultView> getPreference(String folderId) async {
     return _preferencesDao.getDefaultView(folderId);
+  }
+  Future<Set<String>> getAllDescendantIds(String folderId) async {
+    return _dao.getAllDescendantIds(folderId);
   }
 
   Future<void> toggleFavorite(Folder folder) {

@@ -35,12 +35,11 @@ class AuthManager {
     final token = response.data!.token;
     final encryptedKey = response.data!.encryptedKey;
 
-    if (token != null) {
       await _tokenStorage.save(token);
-    }
+
 
     if (encryptedKey == null) {
-      await _firstLoginFlow(idToken:idToken, token: token!,askPin:askPin);
+      await _firstLoginFlow(idToken:idToken, token: token,askPin:askPin);
     } else {
       await _normalLoginFlow(encryptedKey, askPin);
     }
@@ -94,8 +93,6 @@ class AuthManager {
   static Future<String?> _interactiveGoogleLogin() async {
     final googleSignIn = GoogleSignIn.instance;
     final account = await googleSignIn.authenticate();
-
-    if (account == null) return null;
 
     final auth = account.authentication;
     return auth.idToken;

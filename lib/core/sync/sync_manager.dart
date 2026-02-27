@@ -68,7 +68,7 @@ class SyncManager {
       final accessToken = await _tokenStorage.get();
       if (accessToken == null) return SyncManagerStatus.notHasAccessToken;
       final status = await _performSync(accessToken: accessToken);
-      if (status.isPremium != null) onUpdateIsPremium?.call(status.isPremium!);
+      if (status.isPremium != null) onUpdateIsPremium.call(status.isPremium!);
       return status.status;
     } catch (e) {
       debugPrint('Sync Error: $e');

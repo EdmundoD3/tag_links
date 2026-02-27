@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/core/sync/sync_notifier.dart';
 import 'package:tag_links/repository/notes_repository.dart';
 import 'package:tag_links/state/notes_provider.dart';
 import '../models/note.dart';
@@ -37,20 +40,28 @@ class NoteMoveService {
   Future<void> move({required Note note, required String? toFolderId}) async {
     final fromFolderId = note.folderId;
 
+    // 1. Crear el objeto con el cambio de carpeta
     final moved = note.copyWith(
       folderId: toFolderId,
       updatedAt: DateTime.now(),
     );
 
-    // UI optimista
-    ref.read(notesProvider(fromFolderId).notifier).removeNote(note.id);
-
-    ref.read(notesProvider(toFolderId).notifier).addNote(moved);
-
-    // persistencia
+    // 2. Persistencia real en la DB primero
+    // Usamos el repositorio directamente para asegurar que el cambio esté en disco
     await ref.read(notesRepositoryProvider).update(moved);
 
-    // limpiar estado temporal
+    // 3. Actualización de la UI (Optimista)
+    // Quitamos de la lista vieja
+    ref.read(notesProvider(fromFolderId).notifier).removeNote(note.id);
+
+    // Añadimos a la lista nueva. 
+    // OJO: Usa un método que actualice el estado sin volver a llamar al repo.create
+    ref.read(notesProvider(toFolderId).notifier).updateNoteState(moved);
+
+    // 4. Limpiar estado temporal
     ref.read(pendingNoteProvider.notifier).clear();
+    
+    // 5. Notificar al sistema de sincronización
+    unawaited(ref.read(syncNotifierProvider.notifier).performSync());
   }
 }

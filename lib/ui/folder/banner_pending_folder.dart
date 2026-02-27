@@ -13,34 +13,66 @@ class BannerPendingFolder extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final folder = ref.watch(pendingFolderProvider);
+
+    // 1. Si no hay carpeta seleccionada, no mostramos nada.
     if (folder == null) return const SizedBox.shrink();
 
-    return MaterialBanner(
-      content: Text(t(ref, 'alertMovePendingFolder', fallback: 'Tienes una carpeta pendiente de mover')),
-      actions: [
-        TextButton(
-          onPressed: () {
-            ref
-                .read(folderMoveProvider)
-                .move(folder: folder, toParentId: toParentId);
-          },
-          child: Text(t(ref, 'store', fallback: 'Almacenar'), style: TextStyle(color: theme.textTheme.bodySmall?.color)),
-        ),
-        TextButton(
-          onPressed: () async {
-            final confirm = await showConfirmDialog(
-              context,
-              title: t(ref, 'bannerNotMove', fallback: 'No mover'),
-              message: t(ref, 'discardAction', fallback: '¿Estás seguro de descartar la acción?'),
-            );
+    // 2. Verificamos si estamos en el mismo lugar (evitar mover a donde ya está).
+    final isSameFolder = folder.id == toParentId;
+    if (isSameFolder) return const SizedBox.shrink();
 
-            if (confirm == true) {
-              ref.read(pendingFolderProvider.notifier).clear();
-            }
-          },
-          child: Text(t(ref, 'discard', fallback: 'Descartar'), style: TextStyle(color: theme.textTheme.bodySmall?.color)),
-        ),
-      ],
+    // 3. Verificamos la "Lista Negra" (Hijos y descendientes).
+    final forbiddenAsync = ref.watch(forbiddenDestinationsProvider);
+
+    return forbiddenAsync.when(
+      data: (forbiddenIds) {
+        // Si el destino actual es un descendiente de la carpeta a mover... OCULTAR.
+        if (forbiddenIds.contains(toParentId)) {
+          return const SizedBox.shrink();
+        }
+
+        return MaterialBanner(
+          elevation: 1,
+          backgroundColor: theme.colorScheme.onSurfaceVariant.withAlpha(8),
+          content: Text(t(ref, 'alertMovePendingFolder', 
+              fallback: 'Tienes una carpeta pendiente de mover')),
+          actions: [
+            TextButton(
+              onPressed: () {
+                ref.read(folderMoveProvider).move(
+                      folder: folder,
+                      toParentId: toParentId,
+                    );
+              },
+              child: Text(
+                t(ref, 'store', fallback: 'Almacenar'),
+                style: TextStyle(color: theme.colorScheme.primary),
+              ),
+            ),
+            TextButton(
+              onPressed: () async {
+                final confirm = await showConfirmDialog(
+                  context,
+                  title: t(ref, 'bannerNotMove', fallback: 'No mover'),
+                  message: t(ref, 'discardAction', 
+                      fallback: '¿Estás seguro de descartar la acción?'),
+                );
+
+                if (confirm == true) {
+                  ref.read(pendingFolderProvider.notifier).clear();
+                }
+              },
+              child: Text(
+                t(ref, 'discard', fallback: 'Descartar'),
+                style: TextStyle(color: theme.textTheme.bodySmall?.color),
+              ),
+            ),
+          ],
+        );
+      },
+      // Mientras carga la lista negra o si hay error, mejor no mostrar el banner por seguridad.
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
     );
   }
 }

@@ -250,6 +250,26 @@ Future<void> deleteByIds(List<String> ids) async {
 
     return Future.wait(result.map((f) => _mapFolderWithTags(db, f)));
   }
+  Future<Set<String>> getAllDescendantIds(String folderId) async {
+  final db = await _db; // Tu instancia de sqflite
+  
+  // Esta consulta busca la carpeta inicial y luego se une a sí misma
+  // buscando todos los registros cuyo parentId sea el id de la carpeta anterior
+  final List<Map<String, dynamic>> results = await db.rawQuery('''
+    WITH RECURSIVE family AS (
+      -- Caso base: empezar por la carpeta que queremos mover
+      SELECT id FROM folders WHERE id = ?
+      UNION ALL
+      -- Paso recursivo: buscar hijos cuyo parentId sea un ID ya encontrado en 'family'
+      SELECT f.id FROM folders f
+      INNER JOIN family ON f.parentId = family.id
+    )
+    SELECT id FROM family;
+  ''', [folderId]);
+
+  // Retornamos un Set para que la búsqueda sea O(1) (instantánea)
+  return results.map((row) => row['id'] as String).toSet();
+}
 
   /// MAP FOLDER + TAGS
   Future<Folder> _mapFolderWithTags(

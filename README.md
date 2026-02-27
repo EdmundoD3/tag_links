@@ -1,23 +1,72 @@
-# tag_links
 
-A new Flutter project.
+# TagLinks - Flutter App 🚀
 
-## Getting Started
+Una solución robusta para la gestión de enlaces y notas, construida con **Flutter** y sincronizada con un backend en **Node.js/TS**. Esta aplicación demuestra un flujo completo de monetización, persistencia local y arquitectura escalable.
 
-This project is a starting point for a Flutter application.
+---
 
-A few resources to get you started if this is your first Flutter project:
+## 🛠 Configuración del Entorno
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+### 1. Variables de API (Inyección en Compilación)
+Para mantener la seguridad y flexibilidad entre entornos (Desarrollo vs. Producción), la URL del servidor se inyecta mediante `--dart-define`.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+#### **Configuración en VS Code (`.vscode/launch.json`)**
+Para depurar sin escribir comandos largos, agrega esto a tu configuración de lanzamiento:
 
+```json
+{
+  "name": "TagLinks Debug",
+  "request": "launch",
+  "type": "dart",
+  "toolArgs": [
+    "--dart-define",
+    "API_BASE_URL=https://tu-servidor-local.com/api"
+  ]
+}
+```
 
-agrega en ad_mob_config: BANNER_ID y rewarded_video_id
+### 2. Google AdMob (Android)
+La publicidad está integrada mediante el SDK oficial. Debes configurar el ID de aplicación en el manifiesto de Android.
+**Archivo:** `android/app/src/main/AndroidManifest.xml`
 
-en android/app/src/main/AndroidManifest.xml agrega <meta-data
-            android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713"/>
+```xml
+<meta-data
+    android:name="com.google.android.gms.ads.APPLICATION_ID"
+    android:value="ca-app-pub-3940256099942544~3347511713"/>
+```
+
+**Archivo:** `lib/core/ads/ad_mob_config.dart`
+Recuerda actualizar los IDs de los bloques de anuncios para producción:
+* `bannerAdUnitId`: Banner inferior.
+* `interstitialAdUnitId`: Intersticial de transición.
+* `rewardedAdUnitId`: Video para recompensas.
+
+### 💎 Compras In-App (Sin Publicidad)
+El sistema permite a los usuarios eliminar la publicidad mediante suscripciones. Los IDs registrados en Google Play Console son:
+* `premium_monthly`
+* `premium_yearly`
+
+---
+
+## 🚀 Comandos de Ejecución
+
+### Ejecutar en Desarrollo
+
+```bash
+flutter run --dart-define=API_BASE_URL=https://tu-servidor-js.com/api
+```
+
+### Compilar APK de Producción
+
+```bash
+flutter build apk --release --dart-define=API_BASE_URL=https://api.tu-dominio-real.com
+```
+
+---
+
+## ⚙️ Tecnologías y Arquitectura
+* **Gestión de Estado:** Riverpod (Notifier & FutureProvider).
+* **Base de Datos:** SQLite para persistencia offline y SharedPreferences para ajustes.
+* **Backend:** Sincronización con API REST (Node.js / TypeScript).
+* **Monetización:** Google Mobile Ads + In-App Purchases (IAP).
+* **UI/UX:** Diseño adaptativo con soporte para temas personalizados.

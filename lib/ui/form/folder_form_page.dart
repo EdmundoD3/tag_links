@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/core/ads/small_banner.dart';
+import 'package:tag_links/core/ads/ads_service_provider.dart';
+import 'package:tag_links/core/ads/interstitial_ads_provider.dart';
 import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/models/tag.dart';
-import 'package:tag_links/pages/home_page.dart';
 import 'package:tag_links/state/folders_provider.dart';
 import 'package:tag_links/state/pending_folder_provider.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
@@ -41,6 +41,7 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
   List<Tag> _tags = [];
   bool _isFavorite = false;
   String? parentId;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -73,6 +74,7 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
       isFavorite: _isFavorite,
       onFavoriteToogle: _isFavoriteToogle,
       onSave: _onSave,
+      isSaving: _isSaving,
     );
   }
 
@@ -101,7 +103,6 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
         onChangeFolder: _onChangeFolder,
         title: t(ref, 'moveToFolder', fallback: 'Cambiar carpeta'),
       ),
-      const SmartBannerAd(),
     ];
   }
 
@@ -142,23 +143,51 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
     return folder;
   }
 
-  Future<void> _onSave() async {
-    if (!_formKey.currentState!.validate()) return;
+Future<void> _onSave() async {
+  // 1. Validaciones iniciales
+  if (_isSaving || !_formKey.currentState!.validate()) return;
 
+  // 2. Bloqueamos el botón
+  setState(() => _isSaving = true);
+
+  try {
     final folder = _captureFolder();
-
     final provider = foldersProvider(parentId);
 
+    // 3. Guardado en la base de datos
     if (widget.isEdit) {
       await ref.read(provider.notifier).updateFolder(folder);
     } else {
       await ref.read(provider.notifier).addFolder(folder);
     }
 
+    // 4. Lógica de Anuncios
+    final adService = ref.read(adServiceProvider);
+    final tocaIntersticial = ref.read(showInterstitialAdsProvider);
+
+    if (tocaIntersticial) {
+      adService.showInterstitialAd(
+        onAdClosed: () {
+          // Registramos que se mostró para el cooldown de 2 días
+          ref.read(interstitialAdsProvider.notifier).registerAdShown();
+          if (mounted) Navigator.pop(context); // Cierra después del anuncio
+        },
+      );
+      // Salimos de la función aquí para que no ejecute el pop de abajo
+      return; 
+    }
+
+    // 5. Si NO hubo anuncio, cerramos normalmente
+    if (mounted) Navigator.pop(context);
+
+  } catch (e) {
+    // Si algo falla, liberamos el botón para que el usuario pueda reintentar
     if (mounted) {
-      Navigator.pop(context);
+      setState(() => _isSaving = false);
+      // Opcional: Mostrar un mensaje de error si el guardado falló
     }
   }
+}
 
   Future<void> _onChangeFolder() async {
     final isConfirm = await ConfirmDialog.moveFolder(context, ref);

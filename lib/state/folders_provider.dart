@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/sync/sync_notifier.dart';
 import 'package:tag_links/models/folder_preference.dart';
@@ -12,7 +14,9 @@ final foldersViewProvider = Provider<AsyncValue<List<Folder>>>((ref) {
   final pagination = ref.watch(folderPaginationProvider);
 
   final hasSearch =
-      searchQuery.text.isNotEmpty || searchQuery.includeTags.isNotEmpty || searchQuery.isFavorite;
+      searchQuery.text.isNotEmpty ||
+      searchQuery.includeTags.isNotEmpty ||
+      searchQuery.isFavorite;
 
   if (hasSearch) {
     return ref.watch(folderSearchProvider((searchQuery, pagination)));
@@ -94,33 +98,60 @@ class FoldersNotifier extends AsyncNotifier<List<Folder>> {
 
   // ───────────── CRUD ─────────────
 
-Future<void> addFolder(Folder folder) async {
+  Future<void> addFolder(Folder folder) async {
     await _repo.create(folder);
-    ref.read(syncNotifierProvider.notifier).performSync(); // 🔥 Agregado
+    unawaited(ref.read(syncNotifierProvider.notifier).performSync());
+    // En el caso de añadir, invalidateSelf está bien para traer el orden correcto de DB
     ref.invalidateSelf();
   }
+
+  // En FoldersNotifier...
 
   Future<void> updateFolder(Folder folder) async {
+    // 1. Guardar en DB para que el cambio sea permanente
     await _repo.update(folder);
-    ref.read(syncNotifierProvider.notifier).performSync(); // 🔥 Agregado
-    ref.invalidateSelf();
-  }
 
-  Future<void> deleteFolder(String id) async {
-    ref.read(syncNotifierProvider.notifier).performSync(); // 🔥 Agregado
-    removeFolder(id);
-    ref.invalidateSelf();
+    // 2. Sync
+    unawaited(ref.read(syncNotifierProvider.notifier).performSync());
+
+    // 3. Actualizar UI manualmente para que el movimiento sea fluido
+    state.whenData((currentItems) {
+      final index = currentItems.indexWhere((f) => f.id == folder.id);
+      if (index != -1) {
+        // Si ya está aquí, reemplazamos
+        final newList = [...currentItems];
+        newList[index] = folder;
+        state = AsyncData(newList);
+      } else {
+        // Si no está (es porque viene de otro padre), la añadimos
+        state = AsyncData([folder, ...currentItems]);
+      }
+    });
   }
 
   void removeFolder(String folderId) {
-    final current = state.asData?.value;
-    if (current == null) return;
+    state.whenData((currentItems) {
+      state = AsyncData(currentItems.where((f) => f.id != folderId).toList());
+    });
+  }
 
-    state = AsyncValue.data(current.where((f) => f.id != folderId).toList());
+  Future<void> deleteFolder(String id) async {
+    // 1. Borrar de la base de datos (¡Este faltaba!)
+    await _repo.delete(id);
+
+    // 2. Sync
+    unawaited(ref.read(syncNotifierProvider.notifier).performSync());
+
+    // 3. Quitar de la UI
+    removeFolder(id);
+
+    // 4. Invalida para asegurar que la paginación se recalcule bien
+    ref.invalidateSelf();
   }
 
   Future<void> toggleFavorite(Folder folder) async {
     await _repo.toggleFavorite(folder);
+    // Para favoritos, como suele cambiar el icono, invalidar es lo más seguro
     ref.invalidateSelf();
   }
 

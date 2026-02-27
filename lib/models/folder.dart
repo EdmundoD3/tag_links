@@ -103,6 +103,7 @@ class Folder {
       id: id.isEmpty ? const Uuid().v4() : id,
       createdAt: createdAt,
       updatedAt: DateTime.now(),
+      parentId: id != parentId ? parentId : null,
     );
   }
   static Folder fromDecryptedJson(String id, String decryptedPayload) {

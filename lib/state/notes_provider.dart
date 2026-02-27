@@ -80,7 +80,7 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
     }
 
     //revisar
-    final links = newItems
+    final linksToEnrich = newItems
         .map((n) => n.link)
         .whereType<LinkPreview>()
         .where((l) => !l.hasMetadata)
@@ -90,7 +90,9 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
         })
         .values
         .toList();
-    unawaited(_enrichLinks(links));
+    if (linksToEnrich.isNotEmpty) {
+      unawaited(_enrichLinks(linksToEnrich));
+    }
 
     return reset ? newItems : [...state.value ?? [], ...newItems];
   }
@@ -98,21 +100,23 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
   bool get hasMore => _hasMore;
   bool get isLoadingMore => _isLoadingMore;
 
-  Future<void> loadMore() async {
+Future<void> loadMore() async {
     if (!_hasMore || _isLoadingMore) return;
 
     _isLoadingMore = true;
-    // 🔁 fuerza rebuild
-    state = AsyncData(state.value ?? []);
-
+    // Solo notificamos que estamos cargando más si es necesario para la UI
+    // pero no reseteamos el estado para no perder la scroll position
     _page++;
 
-    final updated = await _fetchPage();
-    state = AsyncData(updated);
-
-    _isLoadingMore = false;
-    // 🔁 rebuild final
-    state = AsyncData(state.value ?? []);
+    try {
+      final updatedList = await _fetchPage();
+      state = AsyncData(updatedList);
+    } catch (e, st) {
+      _page--; // Revertir página si falla
+      state = AsyncError(e, st);
+    } finally {
+      _isLoadingMore = false;
+    }
   }
 
   // CRUD
@@ -136,11 +140,28 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
     state = AsyncValue.data(updated);
   }
 
-  Future<void> updateNote(Note note) async {
+Future<void> updateNote(Note note) async {
     await _repo.update(note);
     unawaited(ref.read(syncNotifierProvider.notifier).performSync());
-    ref.invalidateSelf();
+    
+    // Actualización optimista: No invalides, solo actualiza el item en la lista
+    state.whenData((notes) {
+      state = AsyncData(notes.map((n) => n.id == note.id ? note : n).toList());
+    });
   }
+  void updateNoteState(Note note) {
+  state.whenData((currentNotes) {
+    // Si la nota ya existe la actualizamos, si no la insertamos al inicio
+    final index = currentNotes.indexWhere((n) => n.id == note.id);
+    if (index != -1) {
+      final newList = [...currentNotes];
+      newList[index] = note;
+      state = AsyncData(newList);
+    } else {
+      state = AsyncData([note, ...currentNotes]);
+    }
+  });
+}
 
   Future<void> deleteNote(String id) async {
     final current = state.asData?.value;
@@ -150,7 +171,7 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
 
     try {
       await _repo.delete(id);
-      ref.read(syncNotifierProvider.notifier).performSync();
+      unawaited(ref.read(syncNotifierProvider.notifier).performSync());
     } catch (e) {
       // ❌ rollback si falla
       state = AsyncValue.data(current);
@@ -158,7 +179,7 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
     }
   }
 
-  Future<void> _enrichLinks(List<LinkPreview> links) async {
+Future<void> _enrichLinks(List<LinkPreview> links) async {
     final service = LinkPreviewService();
     final repoLinkPreview = ref.read(linkPreviewRepositoryProvider);
     bool updatedAny = false;
@@ -171,8 +192,13 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
       }
     }
 
+    // 🚩 CAMBIO CLAVE: En lugar de invalidateSelf (que crea bucles), 
+    // podrías usar un evento de bus o simplemente dejar que la UI
+    // se actualice la próxima vez que el usuario navegue.
+    // Si necesitas que sea real-time, actualiza el estado local de la nota.
     if (updatedAny) {
-      ref.invalidateSelf();
+      // Opcional: Solo refrescar si es vital, pero con cuidado del bucle.
+      // ref.invalidateSelf(); 
     }
   }
 }

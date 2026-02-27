@@ -1,15 +1,20 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tag_links/core/ads/ad_mob_config.dart';
+import 'package:tag_links/core/ads/ads_disable_provider.dart';
 import 'package:tag_links/core/app_purchases/premium_provider.dart';
 
 final showInterstitialAdsProvider = Provider<bool>((ref) {
   final isPremium = ref.watch(premiumNotifierProvider);
-  if (isPremium == true) return false;
+  if (isPremium) return false;
+
+  final adsActivas = ref.watch(isAdsActiveProvider);
+  if (!adsActivas) return false;
 
   final nextAllowed = ref.watch(interstitialAdsProvider);
-
-  if (nextAllowed == null) return false; // aún cargando
+  
+  // Si aún está cargando el SharedPreferences, no permitimos mostrar
+  if (nextAllowed == null) return false;
 
   return DateTime.now().isAfter(nextAllowed);
 });

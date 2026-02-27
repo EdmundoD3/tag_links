@@ -12,7 +12,7 @@ final isAdsActiveProvider = Provider<bool>((ref) {
 
   return asyncValue.when(
     loading: () => false, // mientras carga no mostrar
-    error: (_, __) => true, // si algo falla, mejor mostrar
+    error: (_, _) => true, // si algo falla, mejor mostrar
     data: (disabledUntil) {
       if (disabledUntil == null) return true;
       return DateTime.now().isAfter(disabledUntil);

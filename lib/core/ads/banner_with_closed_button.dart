@@ -10,7 +10,7 @@ class BannerWithCloseButton extends StatelessWidget {
     super.key,
     required this.child,
     required this.onCloseTap,
-    this.padding = const EdgeInsets.symmetric(vertical: 8),
+    this.padding = const EdgeInsets.symmetric(horizontal: 12),
     this.showClose = true,
   });
 
@@ -26,7 +26,7 @@ class BannerWithCloseButton extends StatelessWidget {
           if (showClose)
             Positioned(
               top: 3,
-              right: 5,
+              right: 8,
               child: _CloseButton(onTap: onCloseTap),
             ),
         ],
@@ -69,23 +69,32 @@ class _CloseButtonState extends State<_CloseButton>
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return ScaleTransition(
-      scale: _scaleAnimation,
-      child: GestureDetector(
-        onTap: widget.onTap,
-        behavior: HitTestBehavior.opaque,
-        child: SizedBox(
-          width: 15,
-          height: 15,
-          // decoration: BoxDecoration(
-          //   color: Colors.black.withOpacity(0.6),
-          //   shape: BoxShape.circle,
-          // ),
-          child: const Icon(Icons.cancel_presentation, size: 16, color: Colors.blue),
+@override
+Widget build(BuildContext context) {
+  return ScaleTransition(
+    scale: _scaleAnimation,
+    child: GestureDetector(
+      onTap: widget.onTap, // Usar onTap o onPressed según prefieras
+      behavior: HitTestBehavior.opaque,
+      child: Container( // Quitamos el SizedBox o lo hacemos de 24x24
+        padding: const EdgeInsets.all(2), // Da un margen pequeño al icono
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.8),
+          shape: BoxShape.circle,
+          boxShadow: [ // Opcional: una sombra muy suave para despegarlo del fondo
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 4,
+            ),
+          ],
+        ),
+        child: const Icon(
+          Icons.cancel, 
+          size: 18, 
+          color: Colors.redAccent
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

@@ -43,7 +43,7 @@ class ApiServices {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'idToken': idToken,
-        if (userName != null) 'userName': userName,
+        'userName': userName,
         if (encryptedKey != null) 'encryptedKey': encryptedKey.toJson(),
       }),
     );
@@ -137,7 +137,7 @@ class ApiServices {
           }),
         )
         .timeout(
-          const Duration(seconds: 30), // 1. Tiempo límite de espera
+          const Duration(seconds: 10), // 1. Tiempo límite de espera
         );
 
     if (response.statusCode == 401) {

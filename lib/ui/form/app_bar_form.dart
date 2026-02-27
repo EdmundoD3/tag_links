@@ -6,6 +6,7 @@ class AppBarForm extends StatelessWidget implements PreferredSizeWidget {
   final void Function() onFavoriteToogle;
   final void Function() onSave;
   final List<Widget>? actions;
+  final bool isSaving;
 
   const AppBarForm({
     super.key,
@@ -14,6 +15,7 @@ class AppBarForm extends StatelessWidget implements PreferredSizeWidget {
     required this.onSave,
     required this.isFavorite,
     required this.onFavoriteToogle,
+    required this.isSaving,
   });
 
   @override
@@ -35,10 +37,16 @@ class AppBarForm extends StatelessWidget implements PreferredSizeWidget {
                 ),
               ),
         IconButton(
-          icon: Icon(
-            Icons.save,
-            color: theme.iconTheme.color ?? Colors.deepPurple,
-          ),
+          icon: isSaving
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(),
+                )
+              : Icon(
+                  Icons.save,
+                  color: theme.iconTheme.color ?? Colors.deepPurple,
+                ),
           onPressed: onSave,
         ),
       ],

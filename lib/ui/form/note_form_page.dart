@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/core/ads/small_banner.dart';
+import 'package:tag_links/core/ads/ads_service_provider.dart';
+import 'package:tag_links/core/ads/interstitial_ads_provider.dart';
 import 'package:tag_links/core/locate/app_lang.dart';
 import 'package:tag_links/models/link_preview.dart';
 import 'package:tag_links/models/note.dart';
 import 'package:tag_links/models/tag.dart';
-import 'package:tag_links/pages/home_page.dart';
 import 'package:tag_links/state/notes_provider.dart';
 import 'package:tag_links/state/pending_note_provider.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
@@ -40,7 +40,7 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
 
   late TextEditingController _titleCtrl;
   late TextEditingController _contentCtrl;
-
+  bool _isSaving = false;
   List<Tag> _tags = [];
 
   bool _isFavorite = false;
@@ -84,19 +84,19 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
     return note;
   }
 
-  Future<void> _onSave() async {
-    if (!_formKey.currentState!.validate()) return;
+Future<void> _onSave() async {
+  if (_isSaving || !_formKey.currentState!.validate()) return;
+  
+  setState(() => _isSaving = true);
 
+  try {
     final note = _captureNote();
-
+    
+    // Lógica de guardado
     if (widget.isPending) {
-      // 👉 flujo especial: viene de banner / mover
-      await ref
-          .read(noteMoveProvider)
-          .move(note: note, toFolderId: widget.folderId);
+      await ref.read(noteMoveProvider).move(note: note, toFolderId: widget.folderId);
     } else {
       final provider = notesProvider(widget.folderId);
-
       if (widget.isEdit) {
         await ref.read(provider.notifier).updateNote(note);
       } else {
@@ -104,10 +104,30 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
       }
     }
 
-    if (mounted) {
-      Navigator.pop(context);
-    }
+    // Lógica de Anuncios
+    final adService = ref.read(adServiceProvider);
+    final tocaIntersticial = ref.read(showInterstitialAdsProvider);
+
+    if (tocaIntersticial) {
+      adService.showInterstitialAd(
+        onAdClosed: () {
+          ref.read(interstitialAdsProvider.notifier).registerAdShown();
+          if (mounted) Navigator.pop(context); 
+        },
+      );
+      // Importante: No ponemos _isSaving = false aquí porque vamos a cerrar la pantalla.
+      return; 
+    } 
+
+    // Si NO toca anuncio, cerramos normalmente
+    if (mounted) Navigator.pop(context);
+
+  } catch (e) {
+    // Si algo falla (ej. error de red al guardar), reactivamos el botón
+    if (mounted) setState(() => _isSaving = false);
+    // Aquí podrías mostrar un SnackBar de error
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -120,6 +140,7 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
       isFavorite: _isFavorite,
       onFavoriteToogle: _isFavoriteToogle,
       onSave: _onSave,
+      isSaving: _isSaving,
     );
   }
 
@@ -156,7 +177,6 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
         onChangeFolder: _onChangeFolder,
         title: t(ref, 'moveToFolder', fallback: 'Cambiar carpeta'),
       ),
-      const SmartBannerAd(),
     ];
   }
 
@@ -216,9 +236,9 @@ class _ContentController extends StatelessWidget {
         labelText: label,
         alignLabelWithHint: true,
         border: const OutlineInputBorder(),
-            labelStyle: TextStyle(color: theme.hintColor),
-            enabledBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: theme.focusColor, width: 2),
+        labelStyle: TextStyle(color: theme.hintColor),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: theme.focusColor, width: 2),
         ),
       ),
     );

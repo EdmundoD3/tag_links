@@ -10,7 +10,7 @@ class InAppPurchaseManager {
     'premium_yearly',
   };
 
-  static void listenToPurchaseUpdated(
+  static Future<void> listenToPurchaseUpdated(
     List<PurchaseDetails> purchases,
   ) async {
     for (final purchase in purchases) {
@@ -35,9 +35,10 @@ class InAppPurchaseManager {
     final isYearly = purchase.productID.contains('yearly');
 
     // Si es compra nueva: ciclo completo. Si es restore: 7 días buffer.
-    final Duration extension = (purchase.status == PurchaseStatus.purchased)
-        ? Duration(days: isYearly ? 370 : 35)
-        : const Duration(days: 7);
+    // Sugerencia para la duración en _updatePremiumExpiration
+final Duration extension = (purchase.status == PurchaseStatus.purchased)
+    ? Duration(days: isYearly ? 370 : 35)
+    : Duration(days: isYearly ? 30 : 7); // Un buffer más realista para restores
 
     final newExpirationDate = now.add(extension);
 

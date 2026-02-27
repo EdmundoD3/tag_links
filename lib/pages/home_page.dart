@@ -12,7 +12,6 @@ import 'package:tag_links/state/pending_note_provider.dart';
 import 'package:tag_links/state/tags_provider.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
 import 'package:tag_links/ui/app_bar/app_bar_folder.dart';
-import 'package:tag_links/core/ads/small_banner.dart';
 import 'package:tag_links/ui/banners/banner_pending.dart';
 import 'package:tag_links/ui/button/create_new_folder_button.dart';
 import 'package:tag_links/ui/button/go_settings_button.dart';
@@ -67,7 +66,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final bool hasPendingNotes = ref.watch(hasPendingNoteProvider);
     final foldersAsync = ref.watch(foldersViewProvider);
     final bool isFolder = ref.watch(isFolderProvider);
-    
+
     //en este caso como valor inicial o sea cuando no hay parametros de busqueda que empieze con las notas favoritas
     final notesAsync = ref.watch(notesViewProvider);
     return PageScaffold(
@@ -80,51 +79,55 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-
-
   PreferredSizeWidget _appBar(WidgetRef ref, bool isFolder) {
     return AppBarPages(
-        title: t(ref, "appName", fallback: 'Tag Links'),
-        actions: [
-          if (kDebugMode) GoDebugPageButon(),
-          GoSettingsButton(),
-          SwitchFolderNote(
-            isFolder: isFolder,
-            size: 26,
-            onTap: () {
-              ref.read(isFolderProvider.notifier).set(!isFolder);
-              ref.invalidate(foldersProvider(null));
-              ref.invalidate(notesProvider(null));
-            },
-          ),
-          Padding(padding: EdgeInsetsGeometry.directional(end: 4)),
-        ],
-      );
+      title: t(ref, "appName", fallback: 'Tag Links'),
+      actions: [
+        if (kDebugMode) GoDebugPageButon(),
+        GoSettingsButton(),
+        SwitchFolderNote(
+          isFolder: isFolder,
+          size: 26,
+          onTap: () {
+            ref.read(isFolderProvider.notifier).set(!isFolder);
+            ref.invalidate(foldersProvider(null));
+            ref.invalidate(notesProvider(null));
+          },
+        ),
+        Padding(padding: EdgeInsetsGeometry.directional(end: 4)),
+      ],
+    );
   }
-  List<Widget> _body(
-    WidgetRef ref,
-    bool isFolder,
-    bool hasPendingNotes,
-    AsyncValue<List<Folder>> foldersAsync,
-    AsyncValue<List<Note>> notesAsync,
-  ) {
-    return [
-      if (hasPendingNotes) _bannerHasPendingNotes(context, ref),
-      BannerPendingFolder(toParentId: null),
-      const SizedBox(height: 16),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: _searchBar(ref, isFolder),
-      ),
-      const SizedBox(height: 32),
-      _selectedIncludeTags(ref),
-      Expanded(
+
+List<Widget> _body(
+  WidgetRef ref,
+  bool isFolder,
+  bool hasPendingNotes,
+  AsyncValue<List<Folder>> foldersAsync,
+  AsyncValue<List<Note>> notesAsync,
+) {
+  return [
+    if (hasPendingNotes) _bannerHasPendingNotes(context, ref),
+    BannerPendingFolder(toParentId: null),
+    const SizedBox(height: 16),
+    Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: _searchBar(ref, isFolder),
+    ),
+    const SizedBox(height: 16), // Reducido de 32 para ganar espacio
+    _selectedIncludeTags(ref),
+    // 🚀 EXTREMADAMENTE IMPORTANTE:
+    // Envolvemos el Expanded en un Flexible o aseguramos que el 
+    // ListView/GridView interno tenga una altura definida.
+    Expanded(
+      child: Container(
+        // Un color transparente ayuda a debuguear áreas de renderizado
+        color: Colors.transparent, 
         child: isFolder ? _buildFolders(foldersAsync) : _buildNotes(notesAsync),
       ),
-
-      const SmartBannerAd(),
-    ];
-  }
+    ),
+  ];
+}
 
   Widget _buildFolders(AsyncValue<List<Folder>> foldersAsync) {
     final notifier = ref.read(foldersProvider(null).notifier);
@@ -212,7 +215,8 @@ class _HomePageState extends ConsumerState<HomePage> {
       },
     );
   }
-    void _onChangeText(WidgetRef ref, String text) {
+
+  void _onChangeText(WidgetRef ref, String text) {
     ref.read(searchQueryProvider.notifier).setText(text);
     ref.read(tagSearchTextProvider.notifier).state = text;
 

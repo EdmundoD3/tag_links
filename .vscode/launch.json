@@ -20,6 +20,15 @@
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"
-        }
+        },
+        {
+      "name": "TagLinks Debug",
+      "request": "launch",
+      "type": "dart",
+      "toolArgs": [
+        "--dart-define",
+        "API_BASE_URL=https://192.168.1.10/api"
+      ]
+    }
     ]
 }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/ads/ads_disable_provider.dart';
 import 'package:tag_links/core/ads/interstitial_ads_provider.dart';
+import 'package:tag_links/core/app_purchases/premium_sales_sheet.dart';
+import 'package:tag_links/ui/alerts/feedback_alert_confirm.dart';
 
 void showAdManagementMenu(
   BuildContext context,
@@ -65,6 +67,19 @@ void showAdManagementMenu(
                               if (context.mounted) {
                                 Navigator.pop(context);
                               }
+                              if (context.mounted) {
+                                FeedbackAlertConfirm.thanksForRewardedAd(
+                                  context,
+                                  ref,
+                                );
+                              }
+                            } else {
+                              if (context.mounted) {
+                                FeedbackAlertConfirm.errorForRewardedAd(
+                                  context,
+                                  ref,
+                                );
+                              }
                             }
 
                             setState(() => isLoading = false);
@@ -84,24 +99,25 @@ void showAdManagementMenu(
                 const SizedBox(height: 12),
 
                 /// 💎 PREMIUM
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () async {
-                      Navigator.pop(context);
-                      await processPurchase();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                      backgroundColor: Colors.purple[900], // Fondo oscuro
-                      foregroundColor: Colors.white, // Texto blanco
-                      elevation: 5, // Sombra moderada
-                      shadowColor: Colors.indigo[200],
-                    ),
-                    icon: const Icon(Icons.diamond),
-                    label: const Text("Plan sin anuncios - \$2.50 / año"),
-                  ),
-                ),
+                PremiumSalesSheet(showEmpty: null),
+                // SizedBox(
+                //   width: double.infinity,
+                //   child: ElevatedButton.icon(
+                //     onPressed: () async {
+                //       Navigator.pop(context);
+                //       await processPurchase();
+                //     },
+                //     style: ElevatedButton.styleFrom(
+                //       padding: const EdgeInsets.symmetric(vertical: 15),
+                //       backgroundColor: Colors.purple[900], // Fondo oscuro
+                //       foregroundColor: Colors.white, // Texto blanco
+                //       elevation: 5, // Sombra moderada
+                //       shadowColor: Colors.indigo[200],
+                //     ),
+                //     icon: const Icon(Icons.diamond),
+                //     label: const Text("Plan sin anuncios - \$2.50 / año"),
+                //   ),
+                // ),
 
                 const SizedBox(height: 16),
 

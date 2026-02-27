@@ -6,8 +6,7 @@ import 'package:tag_links/core/ads/ads_disable_provider.dart';
 import 'package:tag_links/core/ads/ads_service_provider.dart';
 import 'package:tag_links/core/ads/banner_with_closed_button.dart';
 import 'package:tag_links/core/ads/show_ad_management_menu.dart';
-import 'package:tag_links/ui/alerts/feedback_alert_confirm.dart';
-
+import 'package:tag_links/core/app_purchases/premium_sales_sheet.dart';
 class SmartBannerAd extends ConsumerStatefulWidget {
   const SmartBannerAd({super.key});
 
@@ -31,11 +30,10 @@ class _SmartBannerAdState extends ConsumerState<SmartBannerAd> {
       size: AdSize.banner,
       request: const AdRequest(),
       listener: BannerAdListener(
-        onAdLoaded: (_) {
-          setState(() => _isLoaded = true);
-        },
+        onAdLoaded: (_) => setState(() => _isLoaded = true),
         onAdFailedToLoad: (ad, error) {
           ad.dispose();
+          debugPrint('Banner Error: $error');
         },
       ),
     )..load();
@@ -43,51 +41,42 @@ class _SmartBannerAdState extends ConsumerState<SmartBannerAd> {
 
   @override
   void dispose() {
-    _bannerAd?.dispose(); // ¡IMPORTANTE! Descoméntalo para liberar RAM
+    _bannerAd?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final showAds = ref.watch(isAdsActiveProvider);
-    debugPrint('showAds: $showAds');
-    // Si las ads están desactivadas o el anuncio aún no carga, no mostramos nada
-    if (!showAds || !_isLoaded || _bannerAd == null) {
+
+    // 2. Si las ads están pausadas temporalmente (por un Reward)
+    final adsActivas = ref.watch(isAdsActiveProvider);
+    
+    if (!adsActivas || !_isLoaded || _bannerAd == null) {
       return const SizedBox.shrink();
     }
 
-    return BannerWithCloseButton(
-      onCloseTap: () => showAdManagementMenu(
-        context,
-        ref,
-        // Dentro de tu SmartBannerAd
-        showRewardedAd: () async {
-          final success = await ref.read(adServiceProvider).showRewardedAd();
-          if (success) {
-            debugPrint("¡Usuario premiado!");
-            // Aquí desactivas las ads o das el premio
-            ref.read(adsDisabledUntilProvider.notifier).disableForHours(24);
-            if (context.mounted) {
-              FeedbackAlertConfirm.thanksForRewardedAd(context, ref);
-            }
-            return true;
-          } else {
-            if (context.mounted) {
-              FeedbackAlertConfirm.errorForRewardedAd(context, ref);
-            }
-            debugPrint("El anuncio no estaba listo o el usuario lo cerró");
-            return false;
-          }
-        },
-        processPurchase: () async {
-          debugPrint("SmartBannerAd: processPurchase falta implementar");
-        },
-      ),
-      child: SizedBox(
-        // Usamos SizedBox con el tamaño exacto del banner
-        width: _bannerAd!.size.width.toDouble(),
-        height: _bannerAd!.size.height.toDouble(),
-        child: AdWidget(ad: _bannerAd!), // ESTO es lo que muestra el anuncio
+    return Container(
+      alignment: Alignment.center,
+      width: double.infinity, // Centramos en el ancho disponible
+      height: _bannerAd!.size.height.toDouble() + 10, // Un poco de aire para el padding
+      child: BannerWithCloseButton(
+        onCloseTap: () => showAdManagementMenu(
+          context,
+          ref,
+          showRewardedAd: () async {
+            // Usamos el servicio que ya tienes
+            return await ref.read(adServiceProvider).showRewardedAd();
+          },
+          processPurchase: () async {
+            // 3. Mostramos el modal de compra que creamos antes
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              builder: (_) => const PremiumSalesSheet(showEmpty: null,),
+            );
+          },
+        ),
+        child: AdWidget(ad: _bannerAd!),
       ),
     );
   }
