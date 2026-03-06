@@ -13,6 +13,7 @@ Future<Tag?> showCreateTagModal(BuildContext context, WidgetRef ref) {
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
     ),
+    backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
     builder: (context) {
       return Padding(
         padding: EdgeInsets.only(
@@ -27,18 +28,22 @@ Future<Tag?> showCreateTagModal(BuildContext context, WidgetRef ref) {
           children: [
             Text(
               t(ref, 'createTag', fallback: 'Crear tag'),
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.hintColor),
+              style: theme.textTheme.titleLarge?.copyWith(fontSize: 18),
             ),
             const SizedBox(height: 12),
 
             TextField(
               controller: controller,
               autofocus: true,
+              style: TextStyle(color: theme.textTheme.labelSmall?.color),
               decoration: InputDecoration(
                 labelText: t(ref, 'tagName', fallback: 'Nombre del tag'),
                 border: const OutlineInputBorder(),
-                labelStyle: TextStyle(color: theme.hintColor),
+                labelStyle: TextStyle(color: theme.textTheme.labelSmall?.color),
                 enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: theme.focusColor, width: 1),
+                ),
+                focusedBorder: OutlineInputBorder(
                   borderSide: BorderSide(color: theme.focusColor, width: 2),
                 ),
               ),
@@ -52,8 +57,13 @@ Future<Tag?> showCreateTagModal(BuildContext context, WidgetRef ref) {
               alignment: Alignment.centerRight,
               child: FilledButton(
                 onPressed: () => _submit(context, controller),
+                style: FilledButton.styleFrom(
+                  backgroundColor: theme.inputDecorationTheme.fillColor, // Color de fondo
+                  foregroundColor: theme.textTheme.titleLarge?.color, // Color del texto
+                ),
                 child: Text(t(ref, 'createTag', fallback: 'Crear tag')),
               ),
+              
             ),
           ],
         ),

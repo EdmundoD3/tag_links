@@ -90,7 +90,7 @@ class _FolderCard extends StatelessWidget {
         contentPadding: EdgeInsetsDirectional.only(start: 16.0, end: 24.0,top: 2.0, bottom: 2.0),
         leading: Icon(
           Icons.folder,
-          color: theme.iconTheme.color,
+          color: theme.badgeTheme.textColor,
         ), // Un toque de color
         title: Text(
           folder.title,

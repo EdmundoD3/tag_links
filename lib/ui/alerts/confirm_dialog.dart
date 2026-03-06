@@ -117,18 +117,27 @@ Future<bool?> showConfirmDialog(
     barrierDismissible: false, // obliga a elegir opción
     builder: (context) {
       return AlertDialog(
-        title: Text(title),
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        title: Text(title, style: theme.textTheme.titleLarge,),
         content: message != null
-            ? Text(message, style: TextStyle(color: theme.hintColor))
+            ? Text(message, style: TextStyle(color: theme.textTheme.bodySmall?.color))
             : null,
         actions: [
           TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: theme.textTheme.titleLarge?.color,
+            ),
             onPressed: () {
               Navigator.of(context).pop(false);
             },
             child: Text(cancelText),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: theme.inputDecorationTheme.fillColor, // Color de fondo
+              foregroundColor: theme.textTheme.titleLarge?.color, // Color del texto
+            ),
+
             onPressed: () {
               Navigator.of(context).pop(true);
             },

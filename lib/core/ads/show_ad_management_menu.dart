@@ -12,6 +12,8 @@ void showAdManagementMenu(
   required Future<void> Function() processPurchase,
 }) {
   showModalBottomSheet(
+    backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+    showDragHandle: true,
     context: context,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -28,17 +30,13 @@ void showAdManagementMenu(
               children: [
                 Text(
                   "¿Te estorba la publicidad?",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
+                  style: theme.textTheme.titleLarge?.copyWith(fontSize: 18),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   "Puedes quitar los anuncios viendo un video o apoyar el proyecto.",
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: theme.hintColor),
+                  style: TextStyle(color: theme.textTheme.bodySmall?.color, fontSize: 14),
                 ),
                 const SizedBox(height: 24),
 
@@ -87,11 +85,10 @@ void showAdManagementMenu(
                     icon: const Icon(Icons.play_circle_fill),
                     label: const Text("Quitar anuncios por 24h"),
                     style: ElevatedButton.styleFrom(
+                      elevation: 1,
                       padding: const EdgeInsets.symmetric(vertical: 15),
-                      backgroundColor: Colors.purple[900], // Fondo oscuro
-                      foregroundColor: Colors.white, // Texto blanco
-                      elevation: 5, // Sombra moderada
-                      shadowColor: Colors.indigo[200],
+                      backgroundColor: theme.inputDecorationTheme.fillColor, // Fondo oscuro
+                      foregroundColor: theme.textTheme.titleLarge?.color, // Texto blanco
                     ),
                   ),
                 ),
@@ -99,7 +96,7 @@ void showAdManagementMenu(
                 const SizedBox(height: 12),
 
                 /// 💎 PREMIUM
-                PremiumSalesSheet(showEmpty: null),
+                // PremiumSalesSheet(showEmpty: null),
                 // SizedBox(
                 //   width: double.infinity,
                 //   child: ElevatedButton.icon(
@@ -119,12 +116,10 @@ void showAdManagementMenu(
                 //   ),
                 // ),
 
-                const SizedBox(height: 16),
-
                 /// ❌ CLOSE
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text("Tal vez luego", style: TextStyle()),
+                  child: Text("Tal vez luego", style: TextStyle(color: theme.textTheme.titleLarge?.color)),
                 ),
               ],
             ),

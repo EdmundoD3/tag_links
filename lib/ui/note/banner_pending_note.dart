@@ -17,13 +17,14 @@ class BannerPendingNote extends ConsumerWidget {
     if (note == null) return const SizedBox.shrink();
 
     return MaterialBanner(
+      backgroundColor: theme.cardColor,
       content: Text(
         t(
           ref,
           'bannerPendingNote',
           fallback: 'Tienes una nota pendiente de almacenar',
         ),
-        style: TextStyle(color: theme.hintColor),
+        style: TextStyle(color: theme.textTheme.labelSmall?.color),
       ),
       actions: [
         // ───────── Almacenar directo
@@ -31,7 +32,8 @@ class BannerPendingNote extends ConsumerWidget {
           onPressed: () {
             ref.read(noteMoveProvider).move(note: note, toFolderId: toFolderId);
           },
-          child: Text(t(ref, 'store', fallback: 'Almacenar')),
+          child: Text(t(ref, 'store', fallback: 'Almacenar'),
+          style: TextStyle(color: theme.textTheme.titleLarge?.color)),
         ),
 
         // ───────── Editar y luego almacenar
@@ -48,7 +50,8 @@ class BannerPendingNote extends ConsumerWidget {
               ),
             );
           },
-          child: Text(t(ref, 'editAndStore', fallback: 'Editar y almacenar')),
+          child: Text(t(ref, 'editAndStore', fallback: 'Editar y almacenar'),
+          style: TextStyle(color: theme.textTheme.titleLarge?.color)),
         ),
 
         // ───────── Descartar
@@ -68,7 +71,8 @@ class BannerPendingNote extends ConsumerWidget {
               ref.read(pendingNoteProvider.notifier).clear();
             }
           },
-          child: Text(t(ref, 'discard', fallback: 'Descartar')),
+          child: Text(t(ref, 'discard', fallback: 'Descartar'),
+          style: TextStyle(color: theme.textTheme.titleLarge?.color)),
         ),
       ],
     );

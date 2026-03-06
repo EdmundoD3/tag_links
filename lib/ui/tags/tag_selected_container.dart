@@ -43,9 +43,15 @@ class TagsSelectedContainer extends ConsumerWidget {
   }
 
   ActionChip _createTagChip(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     return ActionChip(
-      label: Text(t(ref, 'createTag', fallback: 'Crear nuevo tag')),
-      avatar: const Icon(Icons.add),
+      elevation: 0,
+      label: Text(t(ref, 'createTag', fallback: 'Crear nuevo tag'), 
+        style: TextStyle(color: theme.textTheme.titleLarge?.color),),
+      backgroundColor: theme.cardColor,
+      side: BorderSide(color: theme.focusColor, width: 1),
+      avatar: Icon(Icons.add, color: theme.textTheme.titleLarge?.color,),
+      surfaceTintColor: Colors.transparent,
       onPressed: () async {
         final newTag = await showCreateTagModal(context, ref);
         if (newTag != null) {
@@ -65,10 +71,12 @@ class _TagChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return GestureDetector(
       onLongPress: () => onEdit(tag),
       child: Chip(
-        label: Text(tag.name),
+        backgroundColor: theme.appBarTheme.backgroundColor,
+        label: Text(tag.name, style: TextStyle(color: theme.textTheme.titleLarge?.color),),
         deleteIcon: const Icon(Icons.close),
         onDeleted: () => onDeleted(tag),
       ),

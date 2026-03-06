@@ -11,11 +11,13 @@ class AppBarPages  extends StatelessWidget implements PreferredSizeWidget {
   });
     @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
   return AppBar(
     title: Text(
       title,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
+      style: TextStyle(color: theme.appBarTheme.foregroundColor),
     ),
     actions: actions,
   );
