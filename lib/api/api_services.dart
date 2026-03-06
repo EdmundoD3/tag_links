@@ -12,8 +12,9 @@ class _ApiUrls {
   final login = '${Env.apiBaseUrl}/api/v1/login';
   final sync = '${Env.apiBaseUrl}/api/v1/sync';
   final encryptionKey = '${Env.apiBaseUrl}/api/v1/user/encryption-key';
+  final verifyPurchase = '${Env.apiBaseUrl}/api/v1/verify-purchase';
 }
-
+enum MethodPurchase { android, ios, windows}
 class SaveResult {
   final bool ok;
   final String? error;
@@ -29,6 +30,8 @@ class SaveResult {
     );
   }
 }
+
+class ApiPurchaseResult {}
 
 class ApiServices {
   static final _paths = _ApiUrls();
@@ -112,6 +115,27 @@ class ApiServices {
       // 3. Manejo de errores de red (Sin internet, DNS error, etc)
       debugPrint('Sync Network Error: $e');
       return SyncApi(status: SyncApiStatus.failed);
+    }
+  }
+  static Future<ApiPurchaseResult?> verifyPurchase({
+    required String token,
+    required String productId,
+    required String purchaseId,
+    required MethodPurchase platform,
+  }) async{
+    try {
+      final response = await http.post(
+      Uri.parse(_paths.verifyPurchase),
+      body: {
+        'token': token,
+        'productId': productId,
+        'purchaseId': purchaseId,
+        'platform': platform.name,
+      },
+    ).timeout(const Duration(seconds: 10));
+    debugPrint("implementar verifyPurchase en api_services.dart");
+    } catch (e) {
+      return null;
     }
   }
 
