@@ -24,6 +24,9 @@ class TitleFormController extends StatelessWidget {
         border: OutlineInputBorder(),
         labelStyle: TextStyle(color: theme.textTheme.labelSmall?.color),
         enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: theme.focusColor, width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
           borderSide: BorderSide(color: theme.focusColor, width: 2),
         ),
       ),

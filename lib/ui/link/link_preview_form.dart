@@ -108,8 +108,11 @@ class _LinkPreviewFormState extends State<LinkPreviewForm> {
             border: const OutlineInputBorder(),
             labelStyle: TextStyle(color: theme.hintColor),
             enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: theme.focusColor, width: 1),
+            ),
+            focusedBorder: OutlineInputBorder(
               borderSide: BorderSide(color: theme.focusColor, width: 2),
-        ),
+            ),
           ),
           keyboardType: TextInputType.url,
           textInputAction: TextInputAction.done,

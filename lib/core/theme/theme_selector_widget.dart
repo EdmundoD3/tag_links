@@ -11,7 +11,7 @@ class ThemeSelector extends ConsumerWidget {
     final current = ref.watch(paletteProvider);
     final theme = Theme.of(context);
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         const SizedBox(height: 12),
         Padding(
@@ -66,15 +66,6 @@ class ThemeSelector extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    // Text(
-                    //   palette.name.toUpperCase(),
-                    //   style: TextStyle(
-                    //     color: theme.textTheme.titleSmall?.color,
-                    //     fontStyle: selected ? FontStyle.italic : FontStyle.normal, fontSize: 14,
-                    //     fontWeight:
-                    //         selected ? FontWeight.bold : FontWeight.normal,
-                    //   ),
-                    // ),
                     if (selected)
                       Icon(Icons.check, size: 16, weight: 400, color: theme.iconTheme.color),
                   ],

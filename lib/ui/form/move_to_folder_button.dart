@@ -11,13 +11,18 @@ class MoveToFolderButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return FilledButton.tonalIcon(
       onPressed: onChangeFolder,
       icon: const Icon(Icons.drive_file_move),
       label: Text(title),
       style: FilledButton.styleFrom(
-        backgroundColor: Colors.deepPurple, // Color de fondo
-        foregroundColor: Colors.white,
+        backgroundColor: theme.inputDecorationTheme.fillColor, // Color de fondo
+        foregroundColor: theme.textTheme.titleLarge?.color, // Color del texto
+        side: BorderSide(
+          color: theme.focusColor, // Un púrpura más oscuro para que resalte
+          width: 0.5, // Grosor del borde
+        ),
       ),
     );
   }

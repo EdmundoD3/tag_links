@@ -63,7 +63,7 @@ class SwitchFolderNote extends StatelessWidget {
               child: Icon(
                 isFolder ? Icons.folder : Icons.sticky_note_2,
                 size: activeSize,
-                color: isFolder ?  theme.iconTheme.color : theme.badgeTheme.textColor,
+                color: isFolder ?  theme.iconTheme.color : theme.iconTheme.color,
               ),
             ),
 

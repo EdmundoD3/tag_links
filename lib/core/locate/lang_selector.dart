@@ -17,7 +17,7 @@ class LangSelector extends ConsumerWidget {
           padding: const EdgeInsets.all(16),
           child: Text(
             'Idioma',
-            style: TextStyle(fontWeight: FontWeight.bold, color: theme.textTheme.bodyMedium?.color,fontSize: 18),
+            style: TextStyle(fontWeight: FontWeight.bold, color: theme.textTheme.titleLarge?.color,fontSize: 18),
           ),
         ),
         RadioGroup<AppLang>(

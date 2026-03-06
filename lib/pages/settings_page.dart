@@ -41,11 +41,11 @@ class SupportProjectPage extends ConsumerWidget {
 
         // 2. Si ya decidió (es true o false), liberamos las opciones de apoyo
         if (adsActive != null) ...[
-          const Padding(
-            padding: EdgeInsets.all(16.0),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
             child: Text(
               "¿Cómo quieres apoyar el proyecto?",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.textTheme.titleLarge?.color),
             ),
           ),
           PremiumSalesSheet(showEmpty: null),

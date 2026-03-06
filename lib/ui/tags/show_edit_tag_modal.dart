@@ -14,6 +14,7 @@ Future<Tag?> showEditTagModal(
     context: context,
     isScrollControlled: true,
     builder: (context) {
+      final theme = Theme.of(context);
       return StatefulBuilder(
         builder: (context, setState) {
           return Padding(
@@ -49,8 +50,8 @@ Future<Tag?> showEditTagModal(
                     setState(() => isFavorite = value);
                   },
                   secondary: Icon(
-                    isFavorite ? Icons.star : Icons.star_border,
-                    color: isFavorite ? Colors.amber : null,
+                    isFavorite ? Icons.favorite : Icons.favorite_border,
+                    color: isFavorite ? Colors.red : null,
                   ),
                 ),
 

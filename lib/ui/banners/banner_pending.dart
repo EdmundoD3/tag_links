@@ -15,11 +15,12 @@ class BannerPending extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.all(12),
       color: theme.cardTheme.color,
+      elevation: 0,
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
           children: [
-            Expanded(child: Text(text, style: TextStyle(color: theme.hintColor))),
+            Expanded(child: Text(text, style: TextStyle(color: theme.textTheme.bodySmall?.color))),
             if (onClose != null)
               IconButton(
                 onPressed: () => onClose!(),

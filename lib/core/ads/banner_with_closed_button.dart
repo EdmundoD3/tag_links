@@ -78,20 +78,20 @@ Widget build(BuildContext context) {
       behavior: HitTestBehavior.opaque,
       child: Container( // Quitamos el SizedBox o lo hacemos de 24x24
         padding: const EdgeInsets.all(2), // Da un margen pequeño al icono
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.8),
-          shape: BoxShape.circle,
-          boxShadow: [ // Opcional: una sombra muy suave para despegarlo del fondo
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 4,
-            ),
-          ],
-        ),
+        // decoration: BoxDecoration(
+        //   color: Colors.white.withValues(alpha: 0.8),
+        //   shape: BoxShape.circle,
+        //   boxShadow: [
+        //     BoxShadow(
+        //       color: Colors.black.withValues(alpha: 0.1),
+        //       blurRadius: 4,
+        //     ),
+        //   ],
+        // ),
         child: const Icon(
-          Icons.cancel, 
+          Icons.cancel_outlined, 
           size: 18, 
-          color: Colors.redAccent
+          color: Colors.blueAccent
         ),
       ),
     ),

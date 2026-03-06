@@ -33,9 +33,10 @@ class BannerPendingFolder extends ConsumerWidget {
 
         return MaterialBanner(
           elevation: 1,
-          backgroundColor: theme.colorScheme.onSurfaceVariant.withAlpha(8),
+          backgroundColor: theme.cardColor,
           content: Text(t(ref, 'alertMovePendingFolder', 
-              fallback: 'Tienes una carpeta pendiente de mover')),
+              fallback: 'Tienes una carpeta pendiente de mover'),
+              style: TextStyle(color: theme.textTheme.labelSmall?.color) ),
           actions: [
             TextButton(
               onPressed: () {
@@ -46,7 +47,7 @@ class BannerPendingFolder extends ConsumerWidget {
               },
               child: Text(
                 t(ref, 'store', fallback: 'Almacenar'),
-                style: TextStyle(color: theme.colorScheme.primary),
+                style: TextStyle(color: theme.textTheme.titleLarge?.color),
               ),
             ),
             TextButton(
@@ -64,7 +65,7 @@ class BannerPendingFolder extends ConsumerWidget {
               },
               child: Text(
                 t(ref, 'discard', fallback: 'Descartar'),
-                style: TextStyle(color: theme.textTheme.bodySmall?.color),
+                style: TextStyle(color: theme.textTheme.titleLarge?.color),
               ),
             ),
           ],
