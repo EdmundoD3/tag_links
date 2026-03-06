@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/api/api_services.dart';
 import 'package:tag_links/core/auth/token_storage.dart';
 import 'package:tag_links/core/encypt/encypter_services.dart';
@@ -41,18 +42,21 @@ class _PerformSyncStatus {
 
   _PerformSyncStatus({required this.status, required this.isPremium});
 }
-class SyncManager {
+
+class SyncManager extends Notifier<SyncManagerStatus> {
   static bool _isSyncing = false;
   final _tokenStorage = TokenStorage();
   final _syncStorage = SyncStorage();
   final _encryptionService = EncryptionService();
 
-  final _notesRepository = NotesRepository(NotesDao());
-  final _foldersRepository = FolderRepository(
-    FoldersDao(),
-    FolderPreferencesDao(),
-  );
+  NotesRepository get _notesRepository => ref.watch(notesRepositoryProvider).requireValue;
+  FolderRepository get _foldersRepository => ref.watch(folderRepositoryProvider).requireValue;
   final ConnectionService _connectionService = ConnectionService();
+
+  @override
+  SyncManagerStatus build() {
+    return SyncManagerStatus.ok;
+  }
 
   Future<SyncManagerStatus> sync(void Function(bool) onUpdateIsPremium) async {
     if (_isSyncing) return SyncManagerStatus.alreadyRunning;
@@ -109,15 +113,24 @@ class SyncManager {
       );
 
       if (!response.isOk) {
-        isPremium=response.data?.isPremium;
+        isPremium = response.data?.isPremium;
         switch (response.status) {
           case SyncApiStatus.limitStorageReached:
-            return _PerformSyncStatus(status: SyncManagerStatus.limitStorageReached, isPremium: isPremium);
+            return _PerformSyncStatus(
+              status: SyncManagerStatus.limitStorageReached,
+              isPremium: isPremium,
+            );
           case SyncApiStatus.unauthorized:
-            return _PerformSyncStatus(status: SyncManagerStatus.notHasAccessToken, isPremium: isPremium);
+            return _PerformSyncStatus(
+              status: SyncManagerStatus.notHasAccessToken,
+              isPremium: isPremium,
+            );
           case SyncApiStatus.failed:
           default:
-            return _PerformSyncStatus(status: SyncManagerStatus.notOk, isPremium: isPremium);
+            return _PerformSyncStatus(
+              status: SyncManagerStatus.notOk,
+              isPremium: isPremium,
+            );
         }
       }
       final syncRes = response.data!.sync;
@@ -169,10 +182,13 @@ class SyncManager {
       } else {
         hasMoreRemote = false;
       }
-      isPremium=response.data?.isPremium;
+      isPremium = response.data?.isPremium;
     }
 
-    return _PerformSyncStatus(status: SyncManagerStatus.ok, isPremium: isPremium);
+    return _PerformSyncStatus(
+      status: SyncManagerStatus.ok,
+      isPremium: isPremium,
+    );
   }
 
   Future<void> _processRemoteData(PullData pullData) async {

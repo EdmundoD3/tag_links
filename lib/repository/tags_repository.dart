@@ -1,12 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sqflite/sqflite.dart';
 import 'package:tag_links/data/data_sources/tags_dao.dart';
+import 'package:tag_links/data/database.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/utils/paginated_utils.dart';
 
 class TagsRepository {
   final TagsDao _tagsDao;
 
-  TagsRepository({TagsDao? tagsDao}) : _tagsDao = tagsDao ?? TagsDao();
+  TagsRepository({required Database db}) : _tagsDao = TagsDao(db);
 
   Future<void> insert(Tag tag) {
     final tagToInsert = tag.ensureForInsert();
@@ -31,6 +33,6 @@ class TagsRepository {
   }) => _tagsDao.getByName(name, paginated: paginated);
 }
 
-final tagsRepositoryProvider = Provider<TagsRepository>((ref) {
-  return TagsRepository();
+final tagsRepositoryProvider = FutureProvider<TagsRepository>((ref) {
+  return TagsRepository(db:ref.watch(dbProvider).requireValue);
 });

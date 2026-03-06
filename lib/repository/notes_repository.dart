@@ -3,15 +3,16 @@ import 'package:tag_links/core/sync/note_raw_sync.dart';
 import 'package:tag_links/core/sync/sync_manager.dart';
 import 'package:tag_links/data/data_sources/deleted_dao.dart';
 import 'package:tag_links/data/data_sources/notes_dao.dart';
+import 'package:tag_links/data/database.dart';
 import 'package:tag_links/models/note.dart';
 import 'package:tag_links/models/search_query.dart';
 import 'package:tag_links/utils/paginated_utils.dart';
 
 class NotesRepository {
   final NotesDao _dao;
-  final DeletedNotesDao _deletedDao = DeletedNotesDao();
+  final DeletedNotesDao _deletedDao;
 
-  NotesRepository(this._dao);
+  NotesRepository(this._dao, this._deletedDao);
 
   Future<List<Note>> searchByQuery(
     SearchQuery query, {
@@ -80,6 +81,9 @@ class NotesRepository {
   }
 }
 
-final notesRepositoryProvider = Provider<NotesRepository>((ref) {
-  return NotesRepository(NotesDao());
+final notesRepositoryProvider = FutureProvider<NotesRepository>((ref) {
+  final db = ref.watch(dbProvider).requireValue;
+  final notesDao = NotesDao(db);
+  final deletedDao = DeletedNotesDao(db: db);
+  return NotesRepository(notesDao, deletedDao);
 });

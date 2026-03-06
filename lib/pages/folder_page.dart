@@ -47,6 +47,9 @@ class _FolderPageState extends ConsumerState<FolderPage> {
   FutureProvider<FolderDefaultView> get _foldersPreferenceProvider =>
       folderPreferenceProvider(widget.folder.id);
 
+  FolderRepository get _repo => ref.watch(folderRepositoryProvider).requireValue;
+
+
   @override
   void dispose() {
     _scrollController.dispose();
@@ -147,12 +150,11 @@ class _FolderPageState extends ConsumerState<FolderPage> {
 
   /// 🔁 Cambiar vista y guardar preferencia
   Future<void> _toggleView(WidgetRef ref, FolderDefaultView current) async {
-    final repo = ref.read(folderRepositoryProvider);
     final newView = current == FolderDefaultView.folders
         ? FolderDefaultView.notes
         : FolderDefaultView.folders;
 
-    await repo.savePreference(widget.folder.id, newView);
+    await _repo.savePreference(widget.folder.id, newView);
     ref.invalidate(_foldersPreferenceProvider);
   }
 

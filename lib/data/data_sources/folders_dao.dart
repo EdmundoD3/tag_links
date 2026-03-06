@@ -1,18 +1,22 @@
 import 'package:sqflite/sqflite.dart';
-import 'package:tag_links/data/database.dart';
 import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/models/search_query.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/utils/paginated_utils.dart';
 
 class FoldersDao {
-  Future<Database> get _db async => AppDatabase().database;
+  final Database _db;
+  FoldersDao({
+    required Database db,
+  }) : _db = db;
+
+  /// BY LAST UPDATE
 
   Future<List<Folder>> getByLastUpdate({
     required int? lastUpdate,
     int limit = 500,
   }) async {
-    final db = await _db;
+    final db = _db;
     final hasLastUpdate = lastUpdate != null;
     final where = hasLastUpdate ? "WHERE updatedAt > ?" : "";
     final args = hasLastUpdate ? [lastUpdate, limit] : [limit];
@@ -32,7 +36,7 @@ class FoldersDao {
     SearchQuery searchQuery, {
     required PaginatedByDate paginated,
   }) async {
-    final db = await _db;
+    final db = _db;
 
     final where = <String>[];
     final args = <Object?>[];
@@ -88,7 +92,7 @@ class FoldersDao {
   Future<List<Folder>> getFavorites({
     required PaginatedByDate paginated,
   }) async {
-    final db = await _db;
+    final db = _db;
 
     final result = await db.query(
       'folders',
@@ -103,7 +107,7 @@ class FoldersDao {
 
   /// INSERT
   Future<void> insert(Folder folder) async {
-    final db = await _db;
+    final db = _db;
     await db.transaction((txn) async {
       await txn.insert(
         'folders',
@@ -123,7 +127,7 @@ class FoldersDao {
 
   /// UPDATE
   Future<void> update(Folder folder) async {
-    final db = await _db;
+    final db = _db;
     await db.transaction((txn) async {
       await txn.update(
         'folders',
@@ -165,7 +169,7 @@ class FoldersDao {
 
 /// UPSERT ALL
   Future<void> upsertAll(List<Folder> folders) async {
-    final db = await _db;
+    final db = _db;
     await db.transaction((txn) async {
       for (final folder in folders) {
         await txn.insert('folders', folder.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
@@ -186,14 +190,14 @@ class FoldersDao {
 
 Future<void> deleteByIds(List<String> ids) async {
     if (ids.isEmpty) return;
-    final db = await _db;
+    final db = _db;
     final placeholders = List.filled(ids.length, '?').join(',');
     await db.delete('folders', where: 'id IN ($placeholders)', whereArgs: ids);
   }
 
 /// DELETE
   Future<void> delete(String id) async {
-    final db = await _db;
+    final db = _db;
     // Gracias al ON DELETE CASCADE en folder_tags, al borrar la carpeta
     // se borran sus relaciones y el trigger descuenta el usageCount.
     await db.delete('folders', where: 'id = ?', whereArgs: [id]);
@@ -201,7 +205,7 @@ Future<void> deleteByIds(List<String> ids) async {
 
   /// GET BY ID
   Future<Folder?> getById(String id) async {
-    final db = await _db;
+    final db = _db;
 
     final result = await db.query(
       'folders',
@@ -219,7 +223,7 @@ Future<void> deleteByIds(List<String> ids) async {
   Future<List<Folder>> getRootFolders({
     required PaginatedByDate paginated,
   }) async {
-    final db = await _db;
+    final db = _db;
 
     final result = await db.query(
       'folders',
@@ -237,7 +241,7 @@ Future<void> deleteByIds(List<String> ids) async {
     String parentId, {
     required PaginatedByDate paginated,
   }) async {
-    final db = await _db;
+    final db = _db;
 
     final result = await db.query(
       'folders',
@@ -251,7 +255,7 @@ Future<void> deleteByIds(List<String> ids) async {
     return Future.wait(result.map((f) => _mapFolderWithTags(db, f)));
   }
   Future<Set<String>> getAllDescendantIds(String folderId) async {
-  final db = await _db; // Tu instancia de sqflite
+  final db = _db; // Tu instancia de sqflite
   
   // Esta consulta busca la carpeta inicial y luego se une a sí misma
   // buscando todos los registros cuyo parentId sea el id de la carpeta anterior

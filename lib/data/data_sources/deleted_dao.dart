@@ -1,8 +1,8 @@
 import 'package:sqflite/sqflite.dart';
-import 'package:tag_links/data/database.dart';
+
 class DeletedTables {
-  static final deletedFoldersTable =DeletedFoldersDao.table;
-  static final deletedNotesTable =DeletedNotesDao.table;
+  static final deletedFoldersTable = DeletedFoldersDao.table;
+  static final deletedNotesTable = DeletedNotesDao.table;
 }
 
 class DeletedData {
@@ -19,10 +19,9 @@ class DeletedData {
   }
 }
 
-
-
 class DeletedFoldersDao {
-  final _DeletedDao _dao = _DeletedDao(tableName: 'deleted_folders');
+  final _DeletedDao _dao;
+  DeletedFoldersDao({required Database db}) : _dao = _DeletedDao(tableName: DeletedFoldersDao.table, db: db);
 
   static String get table => _DeletedDao.getTable('deleted_folders');
 
@@ -33,9 +32,10 @@ class DeletedFoldersDao {
 }
 
 class DeletedNotesDao {
-  final _DeletedDao _dao = _DeletedDao(tableName: 'deleted_notes');
+  final _DeletedDao _dao;
+  DeletedNotesDao({required Database db}) : _dao = _DeletedDao(tableName: DeletedNotesDao.table, db: db);
 
-  static String get table => _DeletedDao.getTable('deleted_notes') ;
+  static String get table => _DeletedDao.getTable('deleted_notes');
 
   Future<void> saveId(String id) => _dao.saveId(id);
 
@@ -46,53 +46,43 @@ class DeletedNotesDao {
 class _DeletedDao {
   final String tableName;
 
-  _DeletedDao({required this.tableName});
+  _DeletedDao({required this.tableName, required Database db}) : _db = db;
 
-  static String getTable(String tableName) => '''
+  static String getTable(String tableName) =>
+      '''
     CREATE TABLE IF NOT EXISTS $tableName (
       id TEXT PRIMARY KEY,
       deletedAt INTEGER NOT NULL
     );
   ''';
 
-  Future<Database> get _db async => AppDatabase().database;
+  final Database _db;
 
   Future<void> saveId(String id) async {
     final now = DateTime.now().millisecondsSinceEpoch;
     final data = DeletedData(id: id, deletedAt: now);
 
-    final db = await _db;
-    await db.insert(
+    await _db.insert(
       tableName,
       data.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 
-  Future<List<DeletedData>> getBatch({
-  int limit = 500,
-}) async {
-  final db = await _db;
+  Future<List<DeletedData>> getBatch({int limit = 500}) async {
+    final result = await _db.query(
+      tableName,
+      limit: limit,
+      orderBy: 'deletedAt ASC',
+    );
 
-  final result = await db.query(
-    tableName,
-    limit: limit,
-    orderBy: 'deletedAt ASC',
-  );
-
-  return result.map(DeletedData.fromRaw).toList();
-}
+    return result.map(DeletedData.fromRaw).toList();
+  }
 
   Future<void> deleteIds(List<String> ids) async {
     if (ids.isEmpty) return;
 
-    final db = await _db;
-
     final placeholders = List.filled(ids.length, '?').join(',');
-    await db.delete(
-      tableName,
-      where: 'id IN ($placeholders)',
-      whereArgs: ids,
-    );
+    await _db.delete(tableName, where: 'id IN ($placeholders)', whereArgs: ids);
   }
 }

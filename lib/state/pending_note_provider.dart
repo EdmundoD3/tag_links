@@ -48,7 +48,7 @@ class NoteMoveService {
 
     // 2. Persistencia real en la DB primero
     // Usamos el repositorio directamente para asegurar que el cambio esté en disco
-    await ref.read(notesRepositoryProvider).update(moved);
+    await ref.watch(notesRepositoryProvider).requireValue.update(moved);
 
     // 3. Actualización de la UI (Optimista)
     // Quitamos de la lista vieja

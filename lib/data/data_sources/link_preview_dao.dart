@@ -1,10 +1,12 @@
 import 'package:sqflite/sqflite.dart';
-import 'package:tag_links/data/database.dart';
 import 'package:tag_links/models/link_preview.dart';
 
 class LinkPreviewDao {
   final String _tableName = 'link_previews';
-  Future<Database> get _db async => AppDatabase().database;
+  final Database _db;
+  const LinkPreviewDao(this._db);
+
+
   Future<void> replace({
     required String noteId,
     Transaction? txn,
@@ -18,12 +20,12 @@ class LinkPreviewDao {
   }
 
   Future<void> delete(Transaction? txn, String noteId) async {
-    final db = txn ?? await _db;
+    final db = txn ?? _db;
     await db.delete(_tableName, where: 'noteId = ?', whereArgs: [noteId]);
   }
 
   Future<void> insert(Transaction? txn, String noteId, LinkPreview link) async {
-    final db = txn ?? await _db;
+    final db = txn ?? _db;
     await db.insert(_tableName, {
       'id': link.id,
       'noteId': noteId,

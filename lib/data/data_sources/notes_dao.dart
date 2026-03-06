@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:tag_links/data/data_sources/link_preview_dao.dart';
-import 'package:tag_links/data/database.dart';
 import 'package:tag_links/models/link_preview.dart';
 import 'package:tag_links/models/note.dart';
 import 'package:tag_links/models/note_join_row.dart';
@@ -11,7 +10,8 @@ import 'package:tag_links/utils/paginated_utils.dart';
 
 //DAO = Data Access Object
 class NotesDao {
-  final _fetch = _FetchersNotesDao();
+  final FetchersNotesDao _fetch;
+  NotesDao(Database db): _fetch = FetchersNotesDao(db: db, linkDao: LinkPreviewDao(db));
   /* ----------------------------- PUBLIC API ----------------------------- */
   Future<List<Note>> searchByQuery(
     SearchQuery query, {
@@ -188,9 +188,15 @@ List<Note> _hydrate(List<NoteJoinRow> rows) {
 
 /* ----------------------------- FETCHERS ----------------------------- */
 
-class _FetchersNotesDao {
-  Future<Database> get _db async => AppDatabase().database;
-  final _linkDao = LinkPreviewDao();
+class FetchersNotesDao {
+  final Database _db;
+  final LinkPreviewDao _linkDao;
+  FetchersNotesDao({
+    required Database db,
+    required LinkPreviewDao linkDao,
+  })  : _db = db,
+        _linkDao = linkDao;
+
 
   Future<List<NoteJoinRow>> searchByQuery(
     SearchQuery searchQuery, {
@@ -326,7 +332,7 @@ class _FetchersNotesDao {
     );
 ''';
     final args = [note.folderId, note.id];
-    final result = await _db.then((db) => db.rawQuery(query, args));
+    final result = await _db.rawQuery(query, args);
 
     final rawCount = result.first['count'];
     final count = (rawCount as num?)?.toInt() ?? 0;

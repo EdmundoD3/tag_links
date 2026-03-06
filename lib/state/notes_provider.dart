@@ -29,7 +29,7 @@ final noteSearchProvider =
       ref,
       params,
     ) {
-      final repo = ref.read(notesRepositoryProvider);
+      final repo = ref.watch(notesRepositoryProvider).requireValue;
 
       return repo.searchByQuery(params.$1, paginated: params.$2);
     });
@@ -53,7 +53,8 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
   final int _pageSize = 20;
   bool _hasMore = true;
   bool _isLoadingMore = false;
-  NotesRepository get _repo => ref.read(notesRepositoryProvider);
+  NotesRepository get _repo => ref.watch(notesRepositoryProvider).requireValue;
+  LinkPreviewRepository get _repoLinkPreview => ref.watch(linkPreviewRepositoryProvider).requireValue;
 
   @override
   Future<List<Note>> build() async {
@@ -181,13 +182,13 @@ Future<void> updateNote(Note note) async {
 
 Future<void> _enrichLinks(List<LinkPreview> links) async {
     final service = LinkPreviewService();
-    final repoLinkPreview = ref.read(linkPreviewRepositoryProvider);
+    
     bool updatedAny = false;
 
     for (final link in links) {
       final updated = await service.enrich(link);
       if (updated != null && updated.hasMetadata) {
-        await repoLinkPreview.replace(updated);
+        await _repoLinkPreview.replace(updated);
         updatedAny = true;
       }
     }

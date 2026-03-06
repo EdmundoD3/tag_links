@@ -8,8 +8,8 @@ import 'package:tag_links/utils/paginated_utils.dart';
 
 class NoteHelpers {
     static Future<void> goFolder(BuildContext context, WidgetRef ref,Note note) async {
-    final repoFolder = ref.read(folderRepositoryProvider);
-    final repoNotes = ref.read(notesRepositoryProvider);
+    final repoFolder = ref.watch(folderRepositoryProvider).requireValue;
+    final repoNotes = ref.watch(notesRepositoryProvider).requireValue;
 
     final paginated = await repoNotes.getPageForNoteId(
       note,

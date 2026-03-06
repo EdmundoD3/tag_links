@@ -1,14 +1,13 @@
 import 'package:sqflite/sqflite.dart';
-import 'package:tag_links/data/database.dart';
 import 'package:tag_links/models/folder_preference.dart';
 
 class FolderPreferencesDao {
   final String _tableName = 'folder_preferences';
-  Future<Database> get _db async => AppDatabase().database;
+  final Database _db;
+  FolderPreferencesDao({required Database db}) : _db = db;
 
   Future<void> save(FolderPreference pref) async {
-    final db = await _db;
-    await db.insert(
+    await _db.insert(
       _tableName,
       pref.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
@@ -21,9 +20,7 @@ class FolderPreferencesDao {
   }
 
   Future<void> update(FolderPreference folderPreference) async {
-    final db = await _db;
-
-    await db.update(
+    await _db.update(
       _tableName,
       folderPreference.toMap(),
       where: 'folderId = ?',
@@ -32,14 +29,11 @@ class FolderPreferencesDao {
   }
 
   Future<void> delete(String folderId) async {
-    final db = await _db;
-    await db.delete(_tableName, where: 'folderId = ?', whereArgs: [folderId]);
+    await _db.delete(_tableName, where: 'folderId = ?', whereArgs: [folderId]);
   }
 
   Future<FolderPreference?> _getByFolderId(String folderId) async {
-    final db = await _db;
-
-    final result = await db.query(
+    final result = await _db.query(
       _tableName,
       where: 'folderId = ?',
       whereArgs: [folderId],
