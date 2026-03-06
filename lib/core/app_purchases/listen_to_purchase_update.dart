@@ -1,5 +1,7 @@
+import 'package:flutter/rendering.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tag_links/api/api_services.dart';
 
 bool isPremium = false;
 
@@ -10,24 +12,55 @@ class InAppPurchaseManager {
     'premium_yearly',
   };
 
-  static Future<void> listenToPurchaseUpdated(
-    List<PurchaseDetails> purchases,
-  ) async {
-    for (final purchase in purchases) {
-      if ((purchase.status == PurchaseStatus.purchased ||
-              purchase.status == PurchaseStatus.restored) &&
-          includesPremium(purchase.productID)) {
-        
-        // ESTRATEGIA HEARTBEAT: Actualizamos la fecha de validez
+static Future<void> listenToPurchaseUpdated(
+  List<PurchaseDetails> purchases,
+) async {
+  for (final purchase in purchases) {
+    if ((purchase.status == PurchaseStatus.purchased ||
+         purchase.status == PurchaseStatus.restored) &&
+        includesPremium(purchase.productID)) {
+      
+      // 🚀 PASO NUEVO: Enviar al servidor
+      // Es recomendable hacerlo antes de marcarlo como premium localmente
+      bool serverVerified = await _verifyPurchaseOnServer(purchase);
+
+      if (serverVerified) {
         await _updatePremiumExpiration(purchase);
         isPremium = true;
       }
+    }
 
-      if (purchase.pendingCompletePurchase) {
-        await InAppPurchase.instance.completePurchase(purchase);
-      }
+    if (purchase.pendingCompletePurchase) {
+      // IMPORTANTE: Solo completamos la compra si el servidor ya la registró
+      // o si decides que la app sea funcional aunque el servidor falle (tú eliges)
+      await InAppPurchase.instance.completePurchase(purchase);
     }
   }
+}
+
+static Future<bool> _verifyPurchaseOnServer(PurchaseDetails purchase) async {
+  try {
+    // El token que necesita tu servidor
+    final String token = purchase.verificationData.serverVerificationData;
+    final String productId = purchase.productID;
+    final String purchaseId = purchase.purchaseID ?? '';
+
+    debugPrint('Enviando token al servidor: $token');
+    // final s = ApiServices.verifyPurchase();
+    // Aquí haces tu petición HTTP
+    /*
+    
+    return response.statusCode == 200;
+    */
+    
+    return true; // Temporalmente true para no bloquearte
+  } catch (e) {
+    debugPrint('Error informando al servidor: $e');
+    // Si falla el servidor, podrías devolver 'true' para no arruinarle 
+    // la experiencia al usuario, o 'false' si tu app depende 100% del backend.
+    return true; 
+  }
+}
 
   static Future<void> _updatePremiumExpiration(PurchaseDetails purchase) async {
     final prefs = await SharedPreferences.getInstance();

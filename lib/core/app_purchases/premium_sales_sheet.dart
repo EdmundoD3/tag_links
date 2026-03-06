@@ -5,36 +5,50 @@ import 'package:tag_links/core/app_purchases/products_provider.dart';
 
 class PremiumSalesSheet extends ConsumerWidget {
   final Widget? showEmpty;
-  const PremiumSalesSheet({
-    super.key,
-    required this.showEmpty
-  });
+  const PremiumSalesSheet({super.key, required this.showEmpty});
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final productsAsync = ref.watch(productsProvider);
+@override
+Widget build(BuildContext context, WidgetRef ref) {
+  final productsAsync = ref.watch(productsProvider);
 
-    return productsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) =>
-          showEmpty?? const SizedBox.shrink(),
-      data: (products) {
-        // LÓGICA: Si no hay productos disponibles en la tienda, ocultamos la sección
-        if (products.isEmpty) {
-          return showEmpty?? const SizedBox.shrink(); 
-        }
+  return productsAsync.when(
+    loading: () => const SizedBox(
+      height: 200, 
+      child: Center(child: CircularProgressIndicator())
+    ),
+    error: (err, stack) {
+      // Si hay un error real, mostramos el contenido vacío opcional
+      return showEmpty ?? const SizedBox.shrink();
+    },
+    data: (products) {
+      if (products.isEmpty) {
+        return showEmpty ?? const SizedBox.shrink();
+      }
 
-        return ListView.builder(
-          shrinkWrap: true,
-          itemCount: products.length,
-          itemBuilder: (context, index) {
-            final product = products[index];
-            return _PremiumProductTile(product: product);
-          },
-        );
-      },
-    );
-  }
+      // IMPORTANTE: Si usas ListView dentro de un BottomSheet, 
+      // asegúrate de que no crezca infinitamente.
+      return Column(
+        mainAxisSize: MainAxisSize.min, // Ajusta el modal al contenido
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Text('Hazte Premium', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          ),
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(), // El modal ya tiene su scroll
+            itemCount: products.length,
+            itemBuilder: (context, index) {
+              final product = products[index];
+              return _PremiumProductTile(product: product);
+            },
+          ),
+          const SizedBox(height: 20),
+        ],
+      );
+    },
+  );
+}
 }
 
 class _PremiumProductTile extends ConsumerWidget {
