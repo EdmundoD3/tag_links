@@ -3,71 +3,75 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/locate/app_lang.dart';
 import 'package:tag_links/state/pending_note_provider.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
+import 'package:tag_links/ui/banners/banner_pending.dart';
 import 'package:tag_links/ui/form/note_form_page.dart';
 
 class BannerPendingNote extends ConsumerWidget {
   final Future<void> Function() onToggleView;
-  const BannerPendingNote({super.key, required this.toFolderId, required this.onToggleView});
+  const BannerPendingNote({
+    super.key,
+    required this.toFolderId,
+    required this.onToggleView,
+  });
 
   final String toFolderId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    
     final pendingNote = ref.watch(pendingNoteProvider);
-    final theme = Theme.of(context);
     if (pendingNote == null) return const SizedBox.shrink();
     final note = pendingNote.note;
-    return MaterialBanner(
-      backgroundColor: theme.cardColor,
-      content: Text(
-        t(
-          ref,
-          'bannerPendingNote',
-          fallback: 'Tienes una nota pendiente de almacenar',
-        ),
-        style: TextStyle(color: theme.textTheme.labelSmall?.color),
+
+    return BannerPending(
+      title: t(
+        ref,
+        'bannerPendingNote',
+        fallback: 'Tienes una nota pendiente de almacenar',
       ),
       actions: [
         // ───────── Almacenar directo
-        TextButton(
-          onPressed: () {
+        BannerOptionsTile(
+          onTap: () {
             onToggleView();
-            if(pendingNote.type == TypeMove.move) {
-              ref.read(noteMoveProvider).move(note: note, toFolderId: toFolderId);
+            if (pendingNote.type == TypeMove.move) {
+              ref
+                  .read(noteMoveProvider)
+                  .move(note: note, toFolderId: toFolderId);
             }
-            if(pendingNote.type == TypeMove.newNote) {
-              ref.read(noteMoveProvider).save(note: note, toFolderId: toFolderId);
+            if (pendingNote.type == TypeMove.newNote) {
+              ref
+                  .read(noteMoveProvider)
+                  .save(note: note, toFolderId: toFolderId);
             }
           },
-          child: Text(t(ref, 'store', fallback: 'Almacenar'),
-          style: TextStyle(color: theme.textTheme.titleLarge?.color)),
+          title: t(ref, 'store', fallback: 'Almacenar'),
         ),
 
         // ───────── Editar y luego almacenar
-        if(pendingNote.type == TypeMove.newNote)
-        TextButton(
-          onPressed: () {
-            onToggleView();
-            ref.read(noteMoveProvider).save(note: note, toFolderId: toFolderId);
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => NoteFormPage(
-                  note: note,
-                  folderId: toFolderId,
-                  isPending: true,
+        if (pendingNote.type == TypeMove.newNote)
+          BannerOptionsTile(
+            onTap: () {
+              onToggleView();
+              ref
+                  .read(noteMoveProvider)
+                  .save(note: note, toFolderId: toFolderId);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => NoteFormPage(
+                    note: note,
+                    folderId: toFolderId,
+                    isPending: true,
+                  ),
                 ),
-              ),
-            );
-          },
-          child: Text(t(ref, 'editAndStore', fallback: 'Editar y almacenar'),
-          style: TextStyle(color: theme.textTheme.titleLarge?.color)),
-        ),
+              );
+            },
+            title: t(ref, 'editAndStore', fallback: 'Editar y almacenar'),
+          ),
 
         // ───────── Descartar
-        TextButton(
-          onPressed: () async {
+        BannerOptionsTile(
+          onTap: () async {
             final confirm = await showConfirmDialog(
               context,
               title: t(ref, 'bannerNotMove', fallback: 'No mover la nota'),
@@ -82,8 +86,7 @@ class BannerPendingNote extends ConsumerWidget {
               ref.read(pendingNoteProvider.notifier).clear();
             }
           },
-          child: Text(t(ref, 'discard', fallback: 'Descartar'),
-          style: TextStyle(color: theme.textTheme.titleLarge?.color)),
+          title: t(ref, 'discard', fallback: 'Descartar'),
         ),
       ],
     );

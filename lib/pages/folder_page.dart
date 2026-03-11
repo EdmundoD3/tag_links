@@ -116,7 +116,7 @@ class _FolderPageState extends ConsumerState<FolderPage> {
   List<Widget> _body(bool showFolders, AsyncValue<List<Note>> notes) {
     return [
       BannerPendingNote(toFolderId: widget.folder.id,onToggleView:()=> _toNotesView(),),
-      BannerPendingFolder(toParentId: widget.folder.id),
+      BannerPendingFolder(toParentId: widget.folder.id, onToggleView:()=> _toFoldersView()),
       // if (showFolders) _foldersList(subFolders) else _buildNotes(notes),
       Expanded(child: showFolders ? _foldersList() : _buildNotes(notes)),
     ];
@@ -159,6 +159,10 @@ class _FolderPageState extends ConsumerState<FolderPage> {
   }
   Future<void> _toNotesView() async {
     await _repo.savePreference(widget.folder.id, FolderDefaultView.notes);
+    ref.invalidate(_foldersPreferenceProvider);
+  }
+  Future<void> _toFoldersView() async {
+    await _repo.savePreference(widget.folder.id, FolderDefaultView.folders);
     ref.invalidate(_foldersPreferenceProvider);
   }
 

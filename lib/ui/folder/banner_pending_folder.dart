@@ -3,17 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/locate/app_lang.dart';
 import 'package:tag_links/state/pending_folder_provider.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
+import 'package:tag_links/ui/banners/banner_pending.dart';
 
 class BannerPendingFolder extends ConsumerWidget {
-  const BannerPendingFolder({super.key, required this.toParentId});
+  final Function() onToggleView;
+  const BannerPendingFolder({super.key, required this.toParentId, required this.onToggleView});
 
   final String? toParentId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final folder = ref.watch(pendingFolderProvider);
-
     // 1. Si no hay carpeta seleccionada, no mostramos nada.
     if (folder == null) return const SizedBox.shrink();
 
@@ -31,27 +31,24 @@ class BannerPendingFolder extends ConsumerWidget {
           return const SizedBox.shrink();
         }
 
-        return MaterialBanner(
-          elevation: 1,
-          backgroundColor: theme.cardColor,
-          content: Text(t(ref, 'alertMovePendingFolder', 
+        return BannerPending(
+          title: t(ref, 'alertMovePendingFolder', 
               fallback: 'Tienes una carpeta pendiente de mover'),
-              style: TextStyle(color: theme.textTheme.labelSmall?.color) ),
           actions: [
-            TextButton(
-              onPressed: () {
+            BannerOptionsTile(
+              onTap: () {
+                onToggleView();
                 ref.read(folderMoveProvider).move(
                       folder: folder,
                       toParentId: toParentId,
                     );
               },
-              child: Text(
+              title: 
                 t(ref, 'store', fallback: 'Almacenar'),
-                style: TextStyle(color: theme.textTheme.titleLarge?.color),
-              ),
             ),
-            TextButton(
-              onPressed: () async {
+            BannerOptionsTile(
+              onTap: () async {
+                onToggleView();
                 final confirm = await showConfirmDialog(
                   context,
                   title: t(ref, 'bannerNotMove', fallback: 'No mover'),
@@ -63,10 +60,8 @@ class BannerPendingFolder extends ConsumerWidget {
                   ref.read(pendingFolderProvider.notifier).clear();
                 }
               },
-              child: Text(
+              title: 
                 t(ref, 'discard', fallback: 'Descartar'),
-                style: TextStyle(color: theme.textTheme.titleLarge?.color),
-              ),
             ),
           ],
         );

@@ -99,35 +99,38 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-List<Widget> _body(
-  WidgetRef ref,
-  bool isFolder,
-  bool hasPendingNotes,
-  AsyncValue<List<Folder>> foldersAsync,
-  AsyncValue<List<Note>> notesAsync,
-) {
-  return [
-    if (hasPendingNotes) _bannerHasPendingNotes(context, ref),
-    BannerPendingFolder(toParentId: null),
-    const SizedBox(height: 16),
-    Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: _searchBar(ref, isFolder),
-    ),
-    const SizedBox(height: 16), // Reducido de 32 para ganar espacio
-    _selectedIncludeTags(ref),
-    // 🚀 EXTREMADAMENTE IMPORTANTE:
-    // Envolvemos el Expanded en un Flexible o aseguramos que el 
-    // ListView/GridView interno tenga una altura definida.
-    Expanded(
-      child: Container(
-        // Un color transparente ayuda a debuguear áreas de renderizado
-        color: Colors.transparent, 
-        child: isFolder ? _buildFolders(foldersAsync) : _buildNotes(notesAsync),
+  List<Widget> _body(
+    WidgetRef ref,
+    bool isFolder,
+    bool hasPendingNotes,
+    AsyncValue<List<Folder>> foldersAsync,
+    AsyncValue<List<Note>> notesAsync,
+  ) {
+    return [
+      if (hasPendingNotes) _bannerHasPendingNotes(context, ref),
+      //si se almacena siempre sera folder
+      BannerPendingFolder(toParentId: null,onToggleView: () => ref.read(isFolderProvider.notifier).set(true),),
+      const SizedBox(height: 16),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: _searchBar(ref, isFolder),
       ),
-    ),
-  ];
-}
+      const SizedBox(height: 16), // Reducido de 32 para ganar espacio
+      _selectedIncludeTags(ref),
+      // 🚀 EXTREMADAMENTE IMPORTANTE:
+      // Envolvemos el Expanded en un Flexible o aseguramos que el
+      // ListView/GridView interno tenga una altura definida.
+      Expanded(
+        child: Container(
+          // Un color transparente ayuda a debuguear áreas de renderizado
+          color: Colors.transparent,
+          child: isFolder
+              ? _buildFolders(foldersAsync)
+              : _buildNotes(notesAsync),
+        ),
+      ),
+    ];
+  }
 
   Widget _buildFolders(AsyncValue<List<Folder>> foldersAsync) {
     final notifier = ref.read(foldersProvider(null).notifier);
@@ -189,30 +192,31 @@ List<Widget> _body(
   //las notas no pueden estar en la carpeta raiz, por eso aqui solo se permite descartar la nota
   Widget _bannerHasPendingNotes(BuildContext context, WidgetRef ref) {
     return BannerPending(
-      text: t(
+      title: t(
         ref,
         'pendingNotesTitle',
         fallback: 'Elige una carpeta donde almacenar la nota',
       ),
-      onClose: () async {
-        final confirm = await showConfirmDialog(
-          context,
-          title: t(
-            ref,
-            'pendingNotesConfirmTitle',
-            fallback: 'No almacenar la nota',
-          ),
-          message: t(
-            ref,
-            'pendingNotesConfirMessage',
-            fallback: '¿Estás seguro de descartar la nota?',
-          ),
-        );
+      actions: [
+        BannerOptionsTile(
+          onTap: () async {
+            final confirm = await showConfirmDialog(
+              context,
+              title: t(ref, 'bannerNotMove', fallback: 'No mover la nota'),
+              message: t(
+                ref,
+                'discardAction',
+                fallback: '¿Estás seguro de descartar la acción?',
+              ),
+            );
 
-        if (confirm == true) {
-          ref.read(pendingNoteProvider.notifier).clear();
-        }
-      },
+            if (confirm == true) {
+              ref.read(pendingNoteProvider.notifier).clear();
+            }
+          },
+          title: t(ref, 'discard', fallback: 'Descartar'),
+        ),
+      ],
     );
   }
 
