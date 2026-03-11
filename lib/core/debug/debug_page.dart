@@ -49,6 +49,9 @@ class DebugPage extends ConsumerWidget {
           onDeleteNote: (String nothing) {
             debugPrint("onDeleteNote: nothing");
           },
+          onMove: (Note nothing) {
+            debugPrint("onMove: nothing");
+          },
         ),
         FolderTile(
           folder: Folder(
@@ -61,6 +64,9 @@ class DebugPage extends ConsumerWidget {
           actionsItems: [],
           onDeleteFolder: () {
             
+          },
+          onMove: (Folder nothing) {
+            debugPrint("onMove: nothing");
           },
           goFolder: (){},
         ),

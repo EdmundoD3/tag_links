@@ -10,6 +10,7 @@ class FolderTile extends ConsumerWidget {
   final Folder folder;
   final void Function() goFolder;
   final void Function() onDeleteFolder;
+  final void Function(Folder folder) onMove;
   final GlobalKey _tileKey = GlobalKey();
 
   FolderTile({
@@ -18,6 +19,7 @@ class FolderTile extends ConsumerWidget {
     required this.actionsItems,
     required this.onDeleteFolder,
     required this.goFolder,
+    required this.onMove,
   });
 
   @override
@@ -52,6 +54,10 @@ class FolderTile extends ConsumerWidget {
           label: t(ref, 'delete', fallback: 'Eliminar'),
           onTap: () => onDeleteFolder(),
         ),
+        ActionMenuItem(
+          icon: Icons.move_down_rounded,
+          label: t(ref, 'moveDown', fallback: 'mover'),
+          onTap: () => onMove(folder)),
         ...actionsItems,
       ],
     );

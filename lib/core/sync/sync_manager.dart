@@ -49,8 +49,8 @@ class SyncManager extends Notifier<SyncManagerStatus> {
   final _syncStorage = SyncStorage();
   final _encryptionService = EncryptionService();
 
-  NotesRepository get _notesRepository => ref.watch(notesRepositoryProvider).requireValue;
-  FolderRepository get _foldersRepository => ref.watch(folderRepositoryProvider).requireValue;
+  NotesRepository get _notesRepository => ref.watch(notesRepositoryProvider);
+  FolderRepository get _foldersRepository => ref.watch(folderRepositoryProvider);
   final ConnectionService _connectionService = ConnectionService();
 
   @override

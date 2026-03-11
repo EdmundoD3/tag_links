@@ -97,14 +97,6 @@ static String triggers = '''
     );
   }
 }
-// 1. El provider que maneja la instancia de la base de datos
-final _appDatabaseProvider = Provider<AppDatabase>((ref) {
-  return AppDatabase(); 
-});
-
-// 2. Un provider que expone directamente el objeto Database de sqflite
-// Esto es útil porque la mayoría de tus repositorios necesitan el objeto Database, no la clase envoltorio.
-final dbProvider = FutureProvider<Database>((ref) async {
-  final appDb = ref.watch(_appDatabaseProvider);
-  return await appDb.database;
+final databaseProvider = Provider<Database>((ref) {
+  throw UnimplementedError();
 });

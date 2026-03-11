@@ -8,15 +8,22 @@ import 'package:share_handler/share_handler.dart';
 import 'package:tag_links/core/ads/ads_service_provider.dart';
 import 'package:tag_links/core/app_purchases/premium_provider.dart';
 import 'package:tag_links/core/theme/theme_provider.dart';
+import 'package:tag_links/data/database.dart';
 import 'package:tag_links/state/url_provider.dart';
 import 'package:tag_links/core/theme/app_theme.dart';
 import 'package:tag_links/utils/handle_media_in_coming_url.dart';
 import 'pages/home_page.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   MobileAds.instance.initialize();
-  runApp(const ProviderScope(child: MyApp()));
+  final db = await AppDatabase().database;
+  runApp(
+    ProviderScope(
+      overrides: [databaseProvider.overrideWithValue(db)],
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends ConsumerStatefulWidget {
@@ -30,30 +37,30 @@ class _MyAppState extends ConsumerState<MyApp> {
   late final StreamSubscription _subHandleUrl;
   StreamSubscription<List<PurchaseDetails>>? _subscription;
 
-@override
-void initState() {
-  super.initState();
-  
-  _subHandleUrl = ShareListener.stream.listen(_handleMedia);
-  ShareListener.getInitial().then(_handleMedia);
+  @override
+  void initState() {
+    super.initState();
 
-  // 1. Activar PremiumNotifier inmediatamente (es ligero)
-  Future.microtask(() => ref.read(premiumNotifierProvider)); 
-  
-  // 2. 🚀 CARGA DE ADS MUCHO DESPUÉS
-  // Esperamos 6 segundos para que el emulador cargue WebView e Impeller
-  Future.delayed(const Duration(seconds: 6), () {
-    if (!mounted) return;
-    try {
-      final ads = ref.read(adServiceProvider);
-      ads.loadRewardedAd();
-      ads.loadInterstitialAd();
-      debugPrint('AdMob: Carga inicial programada ejecutada.');
-    } catch (e) {
-      debugPrint('AdMob: Error en carga diferida: $e');
-    }
-  });
-}
+    _subHandleUrl = ShareListener.stream.listen(_handleMedia);
+    ShareListener.getInitial().then(_handleMedia);
+
+    // 1. Activar PremiumNotifier inmediatamente (es ligero)
+    Future.microtask(() => ref.read(premiumNotifierProvider));
+
+    // 2. 🚀 CARGA DE ADS MUCHO DESPUÉS
+    // Esperamos 6 segundos para que el emulador cargue WebView e Impeller
+    Future.delayed(const Duration(seconds: 6), () {
+      if (!mounted) return;
+      try {
+        final ads = ref.read(adServiceProvider);
+        ads.loadRewardedAd();
+        ads.loadInterstitialAd();
+        debugPrint('AdMob: Carga inicial programada ejecutada.');
+      } catch (e) {
+        debugPrint('AdMob: Error en carga diferida: $e');
+      }
+    });
+  }
 
   void _handleMedia(SharedMedia? media) {
     return handleMedia(media, ref);

@@ -11,7 +11,8 @@ import 'package:tag_links/utils/paginated_utils.dart';
 //DAO = Data Access Object
 class NotesDao {
   final FetchersNotesDao _fetch;
-  NotesDao(Database db): _fetch = FetchersNotesDao(db: db, linkDao: LinkPreviewDao(db));
+  NotesDao(Database db)
+    : _fetch = FetchersNotesDao(db: db, linkDao: LinkPreviewDao(db));
   /* ----------------------------- PUBLIC API ----------------------------- */
   Future<List<Note>> searchByQuery(
     SearchQuery query, {
@@ -128,7 +129,7 @@ class NotesDao {
   }
 
   /* ----------------------------- HYDRATION ----------------------------- */
-List<Note> _hydrate(List<NoteJoinRow> rows) {
+  List<Note> _hydrate(List<NoteJoinRow> rows) {
     // 1. Mapa principal de notas (el que ya tenías)
     final Map<String, Note> map = {};
 
@@ -138,36 +139,33 @@ List<Note> _hydrate(List<NoteJoinRow> rows) {
 
     for (final row in rows) {
       // Intentamos obtener o crear la nota
-      final note = map.putIfAbsent(
-        row.noteId,
-        () {
-          // Si la nota es nueva en el mapa, también inicializamos su set de rastreo
-          tagsTracker[row.noteId] = {};
-          
-          return Note(
-            id: row.noteId,
-            folderId: row.folderId,
-            title: row.title,
-            content: row.content ?? '',
-            color: row.color,
-            createdAt: DateTime.fromMillisecondsSinceEpoch(row.createdAt),
-            updatedAt: DateTime.fromMillisecondsSinceEpoch(row.updatedAt),
-            isFavorite: row.isFavorite,
-            tags: [], // Lista vacía que iremos llenando
-            link: row.linkId == null
-                ? null
-                : LinkPreview(
-                    id: row.linkId!,
-                    noteId: row.noteId,
-                    url: row.linkUrl!,
-                    title: row.linkTitle,
-                    description: row.linkDescription,
-                    image: row.linkImage,
-                    siteName: row.linkSiteName,
-                  ),
-          );
-        },
-      );
+      final note = map.putIfAbsent(row.noteId, () {
+        // Si la nota es nueva en el mapa, también inicializamos su set de rastreo
+        tagsTracker[row.noteId] = {};
+
+        return Note(
+          id: row.noteId,
+          folderId: row.folderId,
+          title: row.title,
+          content: row.content ?? '',
+          color: row.color,
+          createdAt: DateTime.fromMillisecondsSinceEpoch(row.createdAt),
+          updatedAt: DateTime.fromMillisecondsSinceEpoch(row.updatedAt),
+          isFavorite: row.isFavorite,
+          tags: [], // Lista vacía que iremos llenando
+          link: row.linkId == null
+              ? null
+              : LinkPreview(
+                  id: row.linkId!,
+                  noteId: row.noteId,
+                  url: row.linkUrl!,
+                  title: row.linkTitle,
+                  description: row.linkDescription,
+                  image: row.linkImage,
+                  siteName: row.linkSiteName,
+                ),
+        );
+      });
 
       // 3. Lógica optimizada para etiquetas
       if (row.tagId != null) {
@@ -191,12 +189,9 @@ List<Note> _hydrate(List<NoteJoinRow> rows) {
 class FetchersNotesDao {
   final Database _db;
   final LinkPreviewDao _linkDao;
-  FetchersNotesDao({
-    required Database db,
-    required LinkPreviewDao linkDao,
-  })  : _db = db,
-        _linkDao = linkDao;
-
+  FetchersNotesDao({required Database db, required LinkPreviewDao linkDao})
+    : _db = db,
+      _linkDao = linkDao;
 
   Future<List<NoteJoinRow>> searchByQuery(
     SearchQuery searchQuery, {
@@ -210,7 +205,6 @@ class FetchersNotesDao {
     );
     if (ids.isEmpty) return [];
 
-    final db = await _db;
     final placeholders = List.filled(ids.length, '?').join(',');
 
     final sql =
@@ -220,7 +214,7 @@ class FetchersNotesDao {
     ORDER BY ${paginated.orderSql}
   ''';
 
-    final result = await db.rawQuery(sql, ids);
+    final result = await _db.rawQuery(sql, ids);
     return result.map(NoteJoinRow.fromMap).toList();
   }
 
@@ -228,7 +222,6 @@ class FetchersNotesDao {
     required int? lastUpdate,
     required int limit,
   }) async {
-    final db = await _db;
     final hasLastUpdate = lastUpdate != null;
     final where = hasLastUpdate ? "WHERE updatedAt > ?" : "";
     final args = hasLastUpdate ? [lastUpdate, limit] : [limit];
@@ -240,14 +233,13 @@ class FetchersNotesDao {
         ORDER BY updatedAt DESC
         LIMIT ?
       ''';
-    final result = await db.rawQuery(sql, args);
+    final result = await _db.rawQuery(sql, args);
     return result.map(NoteJoinRow.fromMap).toList();
   }
 
   Future<List<NoteJoinRow>> byFolder(String folderId, PaginatedByDate p) async {
-    final db = await _db;
 
-    final rows = await db.rawQuery(
+    final rows = await _db.rawQuery(
       '''
       ${NoteJoinRow.selectQuery}
       WHERE n.id IN (
@@ -269,10 +261,9 @@ class FetchersNotesDao {
     List<String> tagIds,
     PaginatedByDate p,
   ) async {
-    final db = await _db;
     final placeholders = List.filled(tagIds.length, '?').join(',');
 
-    final rows = await db.rawQuery(
+    final rows = await _db.rawQuery(
       '''
       ${NoteJoinRow.selectQuery}
       WHERE n.id IN (
@@ -295,9 +286,8 @@ class FetchersNotesDao {
   }
 
   Future<List<NoteJoinRow>> favorites(PaginatedByDate p) async {
-    final db = await _db;
 
-    final rows = await db.rawQuery(
+    final rows = await _db.rawQuery(
       '''
       ${NoteJoinRow.selectQuery}
       WHERE n.id IN (
@@ -351,7 +341,6 @@ class FetchersNotesDao {
     required PaginatedByDate paginated,
     String? folderId,
   }) async {
-    final db = await _db;
 
     final where = <String>[];
     final args = <Object?>[];
@@ -421,14 +410,13 @@ class FetchersNotesDao {
     args.add(paginated.limit);
     args.add(paginated.offset);
 
-    final result = await db.rawQuery(sql, args);
+    final result = await _db.rawQuery(sql, args);
     return result.map((r) => r['id'] as String).toList();
   }
 
   Future<List<NoteJoinRow>> byId(String id) async {
-    final db = await _db;
 
-    final rows = await db.rawQuery(
+    final rows = await _db.rawQuery(
       '''
       ${NoteJoinRow.selectQuery}
       WHERE n.id = ?
@@ -440,9 +428,8 @@ class FetchersNotesDao {
   }
 
   Future<int> countByFolder(String folderId) async {
-    final db = await _db;
 
-    final result = await db.rawQuery(
+    final result = await _db.rawQuery(
       '''
     SELECT COUNT(*) as total
     FROM notes
@@ -455,10 +442,9 @@ class FetchersNotesDao {
   }
 
   Future<int> countByTags(String folderId, List<String> tagIds) async {
-    final db = await _db;
     final placeholders = List.filled(tagIds.length, '?').join(',');
 
-    final result = await db.rawQuery(
+    final result = await _db.rawQuery(
       '''
     SELECT COUNT(*) as total
     FROM (
@@ -482,10 +468,9 @@ class FetchersNotesDao {
     String query,
     PaginatedByDate p,
   ) async {
-    final db = await _db;
     final q = '%$query%';
 
-    final rows = await db.rawQuery(
+    final rows = await _db.rawQuery(
       '''
     ${NoteJoinRow.selectQuery}
     WHERE n.id IN (
@@ -505,10 +490,9 @@ class FetchersNotesDao {
   }
 
   Future<int> countSearch(String folderId, String query) async {
-    final db = await _db;
     final q = '%$query%';
 
-    final result = await db.rawQuery(
+    final result = await _db.rawQuery(
       '''
     SELECT COUNT(*)
     FROM notes
@@ -524,27 +508,26 @@ class FetchersNotesDao {
    * INSERT
    * -------------------------------------------------------------------- */
 
-Future<void> insert(Note note) async {
-    final db = await _db;
-    await db.transaction((txn) async {
+  Future<void> insert(Note note) async {
+    await _db.transaction((txn) async {
       // 1️⃣ Insert note
-      await txn.insert(
+      final success = await txn.insert(
         'notes',
         note.toMap(),
-        conflictAlgorithm: ConflictAlgorithm.replace,
       );
+      if (success <= 0) return;
 
       // 2️⃣ Insert tags (El Trigger se encarga del usageCount automáticamente)
       for (final tag in note.tags) {
         await txn.insert('note_tags', {
           'noteId': note.id,
           'tagId': tag.id,
-        }, conflictAlgorithm: ConflictAlgorithm.ignore);
+        });
       }
 
       // 3️⃣ Link
       if (note.link != null) {
-        _linkDao.insert(txn, note.id, note.link!);
+        await _linkDao.insert(txn: txn,noteId: note.id,link: note.link!);
       }
     });
   }
@@ -553,9 +536,8 @@ Future<void> insert(Note note) async {
    * UPDATE
    * -------------------------------------------------------------------- */
 
-Future<void> update(Note note) async {
-    final db = await _db;
-    await db.transaction((txn) async {
+  Future<void> update(Note note) async {
+    await _db.transaction((txn) async {
       // 1️⃣ Update base note
       await txn.update(
         'notes',
@@ -564,11 +546,11 @@ Future<void> update(Note note) async {
         whereArgs: [note.id],
       );
 
-      // 2️⃣ Tags: Borrar y Recrear. 
+      // 2️⃣ Tags: Borrar y Recrear.
       // Al borrar de 'note_tags', el Trigger decrementa usageCount.
       // Al insertar en 'note_tags', el Trigger incrementa usageCount.
       await txn.delete('note_tags', where: 'noteId = ?', whereArgs: [note.id]);
-      
+
       for (final tag in note.tags) {
         await txn.insert('note_tags', {
           'noteId': note.id,
@@ -585,74 +567,72 @@ Future<void> update(Note note) async {
     });
   }
 
-Future<void> upsertAll(List<Note> notes) async {
-  if (notes.isEmpty) return;
-  final db = await _db;
+  Future<void> upsertAll(List<Note> notes) async {
+    if (notes.isEmpty) return;
 
-  await db.transaction((txn) async {
-    final batch = txn.batch(); // 👈 Iniciamos el Batch
+    await _db.transaction((txn) async {
+      final batch = txn.batch(); // 👈 Iniciamos el Batch
 
-    for (final note in notes) {
-      // 1. Upsert de la Nota
-      batch.insert(
-        'notes',
-        note.toMap(),
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
+      for (final note in notes) {
+        // 1. Upsert de la Nota
+        batch.insert(
+          'notes',
+          note.toMap(),
+          conflictAlgorithm: ConflictAlgorithm.ignore,
+        );
 
-      // 2. Gestión de Tags: Borramos todos y re-insertamos (más rápido en batch)
-      batch.delete('note_tags', where: 'noteId = ?', whereArgs: [note.id]);
-      for (final tag in note.tags) {
-        batch.insert('note_tags', {
-          'noteId': note.id,
-          'tagId': tag.id,
-        });
-        // Si tienes una tabla maestra de tags, podrías hacer upsert del tag aquí también
-      }
+        // 2. Gestión de Tags: Borramos todos y re-insertamos (más rápido en batch)
+        batch.delete('note_tags', where: 'noteId = ?', whereArgs: [note.id]);
+        for (final tag in note.tags) {
+          batch.insert('note_tags', {'noteId': note.id, 'tagId': tag.id});
+          // Si tienes una tabla maestra de tags, podrías hacer upsert del tag aquí también
+        }
 
-      // 3. Gestión de Links
-      if (note.link != null) {
+        // 3. Gestión de Links
+        if (note.link != null) {
           await _linkDao.replace(txn: txn, noteId: note.id, link: note.link!);
         } else {
           await _linkDao.delete(txn, note.id);
         }
-    }
+      }
 
-    // Ejecutamos todo de un solo golpe
-    await batch.commit(noResult: true); 
-  });
-}
+      // Ejecutamos todo de un solo golpe
+      await batch.commit(noResult: true);
+    });
+  }
 
   /* ----------------------------------------------------------------------
    * DELETE
    * -------------------------------------------------------------------- */
 
-Future<void> delete(String noteId) async {
-    final db = await _db;
+  Future<void> delete(String noteId) async {
     // Con ON DELETE CASCADE en la tabla note_tags y link_previews,
     // solo necesitas borrar la nota. Los triggers se dispararán solos.
-    await db.delete('notes', where: 'id = ?', whereArgs: [noteId]);
+    await _db.delete('notes', where: 'id = ?', whereArgs: [noteId]);
   }
 
-Future<void> deleteByIds(List<String> ids) async {
-  if (ids.isEmpty) return;
-  final db = await _db;
-  
-  // Dividir en trozos de 500 si la lista es enorme (Opcional, pero robusto)
-  final placeholders = List.filled(ids.length, '?').join(',');
-  
-  await db.transaction((txn) async {
-    // Si no tienes "ON DELETE CASCADE" en tu base de datos, 
-    // debes borrar manualmente los hijos aquí también en el mismo batch.
-    final batch = txn.batch();
-    
-    batch.delete('note_tags', where: 'noteId IN ($placeholders)', whereArgs: ids);
-    batch.delete('links', where: 'noteId IN ($placeholders)', whereArgs: ids);
-    batch.delete('notes', where: 'id IN ($placeholders)', whereArgs: ids);
-    
-    await batch.commit(noResult: true);
-  });
-}
+  Future<void> deleteByIds(List<String> ids) async {
+    if (ids.isEmpty) return;
+
+    // Dividir en trozos de 500 si la lista es enorme (Opcional, pero robusto)
+    final placeholders = List.filled(ids.length, '?').join(',');
+
+    await _db.transaction((txn) async {
+      // Si no tienes "ON DELETE CASCADE" en tu base de datos,
+      // debes borrar manualmente los hijos aquí también en el mismo batch.
+      final batch = txn.batch();
+
+      batch.delete(
+        'note_tags',
+        where: 'noteId IN ($placeholders)',
+        whereArgs: ids,
+      );
+      batch.delete('links', where: 'noteId IN ($placeholders)', whereArgs: ids);
+      batch.delete('notes', where: 'id IN ($placeholders)', whereArgs: ids);
+
+      await batch.commit(noResult: true);
+    });
+  }
 
   //helpers
 

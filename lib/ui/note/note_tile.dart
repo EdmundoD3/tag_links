@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/locate/app_lang.dart';
 import 'package:tag_links/models/note.dart';
+import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/ui/link/link_preview_widget.dart';
 import 'package:tag_links/ui/menu/menu_container.dart';
 import 'package:tag_links/ui/form/note_form_page.dart';
@@ -14,11 +15,13 @@ class NoteTile extends ConsumerWidget {
   final Note note;
   final List<ActionMenuItem> actionsItems;
   final void Function(String id) onDeleteNote;
+  final void Function(Note note) onMove;
   final GlobalKey _tileKey = GlobalKey();
 
   NoteTile({
     super.key,
     required this.note,
+    required this.onMove,
     this.actionsItems = const [],
     required this.onDeleteNote,
   });
@@ -77,10 +80,15 @@ class NoteTile extends ConsumerWidget {
           ),
         ),
         ActionMenuItem(
+          icon: Icons.move_down_rounded,
+          label: t(ref, 'moveDown', fallback: 'mover'),
+          onTap: () => onMove(note)),
+        ActionMenuItem(
           icon: Icons.delete,
           label: t(ref, 'delete', fallback: 'Eliminar'),
           onTap: () => onDeleteNote(note.id),
         ),
+        
         ...actionsItems,
       ],
     );
@@ -168,7 +176,9 @@ class _NoteTileCard extends StatelessWidget {
                 DecoratedText(text: note.content),
                 // Fecha
                 const SizedBox(height: 6),
-                _dateWidget(theme, note.createdAt),
+                _footer(
+                  theme: theme,
+                ),
               ],
             ),
           ),
@@ -231,20 +241,47 @@ class _NoteTileCard extends StatelessWidget {
       ),
     ];
   }
+  Widget _footer({required ThemeData theme,}) {
+    return Row(
+      children: [
+        Expanded(
+          child: _miniTags(theme: theme, tags: note.tags),
+        ),
+        const SizedBox(width: 8),
+        _dateWidget(theme: theme, date: note.updatedAt),
+      ],
+    );
+  }
 
-  Widget _dateWidget(ThemeData theme, DateTime date) {
-    return Align(
-      alignment: Alignment.centerRight,
-      child: Text(
-        _formatDate(date),
-        style: theme.textTheme.labelSmall?.copyWith(color: Colors.grey),
-      ),
+  Widget _dateWidget({
+    required ThemeData theme,
+    required DateTime date,
+  }) {
+    return Text(
+      _formatDate(date),
+      style: theme.textTheme.labelSmall?.copyWith(color: Colors.grey),
+      textAlign: TextAlign.right,
+    );
+  }
+
+  Widget _miniTags({required ThemeData theme, List<Tag> tags = const []}) {
+    String resultado = tags.map((tag) => tag.name).join(', ');
+
+    return Text(
+      resultado,
+      style: theme.textTheme.labelSmall?.copyWith(color: Colors.grey),
+      textAlign: TextAlign.left,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
     );
   }
 
   String _formatDate(DateTime date) {
     String horas = date.hour.toString().padLeft(2, '0');
     String minutos = date.minute.toString().padLeft(2, '0');
-    return '$horas:$minutos';
+    String day = date.day.toString().padLeft(2, '0');
+    String month = date.month.toString().padLeft(2, '0');
+    String year = date.year.toString();
+    return '$day/$month/$year $horas:$minutos';
   }
 }

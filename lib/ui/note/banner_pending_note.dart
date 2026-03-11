@@ -6,16 +6,18 @@ import 'package:tag_links/ui/alerts/confirm_dialog.dart';
 import 'package:tag_links/ui/form/note_form_page.dart';
 
 class BannerPendingNote extends ConsumerWidget {
-  const BannerPendingNote({super.key, required this.toFolderId});
+  final Future<void> Function() onToggleView;
+  const BannerPendingNote({super.key, required this.toFolderId, required this.onToggleView});
 
   final String toFolderId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final note = ref.watch(pendingNoteProvider);
+    
+    final pendingNote = ref.watch(pendingNoteProvider);
     final theme = Theme.of(context);
-    if (note == null) return const SizedBox.shrink();
-
+    if (pendingNote == null) return const SizedBox.shrink();
+    final note = pendingNote.note;
     return MaterialBanner(
       backgroundColor: theme.cardColor,
       content: Text(
@@ -30,15 +32,24 @@ class BannerPendingNote extends ConsumerWidget {
         // ───────── Almacenar directo
         TextButton(
           onPressed: () {
-            ref.read(noteMoveProvider).move(note: note, toFolderId: toFolderId);
+            onToggleView();
+            if(pendingNote.type == TypeMove.move) {
+              ref.read(noteMoveProvider).move(note: note, toFolderId: toFolderId);
+            }
+            if(pendingNote.type == TypeMove.newNote) {
+              ref.read(noteMoveProvider).save(note: note, toFolderId: toFolderId);
+            }
           },
           child: Text(t(ref, 'store', fallback: 'Almacenar'),
           style: TextStyle(color: theme.textTheme.titleLarge?.color)),
         ),
 
         // ───────── Editar y luego almacenar
+        if(pendingNote.type == TypeMove.newNote)
         TextButton(
           onPressed: () {
+            onToggleView();
+            ref.read(noteMoveProvider).save(note: note, toFolderId: toFolderId);
             Navigator.push(
               context,
               MaterialPageRoute(

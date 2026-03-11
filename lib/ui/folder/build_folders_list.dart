@@ -4,6 +4,8 @@ import 'package:tag_links/core/locate/app_lang.dart';
 import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/pages/folder_page.dart';
 import 'package:tag_links/state/folders_provider.dart';
+import 'package:tag_links/state/pending_folder_provider.dart';
+import 'package:tag_links/ui/alerts/confirm_dialog.dart';
 import 'package:tag_links/ui/folder/folder_tile.dart';
 import 'package:tag_links/ui/utils/empty_indicator.dart';
 
@@ -24,31 +26,43 @@ class BuildFoldersList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return foldersAsync.when(
-        data: (folders) {
-          if (folders.isEmpty) {
-            return EmptyIndicator(title: t(ref, 'noFolders', fallback: 'No folders'));
-          }
-
-          return Stack(
-            children: [
-              ListView.builder(
-                controller: scrollController,
-                itemCount: folders.length,
-                itemBuilder: (_, i) => FolderTile(
-                  folder: folders[i],
-                  actionsItems: [],
-                  goFolder: () => _goFolder(context, folders[i]),
-                  onDeleteFolder: () => onDeleteFolder(folders[i].id),
-                ),
-              ),
-
-              if (notifier.isLoadingMore) _loadingMoreIndicator(),
-            ],
+      data: (folders) {
+        if (folders.isEmpty) {
+          return EmptyIndicator(
+            title: t(ref, 'noFolders', fallback: 'No folders'),
           );
-        },
-        loading: () => _loading(),
-        error: (error, _) => _error(error.toString()),
-      );
+        }
+
+        return Stack(
+          children: [
+            ListView.builder(
+              controller: scrollController,
+              itemCount: folders.length,
+              itemBuilder: (_, i) => FolderTile(
+                folder: folders[i],
+                actionsItems: [],
+                goFolder: () => _goFolder(context, folders[i]),
+                onDeleteFolder: () => onDeleteFolder(folders[i].id),
+                onMove: (folder) async {
+                  final isConfirm = await ConfirmDialog.moveFolder(
+                    context,
+                    ref,
+                  );
+
+                  if (isConfirm != true) return;
+
+                  ref.read(pendingFolderProvider.notifier).set(folder);
+                },
+              ),
+            ),
+
+            if (notifier.isLoadingMore) _loadingMoreIndicator(),
+          ],
+        );
+      },
+      loading: () => _loading(),
+      error: (error, _) => _error(error.toString()),
+    );
   }
 
   Widget _loading() {

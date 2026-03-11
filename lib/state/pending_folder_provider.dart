@@ -13,7 +13,7 @@ final forbiddenDestinationsProvider = FutureProvider<Set<String>>((ref) async {
   final pendingFolder = ref.watch(pendingFolderProvider);
   if (pendingFolder == null) return {};
 
-  final repo = ref.watch(folderRepositoryProvider).requireValue;
+  final repo = ref.watch(folderRepositoryProvider);
   return await repo.getAllDescendantIds(pendingFolder.id);
 });
 

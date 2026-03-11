@@ -12,7 +12,7 @@ class TagsDao {
     await _db.insert(
       _tableName,
       tag.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
+      conflictAlgorithm: ConflictAlgorithm.ignore,
     );
   }
 

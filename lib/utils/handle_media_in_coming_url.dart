@@ -27,7 +27,7 @@ void _handleIncomingUrl(String text, WidgetRef ref) {
   }
 
   // 1. Crear nota base con todo el texto
-  final note = Note.baseNote(content: content);
+  final note = Note.baseNote(content: content,);
 
   // 2. Si hay URL, crear link mínimo
   if (match != null) {
@@ -37,5 +37,5 @@ void _handleIncomingUrl(String text, WidgetRef ref) {
   }
 
   // 3. Guardar nota temporal
-  notifier.set(note);
+  notifier.set(note,TypeMove.newNote);
 }

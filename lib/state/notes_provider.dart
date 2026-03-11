@@ -29,7 +29,7 @@ final noteSearchProvider =
       ref,
       params,
     ) {
-      final repo = ref.watch(notesRepositoryProvider).requireValue;
+      final repo = ref.watch(notesRepositoryProvider);
 
       return repo.searchByQuery(params.$1, paginated: params.$2);
     });
@@ -53,8 +53,8 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
   final int _pageSize = 20;
   bool _hasMore = true;
   bool _isLoadingMore = false;
-  NotesRepository get _repo => ref.watch(notesRepositoryProvider).requireValue;
-  LinkPreviewRepository get _repoLinkPreview => ref.watch(linkPreviewRepositoryProvider).requireValue;
+  NotesRepository get _repo => ref.watch(notesRepositoryProvider);
+  LinkPreviewRepository get _repoLinkPreview => ref.watch(linkPreviewRepositoryProvider);
 
   @override
   Future<List<Note>> build() async {

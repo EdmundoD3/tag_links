@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:tag_links/models/link_preview.dart';
 
@@ -15,7 +16,7 @@ class LinkPreviewDao {
     await delete(txn, noteId);
 
     if (link != null) {
-      await insert(txn, noteId, link);
+      await insert(txn: txn,noteId: noteId, link: link);
     }
   }
 
@@ -24,9 +25,10 @@ class LinkPreviewDao {
     await db.delete(_tableName, where: 'noteId = ?', whereArgs: [noteId]);
   }
 
-  Future<void> insert(Transaction? txn, String noteId, LinkPreview link) async {
+  Future<int?> insert({required String noteId, required LinkPreview link, Transaction? txn}) async {
     final db = txn ?? _db;
-    await db.insert(_tableName, {
+    try {
+      return db.insert(_tableName, {
       'id': link.id,
       'noteId': noteId,
       'url': link.url,
@@ -34,6 +36,11 @@ class LinkPreviewDao {
       'description': link.description,
       'image': link.image,
       'siteName': link.siteName,
-    }, conflictAlgorithm: ConflictAlgorithm.replace);
+    });
+    } catch (e) {
+      debugPrint('error LinkPreviewDao.insert: $e');
+      return null;
+    }
+    
   }
 }

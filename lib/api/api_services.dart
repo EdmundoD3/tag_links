@@ -2,53 +2,29 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/rendering.dart';
 import 'package:http/http.dart' as http;
+import 'package:tag_links/api/api_constants.dart';
+import 'package:tag_links/api/api_models.dart';
 import 'package:tag_links/api/login_response.dart';
 import 'package:tag_links/core/encypt/encrypted_datakey_model.dart';
 import 'package:tag_links/core/sync/folder_raw_sync.dart';
 import 'package:tag_links/core/sync/note_raw_sync.dart';
-import 'package:tag_links/service/env.dart';
-
-class _ApiUrls {
-  final login = '${Env.apiBaseUrl}/api/v1/login';
-  final sync = '${Env.apiBaseUrl}/api/v1/sync';
-  final encryptionKey = '${Env.apiBaseUrl}/api/v1/user/encryption-key';
-  final verifyPurchase = '${Env.apiBaseUrl}/api/v1/verify-purchase';
-}
-enum MethodPurchase { android, ios, windows}
-class SaveResult {
-  final bool ok;
-  final String? error;
-  final String? message;
-
-  SaveResult({required this.ok, this.error, this.message});
-
-  factory SaveResult.fromJson(Map<String, dynamic> json) {
-    return SaveResult(
-      ok: json['ok'] as bool,
-      error: json['error'] as String?,
-      message: json['message'] as String?,
-    );
-  }
-}
-
-class ApiPurchaseResult {}
 
 class ApiServices {
-  static final _paths = _ApiUrls();
+  static final _paths = ApiUrls();
 
   static Future<LoginApi> login({
     required String idToken,
     String? userName,
     EncryptedDataKey? encryptedKey,
   }) async {
-    final response = await http.post(
-      Uri.parse(_paths.login),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
+    final response = await _HttpService.post(
+      path: _paths.login,
+      body: {
         'idToken': idToken,
         'userName': userName,
         if (encryptedKey != null) 'encryptedKey': encryptedKey.toJson(),
-      }),
+      },
+      accessToken: null,
     );
 
     final body = jsonDecode(response.body);
@@ -68,26 +44,25 @@ class ApiServices {
     return LoginApi(status: ApiLoginStatus.loginFailed, data: null);
   }
 
-  static Future<SaveResult> registerEncryptedKey({
+  static Future<ApiSaveResult> registerEncryptedKey({
     required String accessToken,
     required EncryptedDataKey encryptedKey,
   }) async {
-    final response = await http.post(
-      Uri.parse(_paths.encryptionKey),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $accessToken',
+    final response = await _HttpService.post(
+      path: _paths.encryptionKey,
+      body: {
+        'encryptedKey': encryptedKey.toJson(),
       },
-      body: jsonEncode(encryptedKey.toJson()),
+      accessToken: accessToken,
     );
 
     final body = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
-      return SaveResult(ok: true, message: body['data']?['message']);
+      return ApiSaveResult(ok: true, message: body['data']?['message']);
     }
 
-    return SaveResult(ok: false, error: body['error'] ?? 'Unknown error');
+    return ApiSaveResult(ok: false, error: body['error'] ?? 'Unknown error');
   }
 
   static Future<SyncApi> sync({
@@ -117,23 +92,24 @@ class ApiServices {
       return SyncApi(status: SyncApiStatus.failed);
     }
   }
+
   static Future<ApiPurchaseResult?> verifyPurchase({
     required String token,
     required String productId,
     required String purchaseId,
     required MethodPurchase platform,
-  }) async{
+  }) async {
     try {
-      final response = await http.post(
-      Uri.parse(_paths.verifyPurchase),
-      body: {
-        'token': token,
-        'productId': productId,
-        'purchaseId': purchaseId,
-        'platform': platform.name,
-      },
-    ).timeout(const Duration(seconds: 10));
-    debugPrint("implementar verifyPurchase en api_services.dart");
+      final response = await _HttpService.post(
+        path: _paths.verifyPurchase,
+        body: {
+          'token': token,
+          'productId': productId,
+          'purchaseId': purchaseId,
+          'platform': platform.name,
+        },
+      );
+      debugPrint("implementar verifyPurchase en api_services.dart");
     } catch (e) {
       return null;
     }
@@ -146,23 +122,16 @@ class ApiServices {
     required int? lastPulledAt,
     required String lastId,
   }) async {
-    final response = await http
-        .post(
-          Uri.parse(_paths.sync),
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $accessToken',
-          },
-          body: jsonEncode({
-            'notes': notes.map((e) => e.toJson()).toList(),
-            'folders': folders.map((e) => e.toJson()).toList(),
-            'lastPulledAt': lastPulledAt ?? 0,
-            'lastId': lastId,
-          }),
-        )
-        .timeout(
-          const Duration(seconds: 10), // 1. Tiempo límite de espera
-        );
+    final response = await _HttpService.post(
+      path: _paths.sync,
+      accessToken: accessToken,
+      body: {
+        'notes': notes.map((e) => e.toJson()).toList(),
+        'folders': folders.map((e) => e.toJson()).toList(),
+        'lastPulledAt': lastPulledAt ?? 0,
+        'lastId': lastId,
+      },
+    );
 
     if (response.statusCode == 401) {
       return SyncApi(status: SyncApiStatus.unauthorized);
@@ -259,14 +228,14 @@ class PullResult {
 }
 
 class SyncResult {
-  final SaveResult save;
+  final ApiSaveResult save;
   final PullResult pull;
 
   SyncResult({required this.save, required this.pull});
 
   factory SyncResult.fromJson(Map<String, dynamic> json) {
     return SyncResult(
-      save: SaveResult.fromJson(json['save']),
+      save: ApiSaveResult.fromJson(json['save']),
       pull: PullResult.fromJson(json['pull']),
     );
   }
@@ -295,5 +264,25 @@ class SyncResponseModel {
       sync: SyncResult.fromJson(json['sync']),
       serverTime: json['serverTime'] as int,
     );
+  }
+}
+
+class _HttpService {
+  static Future<http.Response> post({
+    required String path,
+    required Map<String, dynamic> body,
+    String? accessToken,
+    Duration duration = const Duration(seconds: 10),
+  }) {
+    return http
+        .post(
+          Uri.parse(path),
+          headers: {
+            'Content-Type': 'application/json',
+            if (accessToken != null) 'Authorization': 'Bearer $accessToken',
+          },
+          body: jsonEncode(body),
+        )
+        .timeout(duration);
   }
 }

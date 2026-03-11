@@ -103,8 +103,8 @@ class FolderRepository {
   }
 }
 
-final folderRepositoryProvider = FutureProvider<FolderRepository>((ref) {
-  final db = ref.watch(dbProvider).requireValue;
+final folderRepositoryProvider = Provider<FolderRepository>((ref) {
+  final db = ref.watch(databaseProvider);
   final foldersDao = FoldersDao(db: db);
   final deleteDao = DeletedFoldersDao(db: db);
   final preferencesDao = FolderPreferencesDao(db: db);
@@ -114,6 +114,6 @@ final folderRepositoryProvider = FutureProvider<FolderRepository>((ref) {
 
 final folderPreferenceProvider =
     FutureProvider.family<FolderDefaultView, String>((ref, folderId) async {
-      final repo = await ref.watch(folderRepositoryProvider.future);
+      final repo = ref.watch(folderRepositoryProvider);
       return repo.getPreference(folderId);
     });

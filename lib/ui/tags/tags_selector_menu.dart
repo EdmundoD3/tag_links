@@ -38,7 +38,7 @@ class TagsSelectorMenu extends ConsumerWidget {
             ref.read(tagSearchTextProvider.notifier).state = '';
           },
         ),
-        TagsSelectedContainer(tags: tags, onDeleted: onDeletedTag),
+        TagsSelectedContainer(tags: tags, onDeleted: onDeletedTag,onGetNewTag: (tag) async => onTagSelected(tag),),
       ],
     );
   }

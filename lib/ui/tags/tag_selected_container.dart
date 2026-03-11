@@ -8,13 +8,16 @@ import 'package:tag_links/ui/tags/show_edit_tag_modal.dart';
 
 class TagsSelectedContainer extends ConsumerWidget {
   final void Function(Tag tag) onDeleted;
+  final Future<void> Function(Tag tag)? onGetNewTag;
   final List<Tag> tags;
   final bool? isCreateTag;
 
   const TagsSelectedContainer({
     super.key,
     required this.tags,
-    required this.onDeleted, this.isCreateTag = true,
+    required this.onDeleted,
+     this.isCreateTag = true,
+     this.onGetNewTag
   });
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -55,7 +58,8 @@ class TagsSelectedContainer extends ConsumerWidget {
       onPressed: () async {
         final newTag = await showCreateTagModal(context, ref);
         if (newTag != null) {
-          ref.read(tagsProvider.notifier).addTag(newTag);
+          await ref.read(tagsProvider.notifier).addTag(newTag);
+          onGetNewTag?.call(newTag);
         }
       },
     );

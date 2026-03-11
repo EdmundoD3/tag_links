@@ -30,7 +30,7 @@ final folderSearchProvider =
       ref,
       params,
     ) {
-      final repo = ref.watch(folderRepositoryProvider).requireValue;
+      final repo = ref.watch(folderRepositoryProvider);
       return repo.searchByQuery(params.$1, paginated: params.$2);
     });
 
@@ -55,7 +55,7 @@ class FoldersNotifier extends AsyncNotifier<List<Folder>> {
   bool _hasMore = true;
   bool _isLoadingMore = false;
 
-  FolderRepository get _repo => ref.watch(folderRepositoryProvider).requireValue;
+  FolderRepository get _repo => ref.watch(folderRepositoryProvider);
 
   @override
   Future<List<Folder>> build() async {

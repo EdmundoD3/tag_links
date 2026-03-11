@@ -33,6 +33,7 @@ class TagsRepository {
   }) => _tagsDao.getByName(name, paginated: paginated);
 }
 
-final tagsRepositoryProvider = FutureProvider<TagsRepository>((ref) {
-  return TagsRepository(db:ref.watch(dbProvider).requireValue);
+final tagsRepositoryProvider = Provider<TagsRepository>((ref) {
+  final db = ref.watch(databaseProvider);
+  return TagsRepository(db:db);
 });

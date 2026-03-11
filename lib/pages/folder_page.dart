@@ -47,7 +47,7 @@ class _FolderPageState extends ConsumerState<FolderPage> {
   FutureProvider<FolderDefaultView> get _foldersPreferenceProvider =>
       folderPreferenceProvider(widget.folder.id);
 
-  FolderRepository get _repo => ref.watch(folderRepositoryProvider).requireValue;
+  FolderRepository get _repo => ref.watch(folderRepositoryProvider);
 
 
   @override
@@ -104,7 +104,7 @@ class _FolderPageState extends ConsumerState<FolderPage> {
           padding: const EdgeInsets.only(right: 8.0),
           child: SwitchFolderNote(
             isFolder: showFolders,
-            onTap: () => _toggleView(ref, preference),
+            onTap: () => _toggleView(preference),
             size: 26,
           ),
         ),
@@ -115,7 +115,7 @@ class _FolderPageState extends ConsumerState<FolderPage> {
 
   List<Widget> _body(bool showFolders, AsyncValue<List<Note>> notes) {
     return [
-      BannerPendingNote(toFolderId: widget.folder.id),
+      BannerPendingNote(toFolderId: widget.folder.id,onToggleView:()=> _toNotesView(),),
       BannerPendingFolder(toParentId: widget.folder.id),
       // if (showFolders) _foldersList(subFolders) else _buildNotes(notes),
       Expanded(child: showFolders ? _foldersList() : _buildNotes(notes)),
@@ -149,12 +149,16 @@ class _FolderPageState extends ConsumerState<FolderPage> {
   }
 
   /// 🔁 Cambiar vista y guardar preferencia
-  Future<void> _toggleView(WidgetRef ref, FolderDefaultView current) async {
+  Future<void> _toggleView(FolderDefaultView current) async {
     final newView = current == FolderDefaultView.folders
         ? FolderDefaultView.notes
         : FolderDefaultView.folders;
 
     await _repo.savePreference(widget.folder.id, newView);
+    ref.invalidate(_foldersPreferenceProvider);
+  }
+  Future<void> _toNotesView() async {
+    await _repo.savePreference(widget.folder.id, FolderDefaultView.notes);
     ref.invalidate(_foldersPreferenceProvider);
   }
 

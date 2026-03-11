@@ -15,6 +15,7 @@ import 'package:tag_links/ui/form/move_to_folder_button.dart';
 import 'package:tag_links/ui/link/link_preview_form.dart';
 import 'package:tag_links/ui/tags/tags_selector_menu.dart';
 import 'package:tag_links/ui/form/title_form_controller.dart';
+import 'package:tag_links/utils/debouncer.dart';
 import 'package:uuid/uuid.dart';
 
 class NoteFormPage extends ConsumerStatefulWidget {
@@ -40,8 +41,15 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
 
   late TextEditingController _titleCtrl;
   late TextEditingController _contentCtrl;
+  late final Debouncer _saveDebouncer;
   bool _isSaving = false;
   List<Tag> _tags = [];
+
+  String? _lastSavedHash;
+
+  String _noteHash(Note n) {
+    return '${n.title}|${n.content}|${n.link?.url}|${n.tags.map((t) => t.id).join(",")}|${n.isFavorite}|${n.folderId}';
+  }
 
   bool _isFavorite = false;
   LinkPreview? _linkPreview;
@@ -56,12 +64,17 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
     _isFavorite = widget.note?.isFavorite ?? false;
     _linkPreview = widget.note?.link;
     _id = widget.note?.id ?? const Uuid().v4();
+    _saveDebouncer = Debouncer(milliseconds: 800);
   }
 
   @override
   void dispose() {
+    //** último guardado, antes de limpiar todo, siempre al principio
+    _saveDebouncer.dispose();
+    //**
     _titleCtrl.dispose();
     _contentCtrl.dispose();
+
     super.dispose();
   }
 
@@ -84,19 +97,20 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
     return note;
   }
 
-Future<void> _onSave() async {
-  if (_isSaving || !_formKey.currentState!.validate()) return;
-  
-  setState(() => _isSaving = true);
-
-  try {
+  Future<void> _onSave() async {
     final note = _captureNote();
-    
+
+    final hash = _noteHash(note);
+    if (_lastSavedHash == hash) return;
+
     // Lógica de guardado
     if (widget.isPending) {
-      await ref.read(noteMoveProvider).move(note: note, toFolderId: widget.folderId);
+      await ref
+          .read(noteMoveProvider)
+          .move(note: note, toFolderId: widget.folderId);
     } else {
       final provider = notesProvider(widget.folderId);
+
       if (widget.isEdit) {
         await ref.read(provider.notifier).updateNote(note);
       } else {
@@ -104,30 +118,58 @@ Future<void> _onSave() async {
       }
     }
 
-    // Lógica de Anuncios
-    final adService = ref.read(adServiceProvider);
-    final tocaIntersticial = ref.read(showInterstitialAdsProvider);
-
-    if (tocaIntersticial) {
-      adService.showInterstitialAd(
-        onAdClosed: () {
-          ref.read(interstitialAdsProvider.notifier).registerAdShown();
-          if (mounted) Navigator.pop(context); 
-        },
-      );
-      // Importante: No ponemos _isSaving = false aquí porque vamos a cerrar la pantalla.
-      return; 
-    } 
-
-    // Si NO toca anuncio, cerramos normalmente
-    if (mounted) Navigator.pop(context);
-
-  } catch (e) {
-    // Si algo falla (ej. error de red al guardar), reactivamos el botón
-    if (mounted) setState(() => _isSaving = false);
-    // Aquí podrías mostrar un SnackBar de error
+    _lastSavedHash = hash;
   }
-}
+
+  Future<void> _autoSave() async {
+    if (_isSaving) return;
+    if (_formKey.currentState == null) return;
+    if (!_formKey.currentState!.validate()) return;
+
+    _isSaving = true;
+
+    try {
+      await _onSave();
+    } catch (e) {
+      debugPrint('Error al guardar: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      } else {
+        _isSaving = false;
+      }
+    }
+  }
+
+  Future<void> _onSaveAndClose() async {
+    if (_isSaving || !_formKey.currentState!.validate()) return;
+
+    setState(() => _isSaving = true);
+
+    try {
+      await _onSave();
+      // Lógica de Anuncios
+      final adService = ref.read(adServiceProvider);
+      final tocaIntersticial = ref.read(showInterstitialAdsProvider);
+      if (tocaIntersticial) {
+        adService.showInterstitialAd(
+          onAdClosed: () {
+            ref.read(interstitialAdsProvider.notifier).registerAdShown();
+            if (mounted) Navigator.pop(context);
+          },
+        );
+        // Importante: No ponemos _isSaving = false aquí porque vamos a cerrar la pantalla.
+        return;
+      }
+
+      // Si NO toca anuncio, cerramos normalmente
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      // Si algo falla (ej. error de red al guardar), reactivamos el botón
+      if (mounted) setState(() => _isSaving = false);
+      // Aquí podrías mostrar un SnackBar de error
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -139,7 +181,7 @@ Future<void> _onSave() async {
       title: widget.isEdit ? _titleCtrl.text : 'Nueva nota',
       isFavorite: _isFavorite,
       onFavoriteToogle: _isFavoriteToogle,
-      onSave: _onSave,
+      onSave: _onSaveAndClose,
       isSaving: _isSaving,
     );
   }
@@ -154,6 +196,7 @@ Future<void> _onSave() async {
           'titleRequired',
           fallback: 'El título es obligatorio',
         ),
+        onChange: () => _saveDebouncer.run(_autoSave),
       ),
       const SizedBox(height: 16),
       LinkPreviewForm(
@@ -165,6 +208,7 @@ Future<void> _onSave() async {
       _ContentController(
         contentCtrl: _contentCtrl,
         label: t(ref, 'content', fallback: 'Contenido'),
+        onChange: () => _saveDebouncer.run(_autoSave),
       ),
       const SizedBox(height: 16),
       TagsSelectorMenu(
@@ -185,6 +229,7 @@ Future<void> _onSave() async {
     setState(() {
       _linkPreview = linkPreview;
     });
+    _saveDebouncer.run(_autoSave);
   }
 
   // controllers
@@ -194,12 +239,14 @@ Future<void> _onSave() async {
     setState(() {
       _tags = [..._tags, tag];
     });
+    _saveDebouncer.run(_autoSave);
   }
 
   void _onDeletedTag(Tag tag) {
     setState(() {
       _tags = _tags.where((t) => t.id != tag.id).toList();
     });
+    _saveDebouncer.run(_autoSave);
   }
 
   Future<void> _onChangeFolder() async {
@@ -208,7 +255,7 @@ Future<void> _onSave() async {
     if (isConfirm != true) return;
 
     final note = _captureNote();
-    ref.read(pendingNoteProvider.notifier).set(note);
+    ref.read(pendingNoteProvider.notifier).set(note, TypeMove.move);
 
     if (!mounted) return;
     Navigator.pop(context);
@@ -218,13 +265,19 @@ Future<void> _onSave() async {
     setState(() {
       _isFavorite = !_isFavorite;
     });
+    _saveDebouncer.run(_autoSave);
   }
 }
 
 class _ContentController extends StatelessWidget {
   final TextEditingController contentCtrl;
   final String label;
-  const _ContentController({required this.contentCtrl, required this.label});
+  final VoidCallback onChange;
+  const _ContentController({
+    required this.contentCtrl,
+    required this.label,
+    required this.onChange,
+  });
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -232,6 +285,7 @@ class _ContentController extends StatelessWidget {
       style: TextStyle(color: theme.textTheme.bodyMedium?.color),
       controller: contentCtrl,
       maxLength: NoteConfig.contentMaxLength,
+      onChanged: (_) => onChange(),
       decoration: InputDecoration(
         labelText: label,
         alignLabelWithHint: true,

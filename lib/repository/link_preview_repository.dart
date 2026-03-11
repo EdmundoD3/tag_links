@@ -13,6 +13,7 @@ class LinkPreviewRepository {
   }
 }
 
-final linkPreviewRepositoryProvider = FutureProvider<LinkPreviewRepository>((ref) {
-  return LinkPreviewRepository(LinkPreviewDao(ref.watch(dbProvider).requireValue));
+final linkPreviewRepositoryProvider = Provider<LinkPreviewRepository>((ref) {
+  final db = ref.watch(databaseProvider);
+  return LinkPreviewRepository(LinkPreviewDao(db));
 });
