@@ -4,6 +4,7 @@ import 'package:tag_links/core/app_purchases/premium_provider.dart';
 import 'package:tag_links/core/auth/auth_status_provider.dart';
 import 'package:tag_links/core/sync/sync_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tag_links/core/sync/sync_types.dart';
 
 // El estado ahora es simplemente un enum para saber el RESULTADO del último intento
 enum SyncResultStatus { ok, error, reloging, limitStorageReached, nothing }

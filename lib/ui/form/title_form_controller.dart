@@ -5,11 +5,13 @@ class TitleFormController extends StatelessWidget {
   final TextEditingController titleCtrl;
   final String label;
   final String validatorMsg;
+  final void Function()? onChange;
 
   const TitleFormController({super.key, 
     required this.titleCtrl,
     required this.label,
     required this.validatorMsg,
+    this.onChange,
   });
 
   @override
@@ -30,6 +32,7 @@ class TitleFormController extends StatelessWidget {
           borderSide: BorderSide(color: theme.focusColor, width: 2),
         ),
       ),
+      onChanged: (value) => onChange?.call(),
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
           return validatorMsg;

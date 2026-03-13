@@ -14,6 +14,7 @@ class Note {
   final List<Tag> tags;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final DateTime? syncAt;
   final bool isFavorite;
 
   Note({
@@ -26,6 +27,7 @@ class Note {
     required this.tags,
     required this.createdAt,
     required this.updatedAt,
+    this.syncAt,
     this.isFavorite = false,
   });
   factory Note.baseNote({
@@ -65,6 +67,7 @@ class Note {
       tags: const [], // se cargan después
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt']),
       updatedAt: DateTime.fromMillisecondsSinceEpoch(map['updatedAt']),
+      syncAt: map['syncAt'] == null ? null : DateTime.fromMillisecondsSinceEpoch(map['syncAt']),
       isFavorite: map['isFavorite'] == 1,
     );
   }
@@ -84,6 +87,7 @@ class Note {
       'color': color,
       'createdAt': createdAt.millisecondsSinceEpoch,
       'updatedAt': updatedAt.millisecondsSinceEpoch,
+      'syncAt': syncAt?.millisecondsSinceEpoch,
       'isFavorite': isFavorite ? 1 : 0,
     };
   }
@@ -109,6 +113,7 @@ class Note {
       tags: tags ?? this.tags,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      syncAt: syncAt,
       isFavorite: isFavorite ?? this.isFavorite,
     );
   }
@@ -168,6 +173,7 @@ String noteTable = '''
             color TEXT,
             createdAt INTEGER NOT NULL,
             updatedAt INTEGER NOT NULL,
+            syncAt INTEGER,
             isFavorite INTEGER NOT NULL DEFAULT 0 CHECK (isFavorite IN (0,1)),
             FOREIGN KEY (folderId) REFERENCES folders(id) ON DELETE CASCADE
           );

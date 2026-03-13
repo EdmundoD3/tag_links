@@ -20,7 +20,7 @@ final tagsProvider = AsyncNotifierProvider<TagsNotifier, List<Tag>>(
 );
 
 class TagsNotifier extends AsyncNotifier<List<Tag>> {
-  TagsRepository get _repo => ref.read(tagsRepositoryProvider);
+  TagsRepository get _repo => ref.watch(tagsRepositoryProvider);
 
   @override
   Future<List<Tag>> build() async {

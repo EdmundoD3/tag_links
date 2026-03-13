@@ -1,10 +1,13 @@
+import 'package:flutter/cupertino.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:tag_links/data/database.dart';
 import 'package:tag_links/models/link_preview.dart';
 
 class LinkPreviewDao {
   final String _tableName = 'link_previews';
-  Future<Database> get _db async => AppDatabase().database;
+  final Database _db;
+  const LinkPreviewDao(this._db);
+
+
   Future<void> replace({
     required String noteId,
     Transaction? txn,
@@ -13,18 +16,19 @@ class LinkPreviewDao {
     await delete(txn, noteId);
 
     if (link != null) {
-      await insert(txn, noteId, link);
+      await insert(txn: txn,noteId: noteId, link: link);
     }
   }
 
   Future<void> delete(Transaction? txn, String noteId) async {
-    final db = txn ?? await _db;
+    final db = txn ?? _db;
     await db.delete(_tableName, where: 'noteId = ?', whereArgs: [noteId]);
   }
 
-  Future<void> insert(Transaction? txn, String noteId, LinkPreview link) async {
-    final db = txn ?? await _db;
-    await db.insert(_tableName, {
+  Future<int?> insert({required String noteId, required LinkPreview link, Transaction? txn}) async {
+    final db = txn ?? _db;
+    try {
+      return db.insert(_tableName, {
       'id': link.id,
       'noteId': noteId,
       'url': link.url,
@@ -32,6 +36,11 @@ class LinkPreviewDao {
       'description': link.description,
       'image': link.image,
       'siteName': link.siteName,
-    }, conflictAlgorithm: ConflictAlgorithm.replace);
+    });
+    } catch (e) {
+      debugPrint('error LinkPreviewDao.insert: $e');
+      return null;
+    }
+    
   }
 }

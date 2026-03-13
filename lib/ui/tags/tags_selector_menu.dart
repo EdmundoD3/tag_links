@@ -7,7 +7,7 @@ import 'package:tag_links/ui/tags/tag_selected_container.dart';
 
 class TagsSelectorMenu extends ConsumerWidget {
   final List<Tag> tags;
-  final ValueChanged<Tag> onTagSelected;
+  final void Function(Tag tag) onTagSelected;
   final ValueChanged<Tag> onDeletedTag;
 
   const TagsSelectorMenu({
@@ -38,7 +38,7 @@ class TagsSelectorMenu extends ConsumerWidget {
             ref.read(tagSearchTextProvider.notifier).state = '';
           },
         ),
-        TagsSelectedContainer(tags: tags, onDeleted: onDeletedTag),
+        TagsSelectedContainer(tags: tags, onDeleted: onDeletedTag, onGetNewTag: (tag) => onTagSelected(tag)),
       ],
     );
   }

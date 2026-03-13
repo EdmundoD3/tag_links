@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/ads/ads_service_provider.dart';
 import 'package:tag_links/core/ads/show_ad_management_menu.dart';
 import 'package:tag_links/core/app_purchases/premium_sales_sheet.dart';
+import 'package:tag_links/core/coffe/invitame_un_caffe.dart';
 import 'package:tag_links/core/locate/lang_selector.dart';
 import 'package:tag_links/core/ads/ads_disable_provider.dart';
 import 'package:tag_links/core/theme/theme_selector_widget.dart';
@@ -50,18 +51,7 @@ class SupportProjectPage extends ConsumerWidget {
           ),
           PremiumSalesSheet(showEmpty: null),
 
-          ListTile(
-            leading: const Icon(Icons.coffee, color: Color(0xFFBB9457)),
-            title: Text(
-              "Invítame un café",
-              style: TextStyle(color: theme.textTheme.bodyMedium?.color),
-            ),
-            subtitle: Text(
-              "Apoyo externo para el desarrollo.",
-              style: TextStyle(color: theme.hintColor),
-            ),
-            onTap: _launchDonationUrl,
-          ),
+          InvitameUnCaffe(),
 
           const Divider(
             color: Colors.grey,
@@ -111,5 +101,5 @@ class SupportProjectPage extends ConsumerWidget {
         ],
       ];
   }
-  void _launchDonationUrl() {}
+
 }

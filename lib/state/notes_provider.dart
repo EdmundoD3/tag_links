@@ -29,7 +29,7 @@ final noteSearchProvider =
       ref,
       params,
     ) {
-      final repo = ref.read(notesRepositoryProvider);
+      final repo = ref.watch(notesRepositoryProvider);
 
       return repo.searchByQuery(params.$1, paginated: params.$2);
     });
@@ -53,7 +53,8 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
   final int _pageSize = 20;
   bool _hasMore = true;
   bool _isLoadingMore = false;
-  NotesRepository get _repo => ref.read(notesRepositoryProvider);
+  NotesRepository get _repo => ref.watch(notesRepositoryProvider);
+  LinkPreviewRepository get _repoLinkPreview => ref.watch(linkPreviewRepositoryProvider);
 
   @override
   Future<List<Note>> build() async {
@@ -163,14 +164,14 @@ Future<void> updateNote(Note note) async {
   });
 }
 
-  Future<void> deleteNote(String id) async {
+  Future<void> deleteNote(Note noteForDelete) async {
     final current = state.asData?.value;
     if (current == null) return;
 
-    state = AsyncValue.data(current.where((note) => note.id != id).toList());
+    state = AsyncValue.data(current.where((note) => note.id != noteForDelete).toList());
 
     try {
-      await _repo.delete(id);
+      await _repo.delete(noteForDelete);
       unawaited(ref.read(syncNotifierProvider.notifier).performSync());
     } catch (e) {
       // ❌ rollback si falla
@@ -181,13 +182,13 @@ Future<void> updateNote(Note note) async {
 
 Future<void> _enrichLinks(List<LinkPreview> links) async {
     final service = LinkPreviewService();
-    final repoLinkPreview = ref.read(linkPreviewRepositoryProvider);
+    
     bool updatedAny = false;
 
     for (final link in links) {
       final updated = await service.enrich(link);
       if (updated != null && updated.hasMetadata) {
-        await repoLinkPreview.replace(updated);
+        await _repoLinkPreview.replace(updated);
         updatedAny = true;
       }
     }

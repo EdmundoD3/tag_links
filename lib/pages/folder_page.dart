@@ -4,7 +4,7 @@ import 'package:tag_links/core/locate/app_lang.dart';
 import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/models/folder_preference.dart';
 import 'package:tag_links/models/note.dart';
-import 'package:tag_links/repository/folder_repository.dart';
+import 'package:tag_links/state/folder_preference_provider.dart';
 import 'package:tag_links/state/folders_provider.dart';
 import 'package:tag_links/state/notes_provider.dart';
 import 'package:tag_links/ui/app_bar/app_bar_folder.dart';
@@ -44,8 +44,10 @@ class _FolderPageState extends ConsumerState<FolderPage> {
       notesProvider(widget.folder.id);
   AsyncNotifierProvider<FoldersNotifier, List<Folder>> get _folderProvider =>
       foldersProvider(widget.folder.id);
-  FutureProvider<FolderDefaultView> get _foldersPreferenceProvider =>
+  AsyncNotifierProvider<FolderPreferenceNotifier, FolderDefaultView> get _foldersPreferenceProvider =>
       folderPreferenceProvider(widget.folder.id);
+
+
 
   @override
   void dispose() {
@@ -87,7 +89,7 @@ class _FolderPageState extends ConsumerState<FolderPage> {
         return PageScaffold(
           appBar: _appBar(showFolders, preference),
           floatingActionButton: _floatingActionButton(showFolders),
-          body: _body(showFolders, notes),
+          body: _body(showFolders: showFolders, notes: notes),
         );
       },
     );
@@ -101,7 +103,7 @@ class _FolderPageState extends ConsumerState<FolderPage> {
           padding: const EdgeInsets.only(right: 8.0),
           child: SwitchFolderNote(
             isFolder: showFolders,
-            onTap: () => _toggleView(ref, preference),
+            onTap: () => _toggleView(preference),
             size: 26,
           ),
         ),
@@ -110,10 +112,10 @@ class _FolderPageState extends ConsumerState<FolderPage> {
     );
   }
 
-  List<Widget> _body(bool showFolders, AsyncValue<List<Note>> notes) {
+  List<Widget> _body({required bool showFolders, required AsyncValue<List<Note>> notes}) {
     return [
-      BannerPendingNote(toFolderId: widget.folder.id),
-      BannerPendingFolder(toParentId: widget.folder.id),
+      BannerPendingNote(toFolderId: widget.folder.id,onToggleView:()=> _toNotesView(),),
+      BannerPendingFolder(toParentId: widget.folder.id, onToggleView:()=> _toFoldersView()),
       // if (showFolders) _foldersList(subFolders) else _buildNotes(notes),
       Expanded(child: showFolders ? _foldersList() : _buildNotes(notes)),
     ];
@@ -146,14 +148,18 @@ class _FolderPageState extends ConsumerState<FolderPage> {
   }
 
   /// 🔁 Cambiar vista y guardar preferencia
-  Future<void> _toggleView(WidgetRef ref, FolderDefaultView current) async {
-    final repo = ref.read(folderRepositoryProvider);
+  Future<void> _toggleView(FolderDefaultView current) async {
     final newView = current == FolderDefaultView.folders
         ? FolderDefaultView.notes
         : FolderDefaultView.folders;
+    await ref.read(_foldersPreferenceProvider.notifier).updatePreference(newView);
+  }
 
-    await repo.savePreference(widget.folder.id, newView);
-    ref.invalidate(_foldersPreferenceProvider);
+  Future<void> _toNotesView() async {
+    return await ref.read(_foldersPreferenceProvider.notifier).updatePreference(FolderDefaultView.notes);
+  }
+  Future<void> _toFoldersView() async {
+    return await ref.read(_foldersPreferenceProvider.notifier).updatePreference(FolderDefaultView.folders);
   }
 
   /// 📂 Lista de carpetas

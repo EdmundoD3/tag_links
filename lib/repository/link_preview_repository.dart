@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/data/data_sources/link_preview_dao.dart';
+import 'package:tag_links/data/database.dart';
 import 'package:tag_links/models/link_preview.dart';
 
 class LinkPreviewRepository {
@@ -13,5 +14,6 @@ class LinkPreviewRepository {
 }
 
 final linkPreviewRepositoryProvider = Provider<LinkPreviewRepository>((ref) {
-  return LinkPreviewRepository(LinkPreviewDao());
+  final db = ref.watch(databaseProvider);
+  return LinkPreviewRepository(LinkPreviewDao(db));
 });

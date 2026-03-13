@@ -1,10 +1,11 @@
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/sync/folder_raw_sync.dart';
-import 'package:tag_links/core/sync/sync_manager.dart';
+import 'package:tag_links/core/sync/sync_types.dart';
 import 'package:tag_links/data/data_sources/deleted_dao.dart';
 import 'package:tag_links/data/data_sources/folder_preferences_dao.dart';
 import 'package:tag_links/data/data_sources/folders_dao.dart';
+import 'package:tag_links/data/database.dart';
 import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/models/folder_preference.dart';
 import 'package:tag_links/models/search_query.dart';
@@ -12,10 +13,10 @@ import 'package:tag_links/utils/paginated_utils.dart';
 
 class FolderRepository {
   final FoldersDao _dao;
-  final DeletedFoldersDao _deletedDao = DeletedFoldersDao();
+  final DeletedFoldersDao _deletedDao;
   final FolderPreferencesDao _preferencesDao;
 
-  FolderRepository(this._dao, this._preferencesDao);
+  FolderRepository(this._dao, this._preferencesDao, this._deletedDao);
 
   Future<List<Folder>> searchByQuery(
     SearchQuery query, {
@@ -23,10 +24,12 @@ class FolderRepository {
   }) async {
     return _dao.searchByQuery(query, paginated: paginated);
   }
+
   Future<void> upsertAll(List<Folder> folders) {
     final enshuredFolders = folders.map((f) => f.ensureForInsert()).toList();
     return _dao.upsertAll(enshuredFolders);
   }
+
   Future<void> deleteByIds(List<String> ids) {
     return _dao.deleteByIds(ids);
   }
@@ -58,9 +61,6 @@ class FolderRepository {
   Future<List<Folder>> getFavorites({required PaginatedByDate paginated}) =>
       _dao.getFavorites(paginated: paginated);
 
-  Future<FolderDefaultView> getPreference(String folderId) async {
-    return _preferencesDao.getDefaultView(folderId);
-  }
   Future<Set<String>> getAllDescendantIds(String folderId) async {
     return _dao.getAllDescendantIds(folderId);
   }
@@ -68,48 +68,51 @@ class FolderRepository {
   Future<void> toggleFavorite(Folder folder) {
     return update(folder.copyWith(isFavorite: !folder.isFavorite));
   }
+  // --------------------- PREFERENCES section ----------------------//
+
+  Future<FolderDefaultView> getPreference(String folderId) async {
+    return _preferencesDao.getDefaultView(folderId);
+  }
 
   Future<void> savePreference(String folderId, FolderDefaultView view) async {
     await _preferencesDao.save(
       FolderPreference(folderId: folderId, defaultView: view),
     );
   }
-    Future<SyncData<FolderRawSync>> getForSync(int? deletedAt) async {
-      final limit = 450;
-    final deletedData = await _deletedDao.getBatch(
-      limit: limit,
-    );
+
+  // ----------------------- SYNC section -------------------------//
+
+  Future<SyncData<FolderRawSync>> getForSync() async {
+    final limit = 200;
+    final deletedData = await _deletedDao.getBatch(limit: limit);
 
     final deletedDataRaw = deletedData.map(FolderRawSync.fromDeleted).toList();
 
-    final data = await _dao.getByLastUpdate(
-      lastUpdate: deletedAt,
-      limit: limit - deletedData.length,
-    );
-    final lastDate = data.reduce((a, b) => a.updatedAt.isAfter(b.updatedAt)? a : b).updatedAt.millisecondsSinceEpoch;
+    final data = await _dao.getForSync(limit: limit - deletedData.length);
+
     final dataRaw = await Future.wait(data.map(FolderRawSync.fromFolder));
 
     return SyncData(
-      data: [...deletedDataRaw, ...dataRaw],
-      lastDate: lastDate,
+      dataForSync: dataRaw,
+      deletedDataForSync: deletedDataRaw,
       hasMore: data.length + deletedData.length >= limit,
     );
   }
+
+  Future<Future<void>> updateSyncAt(List<String> ids, int syncAt) async {
+    return _dao.updateSyncAt(ids, syncAt);
+  }
+
+  Future<void> clearDeletedNotes(List<String> ids) {
+    return _deletedDao.deleteIds(ids);
+  }
 }
 
-final foldersDaoProvider = Provider<FoldersDao>((ref) => FoldersDao());
-
-final folderPreferencesDaoProvider = Provider((ref) => FolderPreferencesDao());
-
 final folderRepositoryProvider = Provider<FolderRepository>((ref) {
-  return FolderRepository(
-    ref.read(foldersDaoProvider),
-    ref.read(folderPreferencesDaoProvider),
-  );
-});
+  final db = ref.watch(databaseProvider);
+  final foldersDao = FoldersDao(db: db);
+  final deleteDao = DeletedFoldersDao(db: db);
+  final preferencesDao = FolderPreferencesDao(db: db);
 
-final folderPreferenceProvider =
-    FutureProvider.family<FolderDefaultView, String>((ref, folderId) {
-      final repo = ref.read(folderRepositoryProvider);
-      return repo.getPreference(folderId);
-    });
+  return FolderRepository(foldersDao, preferencesDao, deleteDao);
+});

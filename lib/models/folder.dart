@@ -13,6 +13,7 @@ class Folder {
   final String? color;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final DateTime? syncAt;
   final bool isFavorite;
 
   Folder({
@@ -25,6 +26,7 @@ class Folder {
     this.color,
     required this.createdAt,
     required this.updatedAt,
+    this.syncAt,
     this.isFavorite = false,
   });
 
@@ -39,6 +41,7 @@ class Folder {
       color: '',
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
+      syncAt: null,
       isFavorite: false,
     );
     return folder.ensureForInsert();
@@ -55,6 +58,7 @@ class Folder {
       color: map['color'],
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt']),
       updatedAt: DateTime.fromMillisecondsSinceEpoch(map['updatedAt']),
+      syncAt:map['syncAt'] == null ? null : DateTime.fromMillisecondsSinceEpoch(map['syncAt']),
       isFavorite: map['isFavorite'] == 1,
     );
   }
@@ -69,6 +73,7 @@ class Folder {
       'color': color,
       'createdAt': createdAt.millisecondsSinceEpoch,
       'updatedAt': updatedAt.millisecondsSinceEpoch,
+      'syncAt': syncAt?.millisecondsSinceEpoch,
       'isFavorite': isFavorite ? 1 : 0,
     };
   }
@@ -83,6 +88,7 @@ class Folder {
     String? color,
     DateTime? createdAt,
     DateTime? updatedAt,
+    DateTime? syncAt,
     bool? isFavorite,
   }) {
     return Folder(
@@ -95,6 +101,7 @@ class Folder {
       color: color ?? this.color,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      syncAt: syncAt ?? this.syncAt,
       isFavorite: isFavorite ?? this.isFavorite,
     );
   }
@@ -124,6 +131,7 @@ class Folder {
       updatedAt: DateTime.fromMillisecondsSinceEpoch(
         (json['updatedAt'] ?? json['createdAt']) as int,
       ),
+
       isFavorite: json['isFavorite'] as bool? ?? false,
     );
   }
@@ -139,6 +147,7 @@ String folderTable = '''
             color TEXT,
             createdAt INTEGER NOT NULL,
             updatedAt INTEGER,
+            syncAt INTEGER,
             isFavorite INTEGER NOT NULL DEFAULT 0 CHECK (isFavorite IN (0,1)),
             FOREIGN KEY (parentId) REFERENCES folders(id) ON DELETE CASCADE
           );

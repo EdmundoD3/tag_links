@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/ads/ads_disable_provider.dart';
 import 'package:tag_links/core/ads/interstitial_ads_provider.dart';
-import 'package:tag_links/core/app_purchases/premium_sales_sheet.dart';
 import 'package:tag_links/ui/alerts/feedback_alert_confirm.dart';
 
 void showAdManagementMenu(
