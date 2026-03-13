@@ -164,14 +164,14 @@ Future<void> updateNote(Note note) async {
   });
 }
 
-  Future<void> deleteNote(String id) async {
+  Future<void> deleteNote(Note noteForDelete) async {
     final current = state.asData?.value;
     if (current == null) return;
 
-    state = AsyncValue.data(current.where((note) => note.id != id).toList());
+    state = AsyncValue.data(current.where((note) => note.id != noteForDelete).toList());
 
     try {
-      await _repo.delete(id);
+      await _repo.delete(noteForDelete);
       unawaited(ref.read(syncNotifierProvider.notifier).performSync());
     } catch (e) {
       // ❌ rollback si falla

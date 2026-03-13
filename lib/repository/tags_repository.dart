@@ -10,7 +10,7 @@ class TagsRepository {
 
   TagsRepository({required Database db}) : _tagsDao = TagsDao(db);
 
-  Future<void> insert(Tag tag) {
+  Future<void> insert(Tag tag) async {
     final tagToInsert = tag.ensureForInsert();
     return _tagsDao.insert(tagToInsert);
   }

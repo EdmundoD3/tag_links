@@ -20,6 +20,9 @@ class AppDatabase {
         CREATE INDEX idx_notes_favorite_updated
         ON notes(isFavorite, updatedAt DESC);
 
+        CREATE INDEX idx_notes_sync
+        ON notes(updatedAt, syncAt);
+
         -- TAGS
         CREATE INDEX idx_note_tags_tag_note
         ON note_tags(tagId, noteId);
@@ -28,11 +31,14 @@ class AppDatabase {
         CREATE INDEX idx_folders_parentId
         ON folders(parentId);
 
+        CREATE INDEX idx_folders_sync
+        ON folders(updatedAt, syncAt);
+
         -- LINKS
         CREATE INDEX idx_link_noteId
         ON link_previews(noteId);
 ''';
-static String triggers = '''
+  static String triggers = '''
   -- TRIGGERS PARA NOTAS
   CREATE TRIGGER IF NOT EXISTS tr_note_tags_insert
   AFTER INSERT ON note_tags
@@ -97,6 +103,7 @@ static String triggers = '''
     );
   }
 }
+
 final databaseProvider = Provider<Database>((ref) {
   throw UnimplementedError();
 });

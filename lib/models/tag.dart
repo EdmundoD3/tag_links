@@ -41,7 +41,10 @@ class Tag {
   }
 
   Tag ensureForInsert() {
-    return copyWith(id: Uuid().v4());
+    if (id.isEmpty || id == "") {
+      return copyWith(id: Uuid().v4());
+    }
+    return this;
   }
 }
 

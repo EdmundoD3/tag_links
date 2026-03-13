@@ -10,7 +10,7 @@ import 'package:tag_links/ui/utils/empty_indicator.dart';
 
 class BuildNotesList extends ConsumerWidget {
   final bool isLoadingMore;
-  final Future<void> Function(String id) onDeleteNote;
+  final Future<void> Function(Note id) onDeleteNote;
   final AsyncValue<List<Note>> notesAsync;
   final ScrollController scrollController;
   final List<ActionMenuItem>? actionsItems;
@@ -55,8 +55,8 @@ class BuildNotesList extends ConsumerWidget {
               itemCount: notes.length,
               itemBuilder: (_, i) => NoteTile(
                 note: notes[i],
-                onDeleteNote: (id) async {
-                  await onDeleteNote(id);
+                onDeleteNote: (note) async {
+                  await onDeleteNote(note);
                 },
                 onMove: (note) async {
                       final isConfirm = await ConfirmDialog.moveNote(context, ref);

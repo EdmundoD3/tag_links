@@ -234,8 +234,8 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
 
   // controllers
   void _onTagSelected(Tag tag) {
-    if (_tags.any((t) => t.id == tag.id)) return;
-
+    final hasSameId = _tags.any((t) => t.id == tag.id);
+    if (hasSameId) return;
     setState(() {
       _tags = [..._tags, tag];
     });

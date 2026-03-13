@@ -6,9 +6,7 @@ import 'package:tag_links/utils/paginated_utils.dart';
 
 class FoldersDao {
   final Database _db;
-  FoldersDao({
-    required Database db,
-  }) : _db = db;
+  FoldersDao({required Database db}) : _db = db;
 
   /// BY LAST UPDATE
 
@@ -112,7 +110,7 @@ class FoldersDao {
       await txn.insert(
         'folders',
         folder.toMap(),
-        conflictAlgorithm: ConflictAlgorithm.replace,
+        conflictAlgorithm: ConflictAlgorithm.ignore,
       );
 
       for (final tag in folder.tags) {
@@ -167,35 +165,53 @@ class FoldersDao {
     });
   }
 
-/// UPSERT ALL
+  /// UPSERT ALL
   Future<void> upsertAll(List<Folder> folders) async {
     final db = _db;
     await db.transaction((txn) async {
       for (final folder in folders) {
-        await txn.insert('folders', folder.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+        await txn.insert(
+          'folders',
+          folder.toMap(),
+          conflictAlgorithm: ConflictAlgorithm.ignore,
+        );
 
-        final currentTagRows = await txn.query('folder_tags', columns: ['tagId'], where: 'folderId = ?', whereArgs: [folder.id]);
-        final currentTagIds = currentTagRows.map((e) => e['tagId'] as String).toSet();
+        final currentTagRows = await txn.query(
+          'folder_tags',
+          columns: ['tagId'],
+          where: 'folderId = ?',
+          whereArgs: [folder.id],
+        );
+        final currentTagIds = currentTagRows
+            .map((e) => e['tagId'] as String)
+            .toSet();
         final newTagIds = folder.tags.map((t) => t.id).toSet();
 
         for (final tagId in newTagIds.difference(currentTagIds)) {
-          await txn.insert('folder_tags', {'folderId': folder.id, 'tagId': tagId});
+          await txn.insert('folder_tags', {
+            'folderId': folder.id,
+            'tagId': tagId,
+          });
         }
         for (final tagId in currentTagIds.difference(newTagIds)) {
-          await txn.delete('folder_tags', where: 'folderId = ? AND tagId = ?', whereArgs: [folder.id, tagId]);
+          await txn.delete(
+            'folder_tags',
+            where: 'folderId = ? AND tagId = ?',
+            whereArgs: [folder.id, tagId],
+          );
         }
       }
     });
   }
 
-Future<void> deleteByIds(List<String> ids) async {
+  Future<void> deleteByIds(List<String> ids) async {
     if (ids.isEmpty) return;
     final db = _db;
     final placeholders = List.filled(ids.length, '?').join(',');
     await db.delete('folders', where: 'id IN ($placeholders)', whereArgs: ids);
   }
 
-/// DELETE
+  /// DELETE
   Future<void> delete(String id) async {
     final db = _db;
     // Gracias al ON DELETE CASCADE en folder_tags, al borrar la carpeta
@@ -254,12 +270,14 @@ Future<void> deleteByIds(List<String> ids) async {
 
     return Future.wait(result.map((f) => _mapFolderWithTags(db, f)));
   }
+
   Future<Set<String>> getAllDescendantIds(String folderId) async {
-  final db = _db; // Tu instancia de sqflite
-  
-  // Esta consulta busca la carpeta inicial y luego se une a sí misma
-  // buscando todos los registros cuyo parentId sea el id de la carpeta anterior
-  final List<Map<String, dynamic>> results = await db.rawQuery('''
+    final db = _db; // Tu instancia de sqflite
+
+    // Esta consulta busca la carpeta inicial y luego se une a sí misma
+    // buscando todos los registros cuyo parentId sea el id de la carpeta anterior
+    final List<Map<String, dynamic>> results = await db.rawQuery(
+      '''
     WITH RECURSIVE family AS (
       -- Caso base: empezar por la carpeta que queremos mover
       SELECT id FROM folders WHERE id = ?
@@ -269,11 +287,13 @@ Future<void> deleteByIds(List<String> ids) async {
       INNER JOIN family ON f.parentId = family.id
     )
     SELECT id FROM family;
-  ''', [folderId]);
+  ''',
+      [folderId],
+    );
 
-  // Retornamos un Set para que la búsqueda sea O(1) (instantánea)
-  return results.map((row) => row['id'] as String).toSet();
-}
+    // Retornamos un Set para que la búsqueda sea O(1) (instantánea)
+    return results.map((row) => row['id'] as String).toSet();
+  }
 
   /// MAP FOLDER + TAGS
   Future<Folder> _mapFolderWithTags(
@@ -292,6 +312,9 @@ Future<void> deleteByIds(List<String> ids) async {
       tags: tags,
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt']),
       updatedAt: DateTime.fromMillisecondsSinceEpoch(map['updatedAt']),
+      syncAt: map['syncAt'] == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(map['syncAt']),
       isFavorite: map['isFavorite'] == 1,
     );
   }
@@ -310,4 +333,41 @@ Future<void> deleteByIds(List<String> ids) async {
 
     return result.map(Tag.fromMap).toList();
   }
+
+  // --------------------- SYNC section ----------------------//
+
+Future<List<Folder>> getForSync({
+  int limit = 200,
+}) async {
+  final sql = '''
+    SELECT *
+    FROM folders
+    WHERE syncAt IS NULL OR syncAt < updatedAt
+    ORDER BY updatedAt DESC
+    LIMIT ?
+  ''';
+
+  final result = await _db.rawQuery(sql, [limit]);
+
+  return Future.wait(result.map((f) => _mapFolderWithTags(_db, f)));
+}
+
+  Future<bool> updateSyncAt(List<String> ids, int syncAt) async {
+    if (ids.isEmpty) return false;
+
+    final db = _db;
+
+    final placeholders = List.filled(ids.length, '?').join(',');
+
+    final sql =
+        '''
+    UPDATE folders
+    SET syncAt = ?
+    WHERE id IN ($placeholders)
+  ''';
+
+    final success = await db.rawUpdate(sql, [syncAt, ...ids]);
+    return success>= ids.length;
+  }
+  
 }

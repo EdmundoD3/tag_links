@@ -8,12 +8,12 @@ class TagsDao {
   TagsDao(this._db);
 
   Future<void> insert(Tag tag) async {
-
     await _db.insert(
       _tableName,
       tag.toMap(),
       conflictAlgorithm: ConflictAlgorithm.ignore,
     );
+    
   }
 
   Future<void> update(Tag tag) async {

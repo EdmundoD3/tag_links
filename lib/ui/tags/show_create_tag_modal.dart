@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/locate/app_lang.dart';
 import 'package:tag_links/models/tag.dart';
+import 'package:tag_links/state/tags_provider.dart';
 import 'package:uuid/uuid.dart';
 
 Future<Tag?> showCreateTagModal(BuildContext context, WidgetRef ref) {
@@ -48,7 +49,6 @@ Future<Tag?> showCreateTagModal(BuildContext context, WidgetRef ref) {
                 ),
               ),
               textInputAction: TextInputAction.done,
-              onSubmitted: (_) => _submit(context, controller),
             ),
 
             const SizedBox(height: 12),
@@ -56,7 +56,7 @@ Future<Tag?> showCreateTagModal(BuildContext context, WidgetRef ref) {
             Align(
               alignment: Alignment.centerRight,
               child: FilledButton(
-                onPressed: () => _submit(context, controller),
+                onPressed: () => _submit(context:context, controller: controller, ref: ref),
                 style: FilledButton.styleFrom(
                   backgroundColor: theme.inputDecorationTheme.fillColor, // Color de fondo
                   foregroundColor: theme.textTheme.titleLarge?.color, // Color del texto
@@ -72,9 +72,11 @@ Future<Tag?> showCreateTagModal(BuildContext context, WidgetRef ref) {
   );
 }
 
-void _submit(BuildContext context, TextEditingController controller) {
+void _submit({required BuildContext context, required WidgetRef ref, required TextEditingController controller}) async {
   final name = controller.text.trim();
   if (name.isEmpty) return;
-
-  Navigator.pop(context, Tag(id: const Uuid().v4(), name: name));
+  final Tag newTag = Tag(id: const Uuid().v4(), name: name);
+  await ref.read(tagsProvider.notifier).addTag(newTag);
+  if (!context.mounted) return;
+  Navigator.pop(context, newTag);
 }

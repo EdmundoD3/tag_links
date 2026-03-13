@@ -127,6 +127,21 @@ class NotesDao {
   Future<int> countSearch(String folderId, String query) async {
     return _fetch.countSearch(folderId, query);
   }
+  // ******* SYNC section *******
+  Future<List<Note>> getForSync({
+    int limit = 200,
+  }) async {
+    final rows = await _fetch.getForSync(
+      limit: limit,
+    );
+    return _hydrate(rows);
+  }
+  Future<bool> updateNotesSyncAt(List<String> ids, int syncAt) async {
+    if(ids.isEmpty) return true; //si no habia nada entonces fue un exito actualizar 0 datos
+    final success = await _fetch.updateNotesSyncAt(ids, syncAt);
+    return success >= ids.length;
+  }
+
 
   /* ----------------------------- HYDRATION ----------------------------- */
   List<Note> _hydrate(List<NoteJoinRow> rows) {
@@ -227,8 +242,7 @@ class FetchersNotesDao {
     final args = hasLastUpdate ? [lastUpdate, limit] : [limit];
     final sql =
         '''
-        SELECT *
-        FROM notes
+        ${NoteJoinRow.selectQuery}
         $where
         ORDER BY updatedAt DESC
         LIMIT ?
@@ -651,4 +665,37 @@ class FetchersNotesDao {
       OrderDate.createdDesc || OrderDate.createdAsc => 'createdAt',
     };
   }
+
+// ******* SYNC section *******
+Future<List<NoteJoinRow>> getForSync({
+  int limit = 200,
+}) async {
+
+  final sql = '''
+    ${NoteJoinRow.selectQuery}
+    WHERE n.syncAt IS NULL OR n.syncAt < n.updatedAt
+    ORDER BY n.updatedAt DESC
+    LIMIT ?
+  ''';
+
+  final result = await _db.rawQuery(sql, [limit]);
+
+  return result.map(NoteJoinRow.fromMap).toList();
+}
+
+Future<int> updateNotesSyncAt(List<String> ids, int syncAt) async {
+  if (ids.isEmpty) return 0;
+
+  final db = _db;
+
+  final placeholders = List.filled(ids.length, '?').join(',');
+
+  final sql = '''
+    UPDATE notes
+    SET syncAt = ?
+    WHERE id IN ($placeholders)
+  ''';
+
+  return await db.rawUpdate(sql, [syncAt, ...ids]);
+}
 }

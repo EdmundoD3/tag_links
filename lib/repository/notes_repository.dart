@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/sync/note_raw_sync.dart';
 import 'package:tag_links/core/sync/sync_manager.dart';
+import 'package:tag_links/core/sync/sync_types.dart';
 import 'package:tag_links/data/data_sources/deleted_dao.dart';
 import 'package:tag_links/data/data_sources/notes_dao.dart';
 import 'package:tag_links/data/database.dart';
@@ -47,37 +48,39 @@ class NotesRepository {
     final noteToUpdate = note.ensureForInsert();
     return _dao.update(noteToUpdate);
   }
+
   Future<void> upsertAll(List<Note> notes) {
     return _dao.upsertAll(notes);
   }
 
-  Future<void> delete(String noteId) {
-    return _dao.delete(noteId);
+  Future<void> delete(Note note) async {
+    if (note.syncAt == null) return _dao.delete(note.id);
+    await _deletedDao.saveId(note.id);
+    return _dao.delete(note.id);
   }
+
   Future<void> deleteByIds(List<String> ids) {
     return _dao.deleteByIds(ids);
   }
-
-
-
-  Future<SyncData<NoteRawSync>> getForSync(int? deletedAt) async {
-    final limit = 250;
-    final deletedData = await _deletedDao.getBatch(
-      limit: limit,
-    );
+  Future<void> clearDeletedNotes(List<String> ids){
+    return _deletedDao.deleteIds(ids);
+  }
+  // --------------------- SYNC section ----------------------//
+  Future<SyncData<NoteRawSync>> getForSync() async {
+    final limit = 200;
+    final deletedData = await _deletedDao.getBatch(limit: limit);
     final deletedDataRaw = deletedData.map(NoteRawSync.fromDeleted).toList();
-    final data = await _dao.getByLastUpdate(
-      lastUpdate: deletedAt,
-      limit: limit - deletedData.length,
-    );
-    final lastDate = data.isEmpty ? null : data.reduce((a, b) => a.updatedAt.isAfter(b.updatedAt)? a : b).updatedAt.millisecondsSinceEpoch;
+    final data = await _dao.getForSync(limit: limit - deletedData.length);
     final dataRaw = await Future.wait(data.map(NoteRawSync.fromNote));
 
     return SyncData(
-      data: [...deletedDataRaw, ...dataRaw],
-      lastDate: lastDate,
+      dataForSync: dataRaw,
+      deletedDataForSync: deletedDataRaw,
       hasMore: data.length + deletedData.length >= limit,
     );
+  }
+  Future<Future<bool>> updateSyncAt(List<String> ids, int syncAt) async {
+    return _dao.updateNotesSyncAt(ids, syncAt);
   }
 }
 

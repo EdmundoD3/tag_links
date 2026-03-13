@@ -46,7 +46,7 @@ class DebugPage extends ConsumerWidget {
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
           ),
-          onDeleteNote: (String nothing) {
+          onDeleteNote: (Note nothing) {
             debugPrint("onDeleteNote: nothing");
           },
           onMove: (Note nothing) {

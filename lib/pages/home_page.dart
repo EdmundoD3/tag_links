@@ -186,6 +186,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         ref.read(searchQueryProvider.notifier).removeTag(tag);
       },
       isCreateTag: false,
+      
     );
   }
 

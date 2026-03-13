@@ -1,47 +1,18 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/api/api_models.dart';
 import 'package:tag_links/api/api_services.dart';
 import 'package:tag_links/core/auth/token_storage.dart';
 import 'package:tag_links/core/encypt/encypter_services.dart';
 import 'package:tag_links/core/sync/folder_raw_sync.dart';
 import 'package:tag_links/core/sync/last_sync_storage.dart';
 import 'package:tag_links/core/sync/note_raw_sync.dart';
-import 'package:tag_links/data/data_sources/folder_preferences_dao.dart';
-import 'package:tag_links/data/data_sources/folders_dao.dart';
-import 'package:tag_links/data/data_sources/notes_dao.dart';
+import 'package:tag_links/core/sync/sync_types.dart';
 import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/models/note.dart';
 import 'package:tag_links/repository/folder_repository.dart';
 import 'package:tag_links/repository/notes_repository.dart';
 import 'package:tag_links/service/conection_service.dart';
-
-class SyncData<T> {
-  final List<T> data;
-  final int? lastDate;
-  final bool hasMore;
-
-  SyncData({required this.data, required this.lastDate, required this.hasMore});
-  factory SyncData.empty() =>
-      SyncData(data: [], lastDate: null, hasMore: false);
-}
-
-enum SyncManagerStatus {
-  ok,
-  notOk,
-  alreadyRunning,
-  notHasAccessToken,
-  itsTooErarly,
-  limitStorageReached,
-  notConection,
-  notConectionServer,
-}
-
-class _PerformSyncStatus {
-  final SyncManagerStatus status;
-  final bool? isPremium;
-
-  _PerformSyncStatus({required this.status, required this.isPremium});
-}
 
 class SyncManager extends Notifier<SyncManagerStatus> {
   static bool _isSyncing = false;
@@ -50,7 +21,8 @@ class SyncManager extends Notifier<SyncManagerStatus> {
   final _encryptionService = EncryptionService();
 
   NotesRepository get _notesRepository => ref.watch(notesRepositoryProvider);
-  FolderRepository get _foldersRepository => ref.watch(folderRepositoryProvider);
+  FolderRepository get _foldersRepository =>
+      ref.watch(folderRepositoryProvider);
   final ConnectionService _connectionService = ConnectionService();
 
   @override
@@ -82,9 +54,8 @@ class SyncManager extends Notifier<SyncManagerStatus> {
     }
   }
 
-  Future<_PerformSyncStatus> _performSync({required String accessToken}) async {
+  Future<PerformSyncStatus> _performSync({required String accessToken}) async {
     int? lastPulledAt = await _syncStorage.getLastPulledAt();
-    int? lastPushedAt = await _syncStorage.getLastPushedAt();
 
     String currentLastId = "";
 
@@ -92,15 +63,18 @@ class SyncManager extends Notifier<SyncManagerStatus> {
     bool hasMoreRemote = true;
     int safetyCounter = 0;
     bool? isPremium;
-    while ((hasMoreLocal || hasMoreRemote) && safetyCounter < 50) {
+    int safetyMax = 30;
+
+    while ((hasMoreLocal || hasMoreRemote) && safetyCounter < safetyMax) {
       safetyCounter++;
       // 1. Obtener datos locales (Notas y Carpetas)
-      final notesBatch = hasMoreLocal
-          ? await _notesRepository.getForSync(lastPushedAt)
+      final now = DateTime.now().millisecondsSinceEpoch;
+      final SyncData<NoteRawSync> notesBatch = hasMoreLocal
+          ? await _notesRepository.getForSync()
           : SyncData<NoteRawSync>.empty();
 
-      final foldersBatch = hasMoreLocal
-          ? await _foldersRepository.getForSync(lastPushedAt)
+      final SyncData<FolderRawSync> foldersBatch = hasMoreLocal
+          ? await _foldersRepository.getForSync()
           : SyncData<FolderRawSync>.empty();
 
       // 2. Sincronización Bidireccional
@@ -116,47 +90,48 @@ class SyncManager extends Notifier<SyncManagerStatus> {
         isPremium = response.data?.isPremium;
         switch (response.status) {
           case SyncApiStatus.limitStorageReached:
-            return _PerformSyncStatus(
+            return PerformSyncStatus(
               status: SyncManagerStatus.limitStorageReached,
               isPremium: isPremium,
             );
           case SyncApiStatus.unauthorized:
-            return _PerformSyncStatus(
+            return PerformSyncStatus(
               status: SyncManagerStatus.notHasAccessToken,
               isPremium: isPremium,
             );
           case SyncApiStatus.failed:
           default:
-            return _PerformSyncStatus(
+            return PerformSyncStatus(
               status: SyncManagerStatus.notOk,
               isPremium: isPremium,
             );
         }
       }
-      final syncRes = response.data!.sync;
+      final SyncResult syncRes = response.data!.sync;
 
       // 3. Procesar PUSH (Subida) exitoso
       if (syncRes.save.ok) {
         // Marcamos como sincronizados los borrados locales para que no se envíen más
         // Suponiendo que tienes un método clearDeleted en tus repositorios
-        final deletedIds = notesBatch.data
-            .where((e) => e.deletedAt != null)
-            .map((e) => e.id)
-            .toList();
-        if (deletedIds.isNotEmpty) {
-          await _notesRepository.deleteByIds(deletedIds);
-        }
 
-        // Actualizar cursor de subida
-        final maxLocalDate = [
-          notesBatch.lastDate ?? 0,
-          foldersBatch.lastDate ?? 0,
-        ].reduce((a, b) => a > b ? a : b);
+        //limpiamos el storage de los ids de notas borradas
+        await _notesRepository.clearDeletedNotes(
+          notesBatch.deletedDataForSync.map((e) => e.id).toList(),
+        );
+        //si se actualizo bien se usa la fecha en la que se obtuvo la informacion
+        await _notesRepository.updateSyncAt(
+          notesBatch.dataForSync.map((e) => e.id).toList(),
+          now,
+        );
 
-        if (maxLocalDate > 0) {
-          lastPushedAt = maxLocalDate;
-          await _syncStorage.setLastPushedAt(maxLocalDate);
-        }
+        await _foldersRepository.clearDeletedNotes(
+          foldersBatch.deletedDataForSync.map((e) => e.id).toList(),
+        );
+        await _foldersRepository.updateSyncAt(
+          foldersBatch.dataForSync.map((e) => e.id).toList(),
+          now,
+        );
+
         hasMoreLocal = notesBatch.hasMore || foldersBatch.hasMore;
       } else {
         hasMoreLocal = false; // Detener subida si hay error de cuota
@@ -183,9 +158,10 @@ class SyncManager extends Notifier<SyncManagerStatus> {
         hasMoreRemote = false;
       }
       isPremium = response.data?.isPremium;
+      safetyMax = (isPremium ?? false) ? 60 : 30;
     }
 
-    return _PerformSyncStatus(
+    return PerformSyncStatus(
       status: SyncManagerStatus.ok,
       isPremium: isPremium,
     );
@@ -211,44 +187,40 @@ class SyncManager extends Notifier<SyncManagerStatus> {
         .toList();
 
     // Guardado masivo
-    if (result.notes.isNotEmpty) await _notesRepository.upsertAll(result.notes);
-
-    if (result.folders.isNotEmpty) {
-      await _foldersRepository.upsertAll(result.folders);
-    }
-
     if (deletedNoteIds.isNotEmpty) {
       await _notesRepository.deleteByIds(deletedNoteIds);
     }
     if (deletedFolderIds.isNotEmpty) {
       await _foldersRepository.deleteByIds(deletedFolderIds);
     }
+
+    if (result.notes.isNotEmpty) {
+      await _notesRepository.upsertAll(result.notes);
+    }
+    if (result.folders.isNotEmpty) {
+      await _foldersRepository.upsertAll(result.folders);
+    }
   }
 
   static Future<_DecryptedDataResult> _backgroundProcess(
     _ProcessDataArgs args,
   ) async {
-    // Aquí no hay acceso al estado de la app, solo a los args
-    final notes = <Note>[];
-    final folders = <Folder>[];
-
     // Instanciamos un servicio temporal con la llave que recibimos
     final tempService = EncryptionService.fromBytes(args.keyBytes);
 
-    for (final raw in args.notesRaw) {
-      if (raw.deletedAt == null) {
-        // Usamos el método que ya tienes pero inyectando el servicio
+    final notes = await Future.wait(
+      args.notesRaw.where((raw) => raw.deletedAt == null).map((raw) async {
         final decrypted = await tempService.decrypt(raw.payload);
-        notes.add(Note.fromDecryptedJson(raw.id, decrypted));
-      }
-    }
+        return Note.fromDecryptedJson(raw.id, decrypted);
+      }),
+    );
 
-    for (final raw in args.foldersRaw) {
-      if (raw.deletedAt == null) {
+    final folders = await Future.wait(
+      args.foldersRaw.where((raw) => raw.deletedAt == null).map((raw) async {
         final decrypted = await tempService.decrypt(raw.payload);
-        folders.add(Folder.fromDecryptedJson(raw.id, decrypted));
-      }
-    }
+        return Folder.fromDecryptedJson(raw.id, decrypted);
+      }),
+    );
 
     return _DecryptedDataResult(notes, folders);
   }

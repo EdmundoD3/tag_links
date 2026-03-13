@@ -14,7 +14,7 @@ import 'package:url_launcher/url_launcher.dart';
 class NoteTile extends ConsumerWidget {
   final Note note;
   final List<ActionMenuItem> actionsItems;
-  final void Function(String id) onDeleteNote;
+  final void Function(Note note) onDeleteNote;
   final void Function(Note note) onMove;
   final GlobalKey _tileKey = GlobalKey();
 
@@ -86,7 +86,7 @@ class NoteTile extends ConsumerWidget {
         ActionMenuItem(
           icon: Icons.delete,
           label: t(ref, 'delete', fallback: 'Eliminar'),
-          onTap: () => onDeleteNote(note.id),
+          onTap: () => onDeleteNote(note),
         ),
         
         ...actionsItems,

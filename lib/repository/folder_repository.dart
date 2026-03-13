@@ -1,7 +1,7 @@
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/sync/folder_raw_sync.dart';
-import 'package:tag_links/core/sync/sync_manager.dart';
+import 'package:tag_links/core/sync/sync_types.dart';
 import 'package:tag_links/data/data_sources/deleted_dao.dart';
 import 'package:tag_links/data/data_sources/folder_preferences_dao.dart';
 import 'package:tag_links/data/data_sources/folders_dao.dart';
@@ -61,16 +61,17 @@ class FolderRepository {
   Future<List<Folder>> getFavorites({required PaginatedByDate paginated}) =>
       _dao.getFavorites(paginated: paginated);
 
-  Future<FolderDefaultView> getPreference(String folderId) async {
-    return _preferencesDao.getDefaultView(folderId);
-  }
-
   Future<Set<String>> getAllDescendantIds(String folderId) async {
     return _dao.getAllDescendantIds(folderId);
   }
 
   Future<void> toggleFavorite(Folder folder) {
     return update(folder.copyWith(isFavorite: !folder.isFavorite));
+  }
+  // --------------------- PREFERENCES section ----------------------//
+
+  Future<FolderDefaultView> getPreference(String folderId) async {
+    return _preferencesDao.getDefaultView(folderId);
   }
 
   Future<void> savePreference(String folderId, FolderDefaultView view) async {
@@ -79,27 +80,31 @@ class FolderRepository {
     );
   }
 
-  Future<SyncData<FolderRawSync>> getForSync(int? deletedAt) async {
-    final limit = 450;
+  // ----------------------- SYNC section -------------------------//
+
+  Future<SyncData<FolderRawSync>> getForSync() async {
+    final limit = 200;
     final deletedData = await _deletedDao.getBatch(limit: limit);
 
     final deletedDataRaw = deletedData.map(FolderRawSync.fromDeleted).toList();
 
-    final data = await _dao.getByLastUpdate(
-      lastUpdate: deletedAt,
-      limit: limit - deletedData.length,
-    );
-    final lastDate = data
-        .reduce((a, b) => a.updatedAt.isAfter(b.updatedAt) ? a : b)
-        .updatedAt
-        .millisecondsSinceEpoch;
+    final data = await _dao.getForSync(limit: limit - deletedData.length);
+
     final dataRaw = await Future.wait(data.map(FolderRawSync.fromFolder));
 
     return SyncData(
-      data: [...deletedDataRaw, ...dataRaw],
-      lastDate: lastDate,
+      dataForSync: dataRaw,
+      deletedDataForSync: deletedDataRaw,
       hasMore: data.length + deletedData.length >= limit,
     );
+  }
+
+  Future<Future<void>> updateSyncAt(List<String> ids, int syncAt) async {
+    return _dao.updateSyncAt(ids, syncAt);
+  }
+
+  Future<void> clearDeletedNotes(List<String> ids) {
+    return _deletedDao.deleteIds(ids);
   }
 }
 
@@ -111,9 +116,3 @@ final folderRepositoryProvider = Provider<FolderRepository>((ref) {
 
   return FolderRepository(foldersDao, preferencesDao, deleteDao);
 });
-
-final folderPreferenceProvider =
-    FutureProvider.family<FolderDefaultView, String>((ref, folderId) async {
-      final repo = ref.watch(folderRepositoryProvider);
-      return repo.getPreference(folderId);
-    });

@@ -10,7 +10,7 @@ class FolderPreferencesDao {
     await _db.insert(
       _tableName,
       pref.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
+      conflictAlgorithm: ConflictAlgorithm.ignore,
     );
   }
 

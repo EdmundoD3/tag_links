@@ -7,6 +7,7 @@ class NoteJoinRow {
   final String? color;
   final int createdAt;
   final int updatedAt;
+  final int? syncAt;
   final bool isFavorite;
 
   final String? tagId;
@@ -27,6 +28,7 @@ class NoteJoinRow {
       color = map['color'] as String?,
       createdAt = map['createdAt'] as int,
       updatedAt = map['updatedAt'] as int,
+      syncAt = map['syncAt'] as int?,
       isFavorite = map['isFavorite'] == 1,
       tagId = map['tag_id'] as String?,
       tagName = map['tag_name'] as String?,
@@ -46,6 +48,7 @@ class NoteJoinRow {
       n.color,
       n.createdAt,
       n.updatedAt,
+      n.syncAt,
       n.isFavorite,
 
       t.id AS tag_id,

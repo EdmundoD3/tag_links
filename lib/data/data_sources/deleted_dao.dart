@@ -65,7 +65,7 @@ class _DeletedDao {
     await _db.insert(
       tableName,
       data.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
+      conflictAlgorithm: ConflictAlgorithm.ignore,
     );
   }
 
