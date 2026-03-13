@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
-enum AppPalette { dark, light, lavender, rosePastel }
+enum AppPalette { dark, light, lavender, rosePastel, arcticBlue, lavenderNight }
 
 Map<AppPalette, ThemeData> _palettes = {
   AppPalette.light: AppTheme.lightTheme,
   AppPalette.dark: AppTheme.darkTheme,
   AppPalette.lavender: AppTheme.lavenderTheme,
   AppPalette.rosePastel: AppTheme.rosePastelTheme,
+  AppPalette.arcticBlue: AppTheme.arcticBlueTheme,
+  AppPalette.lavenderNight: AppTheme.lavenderNightTheme,
 };
 
 ThemeData getPalette({required AppPalette palette}) {
@@ -18,22 +20,22 @@ class AppTheme {
   // Getter estático para acceder al tema fácilmente
   static ThemeData get lightTheme {
     return _generatePalette(
-      strongBackground: const Color(0xFFFFFFFF),
-      strongBackgroundText: Color(0xFF1A1C1E),
-      icon: Color.fromARGB(255, 93, 95, 102),
-      badge: Color.fromARGB(255, 93, 95, 102),
-      lighBackground: Color(0xFFFFFFFF),
-      titleColor: Color(0xFF1A1C1E),
-      textColor: Color(0xFF44474E),
-      secondTextColor: Color(0xFF44474E),
-      thirdTextColor: Color(0xFF7E57C2),
-      cardNoteColor: Color(0xFFFFFFFF),
-      subtitleColor: Color(0xFF757575),
-      secondSubtitleColor: Colors.grey,
-      scaffoldBackgroundColor: Color(0xFFF8F9FA),
-      searchInput: Color(0xFFEEEEEE),
-      searchInputBorder: Colors.grey,
-      searchIcon: Colors.grey,
+      strongBackground: const Color(0xFFF2F3F5),
+      strongBackgroundText: const Color(0xFF1A1C1E),
+      icon: const Color(0xFF5D5F66),
+      badge: const Color(0xFF5D5F66),
+      lighBackground: const Color(0xFFF1F3F4),
+      titleColor: const Color(0xFF1A1C1E),
+      textColor: const Color(0xFF44474E),
+      secondTextColor: const Color(0xFF5C5F66),
+      thirdTextColor: const Color(0xFF7E57C2),
+      cardNoteColor: const Color(0xFFF6F7F9),
+      subtitleColor: const Color(0xFF6F7278),
+      secondSubtitleColor: const Color(0xFF8A8D93),
+      scaffoldBackgroundColor: const Color(0xFFF8F9FA),
+      searchInput: const Color(0xFFEDEFF1),
+      searchInputBorder: const Color(0xFFD1D5DB),
+      searchIcon: const Color(0xFF8A8D93),
     );
   }
 
@@ -43,7 +45,7 @@ class AppTheme {
       strongBackgroundText: Color(0xFFF8F9FA),
       icon: Color(0xFF8E9199),
       badge: Color(0xFF8E9199),
-      lighBackground: const Color(0xFF22282F), //card theme
+      lighBackground: const Color(0xFF22282F),
       titleColor: Color(0xFFE2E2E6),
       textColor: Color(0xFFC4C6D0),
       secondTextColor: Color(0xFFC4C6D0),
@@ -80,23 +82,68 @@ class AppTheme {
   }
 
   static ThemeData get rosePastelTheme {
+    const mentaBlanco = Color.fromARGB(255, 245, 255, 251);
     return _generatePalette(
       strongBackground: const Color(0xFFFF92C2),
-      strongBackgroundText: const Color(0xFFF8F7FF),
-      icon: const Color(0xFFFFE4F3),
+      strongBackgroundText: mentaBlanco,
+      icon: mentaBlanco,
       badge: const Color(0xFFF8517F),
       lighBackground: const Color(0xFFFFC2D1),
       titleColor: const Color(0xFF590D22),
       textColor: const Color(0xFF3A2A30),
-      secondTextColor: const Color(0xFF5C4A52),
+      secondTextColor: const Color.fromARGB(255, 1, 31, 19),
       thirdTextColor: const Color(0xFFFF92C2),
-      cardNoteColor: const Color(0xFFFDFBF9),
-      subtitleColor: const Color(0xFFFDFBF9),
+      cardNoteColor: mentaBlanco,
+      subtitleColor: mentaBlanco,
       secondSubtitleColor: const Color(0xFF8A7A80),
-      scaffoldBackgroundColor: const Color(0xFFFFEEF2),
+      scaffoldBackgroundColor: const Color.fromARGB(255, 252, 240, 243),
       searchInput: const Color(0x33FF95B5), // rosa transparente
       searchInputBorder: const Color(0x66FF92C2),
       searchIcon: const Color(0x66FF92C2),
+    );
+  }
+
+  static ThemeData get arcticBlueTheme {
+    const cafeClaro = Color.fromARGB(255, 255, 251, 245);
+    return _generatePalette(
+      strongBackground: const Color(0xFF507DBC),
+      strongBackgroundText: cafeClaro,
+      icon: cafeClaro,
+      badge: const Color(0xFF507DBC),
+      lighBackground: const Color(0xFFBBD1EA),
+      titleColor: const Color(0xFF04080F),
+      textColor: const Color(0xFF04080F),
+      secondTextColor: const Color(0xFF2F3E46),
+      thirdTextColor: const Color(0xFF507DBC),
+      cardNoteColor: cafeClaro,
+      subtitleColor: cafeClaro,
+      secondSubtitleColor: const Color(0xFF6C7A80),
+      scaffoldBackgroundColor: const Color(0xFFDAE3E5),
+      searchInput: const Color(0x33A1C6EA),
+      searchInputBorder: const Color(0x88507DBC),
+      searchIcon: const Color(0xFF6C7A80),
+    );
+  }
+
+  static ThemeData get lavenderNightTheme {
+    const verdeClaro = Color.fromARGB(255, 250, 255, 247);
+    return _generatePalette(
+      strongBackground: const Color(0xFF967AA1),
+      strongBackgroundText: verdeClaro,
+      icon: verdeClaro,
+      badge: const Color(0xFFAAA1C8),
+      lighBackground: const Color(0xFFD5C6E0),
+      titleColor: const Color(0xFF192A51),
+      textColor: const Color(0xFF192A51),
+      secondTextColor: const Color(0xFF3A3F5C),
+      thirdTextColor: const Color(0xFF967AA1),
+      cardNoteColor: verdeClaro,
+      subtitleColor: verdeClaro,
+      secondSubtitleColor: const Color(0xFF6E6A86),
+      scaffoldBackgroundColor: const Color(0xFFF5E6E8),
+      searchInput: const Color(0x33AAA1C8),
+      searchInputBorder: const Color(0x88967AA1),
+      searchIcon: const Color(0xFF6E6A86),
     );
   }
 }
