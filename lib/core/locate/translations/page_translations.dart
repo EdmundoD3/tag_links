@@ -14,12 +14,19 @@ final Map<String, Map<AppLang, String>> translationsPage = {
     AppLang.es: '¿Estás seguro de descartar la nota?',
     AppLang.en: 'Are you sure you want to discard the note?',
   },
+  
   //settings page
   'settingsTitle': {AppLang.es: 'Configuración', AppLang.en: 'Settings'},
-  'supportProject': {
-    AppLang.es: 'Apoya el proyecto',
-    AppLang.en: 'Support the project',
+  
+  'settingsTheme': {
+    AppLang.es: 'Tema',
+    AppLang.en: 'Theme',
   },
+  'settingsLanguage': {
+    AppLang.es: 'Idioma',
+    AppLang.en: 'Language',
+  },
+
   // helpers
   'fabAddNote': {AppLang.es: 'Agregar nota', AppLang.en: 'Add note'},
   'fabAddFolder': {AppLang.es: 'Agregar carpeta', AppLang.en: 'Add folder'},

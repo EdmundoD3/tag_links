@@ -16,7 +16,9 @@ final Map<String, Map<AppLang, String>> helpersTranslations = {
   'close': {AppLang.es: 'Cerrar', AppLang.en: 'Close'},
   'edit': {AppLang.es: 'Editar', AppLang.en: 'Edit'},
   'copyText': {AppLang.es: 'Copiar', AppLang.en: 'Copy'},
+  'moveDown': {AppLang.es: 'Mover', AppLang.en: 'Move'},
   'delete': {AppLang.es: 'Eliminar', AppLang.en: 'Delete'},
+  'accept': {AppLang.es: 'Aceptar', AppLang.en: 'Accept'},
   'cancel': {AppLang.es: 'Cancelar', AppLang.en: 'Cancel'},
   'discard': {AppLang.es: 'Descartar', AppLang.en: 'Discard'},
   'store': {AppLang.es: 'Almacenar', AppLang.en: 'Store'},
@@ -43,7 +45,7 @@ final Map<String, Map<AppLang, String>> helpersTranslations = {
     //tags
   'tagsTitle': {AppLang.es: 'Etiquetas', AppLang.en: 'Tags'},
   'tagName': {AppLang.es: 'Nombre del tag', AppLang.en: 'Tag name'},
-  'createTag': {AppLang.es: 'Crear nuevo tag', AppLang.en: 'Create new tag'},
+  'createTag': {AppLang.es: 'Nuevo tag', AppLang.en: 'New tag'},
   'deleteTag': {AppLang.es: 'Eliminar tag', AppLang.en: 'Delete tag'},
   'editTag': {AppLang.es: 'Editar tag', AppLang.en: 'Edit tag'},
 };

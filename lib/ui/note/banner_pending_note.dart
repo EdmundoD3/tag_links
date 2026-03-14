@@ -80,6 +80,7 @@ class BannerPendingNote extends ConsumerWidget {
                 'discardAction',
                 fallback: '¿Estás seguro de descartar la acción?',
               ),
+              ref: ref,
             );
 
             if (confirm == true) {

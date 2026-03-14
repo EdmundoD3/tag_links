@@ -20,7 +20,9 @@ class ConfirmDialog {
       ),
       succesText: t(ref, 'alertDeleteNoteSucces', fallback: 'Nota eliminada'),
       errorText: t(ref, 'alertDeleteNoteError', fallback: 'Error al eliminar'),
+      ref: ref,
     );
+
   }
 
   static Future<void> deleteFolder(
@@ -47,6 +49,7 @@ class ConfirmDialog {
         'alertDeleteFolderError',
         fallback: 'Error al eliminar',
       ),
+      ref: ref,
     );
   }
 
@@ -59,6 +62,7 @@ class ConfirmDialog {
         'alertMoveFolder',
         fallback: '¿Estás seguro de mover la carpeta?',
       ),
+      ref: ref,
     );
   }
 
@@ -71,6 +75,7 @@ class ConfirmDialog {
         'alertMoveNote',
         fallback: '¿Estás seguro de mover la nota?',
       ),
+      ref: ref,
     );
   }
 }
@@ -78,6 +83,7 @@ class ConfirmDialog {
 Future<void> _deleteAction(
   BuildContext context,
   Future<void> Function() onDelete, {
+    required WidgetRef ref,
   required String title,
   required String message,
   required String succesText,
@@ -85,6 +91,7 @@ Future<void> _deleteAction(
 }) async {
   final isDelete = await showConfirmDialog(
     context,
+    ref: ref,
     title: title,
     message: message,
   );
@@ -108,8 +115,7 @@ Future<bool?> showConfirmDialog(
   BuildContext context, {
   required String title,
   required String? message,
-  String confirmText = 'Confirmar',
-  String cancelText = 'Cancelar',
+  required WidgetRef ref,
 }) {
   final theme = Theme.of(context);
   return showDialog<bool>(
@@ -130,7 +136,7 @@ Future<bool?> showConfirmDialog(
             onPressed: () {
               Navigator.of(context).pop(false);
             },
-            child: Text(cancelText),
+            child: Text(t(ref, 'cancel', fallback: 'Cancelar')),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -141,7 +147,7 @@ Future<bool?> showConfirmDialog(
             onPressed: () {
               Navigator.of(context).pop(true);
             },
-            child: Text(confirmText),
+            child: Text(t(ref, 'accept', fallback: 'Aceptar')),
           ),
         ],
       );

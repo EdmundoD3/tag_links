@@ -5,6 +5,7 @@ import 'package:tag_links/core/ads/show_ad_management_menu.dart';
 import 'package:tag_links/core/app_purchases/premium_sales_sheet.dart';
 import 'package:tag_links/core/coffe/invitame_un_caffe.dart';
 import 'package:tag_links/core/locate/lang_selector.dart';
+import 'package:tag_links/core/locate/app_lang.dart';
 import 'package:tag_links/core/ads/ads_disable_provider.dart';
 import 'package:tag_links/core/theme/theme_selector_widget.dart';
 import 'package:tag_links/ui/page_widgets/page_scaffold.dart';
@@ -21,7 +22,7 @@ class SupportProjectPage extends ConsumerWidget {
     return PageScaffold(
       appBar: AppBar(
         title: Text(
-          "Settings",
+          t(ref, 'settingsTitle', fallback: 'Configuración'),
           style: TextStyle(color: theme.appBarTheme.foregroundColor),
         ),
       ),
@@ -34,6 +35,7 @@ class SupportProjectPage extends ConsumerWidget {
     // 1. Mientras el estado es null, mostramos la opción de "Quitar Publicidad"
     //    o un loader si prefieres esperar a que SharedPreferences responda.
     //    En este caso, asumimos que si es null, es porque nunca ha decidido.
+    
     final theme = Theme.of(context);
 
     return [
@@ -45,7 +47,7 @@ class SupportProjectPage extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Text(
-              "¿Cómo quieres apoyar el proyecto?",
+              t(ref, 'supportProject', fallback: '¿Cómo quieres apoyar el proyecto?'),
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.textTheme.titleLarge?.color),
             ),
           ),
@@ -63,11 +65,11 @@ class SupportProjectPage extends ConsumerWidget {
             ListTile(
               leading: const Icon(Icons.video_library, color: Colors.orange),
               title: Text(
-                "Ver un anuncio grande",
+                t(ref, 'viewLargeAd', fallback: 'Ver un anuncio grande'),
                 style: TextStyle(color: theme.textTheme.bodyMedium?.color),
               ),
               subtitle: Text(
-                "Se desactiva por un día la publicidad.",
+                t(ref,'disableAdsForOneDay', fallback: 'Se desactivará por un día la publicidad'),
                 style: TextStyle(color: theme.hintColor),
               ),
               onTap: () => showAdManagementMenu(
@@ -87,11 +89,18 @@ class SupportProjectPage extends ConsumerWidget {
           },
         ),
             ),
+          
+          const Divider(
+            color: Colors.grey,
+            thickness: 1,
+            indent: 10,
+            endIndent: 10,
+          ),
 
-          const SizedBox(height: 40),
+          const SizedBox(height: 20),
           Center(
             child: Text(
-              "¡Gracias por usar la App!",
+              t(ref,'thanksForUsingApp', fallback: '¡Gracias por usar la App!'),
               style: TextStyle(
                 color: theme.textTheme.titleMedium?.color,
                 fontStyle: FontStyle.italic,

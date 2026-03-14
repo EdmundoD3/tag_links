@@ -28,7 +28,7 @@ class AppTheme {
       titleColor: const Color(0xFF1A1C1E),
       textColor: const Color(0xFF44474E),
       secondTextColor: const Color(0xFF5C5F66),
-      thirdTextColor: const Color(0xFF7E57C2),
+      thirdTextColor: const Color(0xFF44474E),
       cardNoteColor: const Color(0xFFF6F7F9),
       subtitleColor: const Color(0xFF6F7278),
       secondSubtitleColor: const Color(0xFF8A8D93),
@@ -49,7 +49,7 @@ class AppTheme {
       titleColor: Color(0xFFE2E2E6),
       textColor: Color(0xFFC4C6D0),
       secondTextColor: Color(0xFFC4C6D0),
-      thirdTextColor: Color(0xFF7E57C2),
+      thirdTextColor: Color(0xFFF8F9FA),
       cardNoteColor: Color(0xFF22282F),
       subtitleColor: Color(0xFF757575),
       secondSubtitleColor: Colors.grey,
@@ -99,7 +99,7 @@ class AppTheme {
       scaffoldBackgroundColor: const Color.fromARGB(255, 252, 240, 243),
       searchInput: const Color(0x33FF95B5), // rosa transparente
       searchInputBorder: const Color(0x66FF92C2),
-      searchIcon: const Color(0x66FF92C2),
+      searchIcon: Colors.grey,
     );
   }
 
@@ -201,6 +201,7 @@ ThemeData _generatePalette({
     iconTheme: IconThemeData(color: icon),
     badgeTheme: BadgeThemeData(textColor: badge),
     chipTheme: ChipThemeData(),
+    
     //search bar
     inputDecorationTheme: InputDecorationThemeData(fillColor: searchInput),
     focusColor: searchInputBorder,

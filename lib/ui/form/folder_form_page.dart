@@ -56,7 +56,9 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
 
   PreferredSizeWidget _appBar() {
     return AppBarForm(
-      title: widget.isEdit ? 'Editar carpeta' : 'Nueva carpeta',
+      title: widget.isEdit
+          ? t(ref, 'editFolder', fallback: 'Editar carpeta')
+          : t(ref, 'newFolder', fallback: 'Nueva carpeta'),
       isFavorite: _isFavorite,
       onFavoriteToogle: _isFavoriteToogle,
       onSave: _onSave,
@@ -88,7 +90,7 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
 
       MoveToFolderButton(
         onChangeFolder: _onChangeFolder,
-        title: t(ref, 'moveToFolder', fallback: 'Cambiar carpeta'),
+        title: t(ref, 'moveToFolder', fallback: 'Mover'),
       ),
     ];
   }
@@ -149,7 +151,7 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
 
   Folder _captureFolder() {
     final now = DateTime.now();
-    
+
     final folder = Folder(
       id: _folder?.id ?? const Uuid().v4(),
       parentId: parentId,

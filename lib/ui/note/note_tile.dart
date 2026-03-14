@@ -81,7 +81,7 @@ class NoteTile extends ConsumerWidget {
         ),
         ActionMenuItem(
           icon: Icons.move_down_rounded,
-          label: t(ref, 'moveDown', fallback: 'mover'),
+          label: t(ref, 'moveDown', fallback: 'Mover'),
           onTap: () => onMove(note)),
         ActionMenuItem(
           icon: Icons.delete,
@@ -253,26 +253,16 @@ class _NoteTileCard extends StatelessWidget {
     );
   }
 
+
+
   Widget _dateWidget({
     required ThemeData theme,
     required DateTime date,
   }) {
     return Text(
       _formatDate(date),
-      style: theme.textTheme.labelSmall?.copyWith(color: Colors.grey),
+      style: theme.textTheme.labelSmall?.copyWith(color: theme.hintColor),
       textAlign: TextAlign.right,
-    );
-  }
-
-  Widget _miniTags({required ThemeData theme, List<Tag> tags = const []}) {
-    String resultado = tags.map((tag) => tag.name).join(', ');
-
-    return Text(
-      resultado,
-      style: theme.textTheme.labelSmall?.copyWith(color: Colors.grey),
-      textAlign: TextAlign.left,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
     );
   }
 
@@ -282,6 +272,19 @@ class _NoteTileCard extends StatelessWidget {
     String day = date.day.toString().padLeft(2, '0');
     String month = date.month.toString().padLeft(2, '0');
     String year = date.year.toString();
-    return '$day/$month/$year $horas:$minutos';
+    return '$day/$month/$year | $horas:$minutos';
+  }
+
+  Widget _miniTags({required ThemeData theme, List<Tag> tags = const []}) {
+    String resultado = tags.map((tag) => tag.name).join(', ');
+
+    return Text(
+      resultado,
+      style: theme.textTheme.labelSmall?.copyWith(color: theme.hintColor),
+      textAlign: TextAlign.left,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
   }
 }
+

@@ -54,6 +54,7 @@ class BannerPendingFolder extends ConsumerWidget {
                   title: t(ref, 'bannerNotMove', fallback: 'No mover'),
                   message: t(ref, 'discardAction', 
                       fallback: '¿Estás seguro de descartar la acción?'),
+                      ref: ref,
                 );
 
                 if (confirm == true) {

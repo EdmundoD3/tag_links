@@ -12,22 +12,23 @@ class PageScaffold extends StatelessWidget {
 Widget build(BuildContext context) {
   final theme = Theme.of(context);
   return Scaffold(
-    backgroundColor: theme.scaffoldBackgroundColor,
-    appBar: appBar,
-    floatingActionButton: floatingActionButton,
-    body: SafeArea(
-      child: Column(
-        children: [
-          // Eliminamos el SingleChildScrollView de aquí
-          // El body de la HomePage ya traerá su propio Expanded
-          ...body, 
-          
-          // El banner fijo al fondo
-          const SmartBannerAd(key: Key('global_banner')), 
-          const SizedBox(height: 8),
-        ],
-      ),
+  backgroundColor: theme.scaffoldBackgroundColor,
+  appBar: appBar,
+  floatingActionButton: floatingActionButton,
+
+  body: SafeArea(
+    child: Column(
+      children: [...body],
     ),
-  );
+  ),
+
+  bottomNavigationBar: Column(
+    mainAxisSize: MainAxisSize.min,
+    children: const [
+      SmartBannerAd(key: Key('global_banner')),
+      SizedBox(height: 8),
+    ],
+  ),
+);
 }
 }
