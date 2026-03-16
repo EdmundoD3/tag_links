@@ -178,7 +178,7 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
 
   PreferredSizeWidget _appBar() {
     return AppBarForm(
-      title: widget.isEdit ? _titleCtrl.text : 'Nueva nota',
+      title: widget.isEdit ? _titleCtrl.text : t(ref, 'newNote', fallback: 'Nota nueva'),
       isFavorite: _isFavorite,
       onFavoriteToogle: _isFavoriteToogle,
       onSave: _onSaveAndClose,
@@ -219,7 +219,7 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
       const SizedBox(height: 8),
       MoveToFolderButton(
         onChangeFolder: _onChangeFolder,
-        title: t(ref, 'moveToFolder', fallback: 'Cambiar carpeta'),
+        title: t(ref, 'moveToFolder', fallback: 'Mover'),
       ),
     ];
   }
@@ -282,6 +282,7 @@ class _ContentController extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return TextFormField(
+      cursorColor: theme.appBarTheme.backgroundColor,
       style: TextStyle(color: theme.textTheme.bodyMedium?.color),
       controller: contentCtrl,
       maxLength: NoteConfig.contentMaxLength,

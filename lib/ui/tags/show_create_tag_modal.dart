@@ -37,15 +37,16 @@ Future<Tag?> showCreateTagModal(BuildContext context, WidgetRef ref) {
               controller: controller,
               autofocus: true,
               style: TextStyle(color: theme.textTheme.labelSmall?.color),
+              cursorColor: theme.scaffoldBackgroundColor,
               decoration: InputDecoration(
                 labelText: t(ref, 'tagName', fallback: 'Nombre del tag'),
-                border: const OutlineInputBorder(),
+                border: OutlineInputBorder(),
                 labelStyle: TextStyle(color: theme.textTheme.labelSmall?.color),
                 enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: theme.focusColor, width: 1),
+                  borderSide: BorderSide(color: theme.hintColor, width: 1),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: theme.focusColor, width: 2),
+                  borderSide: BorderSide(color: theme.hintColor, width: 2),
                 ),
               ),
               textInputAction: TextInputAction.done,
@@ -56,14 +57,16 @@ Future<Tag?> showCreateTagModal(BuildContext context, WidgetRef ref) {
             Align(
               alignment: Alignment.centerRight,
               child: FilledButton(
-                onPressed: () => _submit(context:context, controller: controller, ref: ref),
+                onPressed: () =>
+                    _submit(context: context, controller: controller, ref: ref),
                 style: FilledButton.styleFrom(
-                  backgroundColor: theme.inputDecorationTheme.fillColor, // Color de fondo
-                  foregroundColor: theme.textTheme.titleLarge?.color, // Color del texto
+                  backgroundColor:
+                      theme.inputDecorationTheme.fillColor, // Color de fondo
+                  foregroundColor:
+                      theme.textTheme.titleLarge?.color, // Color del texto
                 ),
                 child: Text(t(ref, 'createTag', fallback: 'Crear tag')),
               ),
-              
             ),
           ],
         ),
@@ -72,7 +75,11 @@ Future<Tag?> showCreateTagModal(BuildContext context, WidgetRef ref) {
   );
 }
 
-void _submit({required BuildContext context, required WidgetRef ref, required TextEditingController controller}) async {
+void _submit({
+  required BuildContext context,
+  required WidgetRef ref,
+  required TextEditingController controller,
+}) async {
   final name = controller.text.trim();
   if (name.isEmpty) return;
   final Tag newTag = Tag(id: const Uuid().v4(), name: name);

@@ -203,12 +203,13 @@ class _HomePageState extends ConsumerState<HomePage> {
           onTap: () async {
             final confirm = await showConfirmDialog(
               context,
-              title: t(ref, 'bannerNotMove', fallback: 'No mover la nota'),
+              title: t(ref, 'bannerNotMove', fallback: 'No mover'),
               message: t(
                 ref,
                 'discardAction',
                 fallback: '¿Estás seguro de descartar la acción?',
               ),
+              ref: ref,
             );
 
             if (confirm == true) {

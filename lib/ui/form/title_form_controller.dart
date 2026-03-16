@@ -18,13 +18,14 @@ class TitleFormController extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return TextFormField(
+      cursorColor: theme.appBarTheme.backgroundColor,
       style: TextStyle(color: theme.textTheme.labelSmall?.color),
       controller: titleCtrl,
       maxLength: NoteConfig.titleMaxLength,
       decoration: InputDecoration(
         labelText: label,
         border: OutlineInputBorder(),
-        labelStyle: TextStyle(color: theme.textTheme.labelSmall?.color),
+        labelStyle: TextStyle(color: theme.hintColor),
         enabledBorder: OutlineInputBorder(
           borderSide: BorderSide(color: theme.focusColor, width: 1),
         ),

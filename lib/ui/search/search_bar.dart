@@ -103,6 +103,7 @@ class _SearchInput extends ConsumerWidget {
       valueListenable: controller,
       builder: (_, value, _) {
         return TextField(
+          cursorColor: theme.appBarTheme.backgroundColor,
           controller: controller,
           decoration: InputDecoration(
             fillColor: theme.inputDecorationTheme.fillColor,

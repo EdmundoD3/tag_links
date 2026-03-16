@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/core/locate/app_lang.dart';
 import 'package:tag_links/core/ads/ads_disable_provider.dart';
 import 'package:tag_links/core/ads/interstitial_ads_provider.dart';
 import 'package:tag_links/ui/alerts/feedback_alert_confirm.dart';
@@ -28,12 +29,12 @@ void showAdManagementMenu(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  "¿Te estorba la publicidad?",
+                  t(ref, 'modalDisableAdsTitle', fallback: '¿Te estorba la publicidad?'),
                   style: theme.textTheme.titleLarge?.copyWith(fontSize: 18),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  "Puedes quitar los anuncios viendo un video o apoyar el proyecto.",
+                  t(ref, 'modalDisableAdsSubtitle', fallback: 'Puedes quitar los anuncios viendo un video o apoyar el proyecto'),
                   textAlign: TextAlign.center,
                   style: TextStyle(color: theme.textTheme.bodySmall?.color, fontSize: 14),
                 ),
@@ -82,7 +83,7 @@ void showAdManagementMenu(
                             setState(() => isLoading = false);
                           },
                     icon: const Icon(Icons.play_circle_fill),
-                    label: const Text("Quitar anuncios por 24h"),
+                    label: Text(t(ref, 'removeAds24h', fallback: 'Quitar anuncios por 24h')),
                     style: ElevatedButton.styleFrom(
                       elevation: 1,
                       padding: const EdgeInsets.symmetric(vertical: 15),
@@ -118,7 +119,8 @@ void showAdManagementMenu(
                 /// ❌ CLOSE
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: Text("Tal vez luego", style: TextStyle(color: theme.textTheme.titleLarge?.color)),
+                  child: Text(t(ref, 'maybeLater', fallback: 'Tal vez luego'), 
+                  style: TextStyle(color: theme.textTheme.titleLarge?.color)),
                 ),
               ],
             ),

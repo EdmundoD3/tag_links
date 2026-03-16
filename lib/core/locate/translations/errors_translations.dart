@@ -7,7 +7,7 @@ final Map<String, Map<AppLang, String>> errorsTranslations = {
   },
   'errorOpenLink': {
     AppLang.es: 'URL no válida o mal formada',
-    AppLang.en: 'Invalid URL or malformed',
+    AppLang.en: 'Invalid or malformed URL',
   },
 
 };

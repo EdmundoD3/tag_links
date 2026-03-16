@@ -16,8 +16,12 @@ class LangSelector extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.all(16),
           child: Text(
-            'Idioma',
-            style: TextStyle(fontWeight: FontWeight.bold, color: theme.textTheme.titleLarge?.color,fontSize: 18),
+            t(ref, 'settingsLanguage', fallback: 'Idioma'),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: theme.textTheme.titleLarge?.color,
+              fontSize: 18,
+            ),
           ),
         ),
         RadioGroup<AppLang>(
@@ -30,8 +34,12 @@ class LangSelector extends ConsumerWidget {
           child: Column(
             children: AppLang.values.map((lang) {
               return RadioListTile<AppLang>(
+                selectedTileColor: theme.textTheme.titleSmall?.color,
                 activeColor: theme.textTheme.titleSmall?.color,
-                title: Text(lang.label, style: TextStyle(color: theme.textTheme.bodyMedium?.color)),
+                title: Text(
+                  lang.label,
+                  style: TextStyle(color: theme.textTheme.bodyMedium?.color),
+                ),
                 value: lang,
               );
             }).toList(),
