@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Visor de Respaldo de Notas</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.6.2/sql-wasm.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #f4f4f9; padding: 20px; color: #333; }
+        .container { max-width: 800px; margin: auto; }
+        .card { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .tag { background: #e0e0e0; padding: 2px 8px; border-radius: 10px; font-size: 0.8em; margin-right: 5px; }
+        .link-preview { border-left: 3px solid #007bff; padding-left: 10px; margin-top: 10px; font-size: 0.9em; color: #555; }
+        input[type="text"] { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; }
+        .header { text-align: center; }
+        .favorite { color: gold; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>Recuperar mis Notas</h1>
+        <input type="file" id="dbfile" accept=".db">
+    </div>
+    
+    <input type="text" id="search" placeholder="Buscar por título, contenido o etiquetas..." style="display:none;">
+    <div id="notes-list"></div>
+</div>
+
+<script>
+    let db;
+    const searchInput = document.getElementById('search');
+    const notesList = document.getElementById('notes-list');
+
+    // Cargar SQL.js
+    const config = { locateFile: filename => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.6.2/${filename}` };
+    
+    document.getElementById('dbfile').onchange = function(e) {
+        const f = e.target.files[0];
+        const r = new FileReader();
+        r.onload = function() {
+            initSqlJs(config).then(function(SQL) {
+                const Uints = new Uint8Array(r.result);
+                db = new SQL.Database(Uints);
+                searchInput.style.display = 'block';
+                renderNotes();
+            });
+        };
+        r.readAsArrayBuffer(f);
+    };
+
+    function renderNotes() {
+        const term = searchInput.value.toLowerCase();
+        // Usamos exactamente tu selectQuery de Flutter
+        const query = `
+            SELECT 
+                n.id AS note_id, n.title, n.content, n.color, n.isFavorite,
+                t.name AS tag_name,
+                lp.url AS link_url, lp.title AS link_title
+            FROM notes n
+            LEFT JOIN note_tags nt ON nt.noteId = n.id
+            LEFT JOIN tags t ON t.id = nt.tagId
+            LEFT JOIN link_previews lp ON lp.noteId = n.id
+        `;
+        
+        const res = db.exec(query);
+        if (!res.length) return;
+
+        const rows = res[0].values;
+        const columns = res[0].columns;
+        
+        // Agrupar filas por note_id (porque los JOINS duplican filas por tags)
+        const notesMap = {};
+        rows.forEach(row => {
+            const n = {};
+            columns.forEach((col, i) => n[col] = row[i]);
+            
+            if (!notesMap[n.note_id]) {
+                notesMap[n.note_id] = { ...n, tags: new Set(), links: new Set() };
+            }
+            if (n.tag_name) notesMap[n.note_id].tags.add(n.tag_name);
+            if (n.link_url) notesMap[n.note_id].links.add(n.link_title || n.link_url);
+        });
+
+        notesList.innerHTML = '';
+        Object.values(notesMap).forEach(note => {
+            const tagsStr = Array.from(note.tags).join(' ');
+            const contentStr = (note.content || '').toLowerCase();
+            const titleStr = note.title.toLowerCase();
+
+            // Buscador simple por texto y tags
+            if (titleStr.includes(term) || contentStr.includes(term) || tagsStr.toLowerCase().includes(term)) {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.style.borderTop = `5px solid ${note.color || '#ccc'}`;
+                
+                card.innerHTML = `
+                    <h3>${note.isFavorite ? '<span class="favorite">★</span> ' : ''}${note.title}</h3>
+                    <p>${note.content || '<i>Sin contenido</i>'}</p>
+                    <div>${Array.from(note.tags).map(t => `<span class="tag">#${t}</span>`).join('')}</div>
+                    ${Array.from(note.links).map(l => `<div class="link-preview">🔗 ${l}</div>`).join('')}
+                `;
+                notesList.appendChild(card);
+            }
+        });
+    }
+
+    searchInput.oninput = renderNotes;
+</script>
+</body>
+</html>

@@ -127,21 +127,19 @@ class NotesDao {
   Future<int> countSearch(String folderId, String query) async {
     return _fetch.countSearch(folderId, query);
   }
+
   // ******* SYNC section *******
-  Future<List<Note>> getForSync({
-    int limit = 200,
-  }) async {
-    final rows = await _fetch.getForSync(
-      limit: limit,
-    );
+  Future<List<Note>> getForSync({int limit = 200}) async {
+    final rows = await _fetch.getForSync(limit: limit);
     return _hydrate(rows);
   }
+
   Future<bool> updateNotesSyncAt(List<String> ids, int syncAt) async {
-    if(ids.isEmpty) return true; //si no habia nada entonces fue un exito actualizar 0 datos
+    if (ids.isEmpty)
+      return true; //si no habia nada entonces fue un exito actualizar 0 datos
     final success = await _fetch.updateNotesSyncAt(ids, syncAt);
     return success >= ids.length;
   }
-
 
   /* ----------------------------- HYDRATION ----------------------------- */
   List<Note> _hydrate(List<NoteJoinRow> rows) {
@@ -252,7 +250,6 @@ class FetchersNotesDao {
   }
 
   Future<List<NoteJoinRow>> byFolder(String folderId, PaginatedByDate p) async {
-
     final rows = await _db.rawQuery(
       '''
       ${NoteJoinRow.selectQuery}
@@ -300,7 +297,6 @@ class FetchersNotesDao {
   }
 
   Future<List<NoteJoinRow>> favorites(PaginatedByDate p) async {
-
     final rows = await _db.rawQuery(
       '''
       ${NoteJoinRow.selectQuery}
@@ -355,7 +351,6 @@ class FetchersNotesDao {
     required PaginatedByDate paginated,
     String? folderId,
   }) async {
-
     final where = <String>[];
     final args = <Object?>[];
 
@@ -429,7 +424,6 @@ class FetchersNotesDao {
   }
 
   Future<List<NoteJoinRow>> byId(String id) async {
-
     final rows = await _db.rawQuery(
       '''
       ${NoteJoinRow.selectQuery}
@@ -442,7 +436,6 @@ class FetchersNotesDao {
   }
 
   Future<int> countByFolder(String folderId) async {
-
     final result = await _db.rawQuery(
       '''
     SELECT COUNT(*) as total
@@ -525,23 +518,17 @@ class FetchersNotesDao {
   Future<void> insert(Note note) async {
     await _db.transaction((txn) async {
       // 1️⃣ Insert note
-      final success = await txn.insert(
-        'notes',
-        note.toMap(),
-      );
+      final success = await txn.insert('notes', note.toMap());
       if (success <= 0) return;
 
       // 2️⃣ Insert tags (El Trigger se encarga del usageCount automáticamente)
       for (final tag in note.tags) {
-        await txn.insert('note_tags', {
-          'noteId': note.id,
-          'tagId': tag.id,
-        });
+        await txn.insert('note_tags', {'noteId': note.id, 'tagId': tag.id});
       }
 
       // 3️⃣ Link
       if (note.link != null) {
-        await _linkDao.insert(txn: txn,noteId: note.id,link: note.link!);
+        await _linkDao.insert(txn: txn, noteId: note.id, link: note.link!);
       }
     });
   }
@@ -589,10 +576,40 @@ class FetchersNotesDao {
 
       for (final note in notes) {
         // 1. Upsert de la Nota
-        batch.insert(
-          'notes',
-          note.toMap(),
-          conflictAlgorithm: ConflictAlgorithm.ignore,
+        batch.rawInsert(
+          '''
+            INSERT INTO notes (
+              id,
+              folderId,
+              title,
+              content,
+              color,
+              createdAt,
+              updatedAt,
+              syncAt,
+              isFavorite
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+              folderId = excluded.folderId,
+              title = excluded.title,
+              content = excluded.content,
+              color = excluded.color,
+              updatedAt = excluded.updatedAt,
+              isFavorite = excluded.isFavorite
+            WHERE excluded.updatedAt > notes.updatedAt
+            ''',
+          [
+            note.id,
+            note.folderId,
+            note.title,
+            note.content,
+            note.color,
+            note.createdAt.millisecondsSinceEpoch,
+            note.updatedAt.millisecondsSinceEpoch,
+            note.syncAt?.millisecondsSinceEpoch,
+            note.isFavorite ? 1 : 0,
+          ],
         );
 
         // 2. Gestión de Tags: Borramos todos y re-insertamos (más rápido en batch)
@@ -666,36 +683,35 @@ class FetchersNotesDao {
     };
   }
 
-// ******* SYNC section *******
-Future<List<NoteJoinRow>> getForSync({
-  int limit = 200,
-}) async {
-
-  final sql = '''
+  // ******* SYNC section *******
+  Future<List<NoteJoinRow>> getForSync({int limit = 200}) async {
+    final sql =
+        '''
     ${NoteJoinRow.selectQuery}
     WHERE n.syncAt IS NULL OR n.syncAt < n.updatedAt
     ORDER BY n.updatedAt DESC
     LIMIT ?
   ''';
 
-  final result = await _db.rawQuery(sql, [limit]);
+    final result = await _db.rawQuery(sql, [limit]);
 
-  return result.map(NoteJoinRow.fromMap).toList();
-}
+    return result.map(NoteJoinRow.fromMap).toList();
+  }
 
-Future<int> updateNotesSyncAt(List<String> ids, int syncAt) async {
-  if (ids.isEmpty) return 0;
+  Future<int> updateNotesSyncAt(List<String> ids, int syncAt) async {
+    if (ids.isEmpty) return 0;
 
-  final db = _db;
+    final db = _db;
 
-  final placeholders = List.filled(ids.length, '?').join(',');
+    final placeholders = List.filled(ids.length, '?').join(',');
 
-  final sql = '''
+    final sql =
+        '''
     UPDATE notes
     SET syncAt = ?
     WHERE id IN ($placeholders)
   ''';
 
-  return await db.rawUpdate(sql, [syncAt, ...ids]);
-}
+    return await db.rawUpdate(sql, [syncAt, ...ids]);
+  }
 }

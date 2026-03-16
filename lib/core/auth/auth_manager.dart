@@ -5,12 +5,6 @@ import 'package:tag_links/core/encypt/encrypt_storage.dart';
 import 'package:tag_links/core/encypt/encrypted_datakey_model.dart';
 import 'package:tag_links/core/encypt/encypter_services.dart';
 
-class AuthData {
-  final EncryptedDataKey? dataKey;
-  final String? token;
-
-  AuthData({required this.dataKey, required this.token});
-}
 class AuthManager {
   static final EncryptionService _encryptionService = EncryptionService();
   static final TokenStorage _tokenStorage = TokenStorage();
@@ -28,6 +22,7 @@ class AuthManager {
 
     // 2️⃣ Login en API
     final response = await ApiServices.login(idToken: idToken);
+    if( response == null) return;
     if (response.data == null) {
       throw Exception("Login fallido");
     }

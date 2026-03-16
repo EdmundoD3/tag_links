@@ -1,6 +1,35 @@
 import 'package:tag_links/core/sync/folder_raw_sync.dart';
 import 'package:tag_links/core/sync/note_raw_sync.dart';
 
+// enums
+enum MethodPurchase { android, ios, windows}
+
+enum SyncApiStatus { ok, unauthorized, limitStorageReached, failed }
+
+enum ApiLoginStatus { unauthorized, loginFailed, ok }
+
+// data clases
+class PullData {
+  final List<NoteRawSync> notes;
+  final List<FolderRawSync> folders;
+
+  PullData({required this.notes, required this.folders});
+
+  factory PullData.fromJson(Map<String, dynamic> json) {
+    return PullData(
+      // Usamos el factory fromJson que creamos en NoteRawSync/FolderRawSync
+      notes: (json['notes'] as List? ?? [])
+          .map((n) => NoteRawSync.fromJson(n as Map<String, dynamic>))
+          .toList(),
+      folders: (json['folders'] as List? ?? [])
+          .map((f) => FolderRawSync.fromJson(f as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+}
+
+// results
+
 class ApiSaveResult {
   final bool ok;
   final String? error;
@@ -17,10 +46,24 @@ class ApiSaveResult {
   }
 }
 
-class ApiPurchaseResult {}
+class ApiPurchaseResult {
+  final bool ok;
+  final String? message;
+  final int? expiryDateMs; // El servidor manda la fecha real de expiración
+
+  ApiPurchaseResult({required this.ok, this.message, this.expiryDateMs});
+
+  factory ApiPurchaseResult.fromJson(Map<String, dynamic> json) {
+    return ApiPurchaseResult(
+      ok: json['ok'] ?? false,
+      message: json['message'],
+      expiryDateMs: json['expiry_date_ms'],
+    );
+  }
+}
 
 
-enum MethodPurchase { android, ios, windows}
+
 
 // ==========================================
 // MODELOS DE RESPUESTA (DATA TRANSFER OBJECTS)
@@ -97,21 +140,15 @@ class PullResult {
   }
 }
 
-class PullData {
-  final List<NoteRawSync> notes;
-  final List<FolderRawSync> folders;
 
-  PullData({required this.notes, required this.folders});
+// SyncApi
 
-  factory PullData.fromJson(Map<String, dynamic> json) {
-    return PullData(
-      // Usamos el factory fromJson que creamos en NoteRawSync/FolderRawSync
-      notes: (json['notes'] as List? ?? [])
-          .map((n) => NoteRawSync.fromJson(n as Map<String, dynamic>))
-          .toList(),
-      folders: (json['folders'] as List? ?? [])
-          .map((f) => FolderRawSync.fromJson(f as Map<String, dynamic>))
-          .toList(),
-    );
-  }
+
+class SyncApiRes {
+  final SyncApiStatus status;
+  final SyncResponseModel? data;
+
+  SyncApiRes({required this.status, this.data});
+
+  bool get isOk => status == SyncApiStatus.ok;
 }

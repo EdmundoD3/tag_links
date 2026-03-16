@@ -285,6 +285,9 @@ class _ContentController extends StatelessWidget {
       style: TextStyle(color: theme.textTheme.bodyMedium?.color),
       controller: contentCtrl,
       maxLength: NoteConfig.contentMaxLength,
+      maxLines: null, // Permite que crezca infinitamente según el texto
+      minLines: 10,   // Altura inicial (puedes ajustarlo a tu gusto)
+      keyboardType: TextInputType.multiline,
       onChanged: (_) => onChange(),
       decoration: InputDecoration(
         labelText: label,

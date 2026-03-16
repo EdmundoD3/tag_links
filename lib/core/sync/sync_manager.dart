@@ -64,7 +64,7 @@ class SyncManager extends Notifier<SyncManagerStatus> {
     int safetyCounter = 0;
     bool? isPremium;
     int safetyMax = 30;
-
+    
     while ((hasMoreLocal || hasMoreRemote) && safetyCounter < safetyMax) {
       safetyCounter++;
       // 1. Obtener datos locales (Notas y Carpetas)
@@ -85,6 +85,8 @@ class SyncManager extends Notifier<SyncManagerStatus> {
         lastPulledAt: lastPulledAt,
         lastId: currentLastId,
       );
+      //null significa que no tiene acceso al servidor o aun no esta implementado
+      if(response == null) break;
 
       if (!response.isOk) {
         isPremium = response.data?.isPremium;

@@ -11,6 +11,10 @@ import 'package:tag_links/models/note_tag.dart';
 import 'package:tag_links/models/tag.dart';
 
 class AppDatabase {
+    Future<String> get dbPath async {
+    final path = await getDatabasesPath();
+    return join(path, 'app.db');
+    }
   static Database? _db;
   static String indexes = '''
       -- NOTES
@@ -73,7 +77,7 @@ class AppDatabase {
   }
 
   Future<Database> _initDB() async {
-    final path = join(await getDatabasesPath(), 'app.db');
+    final String path = await dbPath;
 
     return openDatabase(
       path,

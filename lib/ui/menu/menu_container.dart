@@ -13,41 +13,53 @@ class ActionMenuItem {
 }
 
 class ActionMenu {
-  static void showActionMenu({
-    required BuildContext context,
-    required Offset position,
-    required List<ActionMenuItem> items,
-  }) {
-    final overlay = Overlay.of(context);
-    late OverlayEntry entry;
+static void showActionMenu({
+  required BuildContext context,
+  required Offset position,
+  required List<ActionMenuItem> items,
+}) {
+  final overlay = Overlay.of(context);
+  final screenSize = MediaQuery.of(context).size;
 
-    entry = OverlayEntry(
-      builder: (context) {
-        return Stack(
-          children: [
-            // Tap afuera → cerrar
-            Positioned.fill(
-              child: GestureDetector(
-                onTap: () => entry.remove(),
-                child: Container(color: Colors.transparent),
-              ),
-            ),
+  // 1. Estimamos la altura del menú (46px por item aprox + bordes)
+  final double menuHeight = (items.length * 46.5) + 10; 
+  
+  double finalY = position.dy;
 
-            Positioned(
-              left: position.dx,
-              top: position.dy,
-              child: _ActionMenuView(
-                items: items,
-                onClose: () => entry.remove(),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-
-    overlay.insert(entry);
+  // 2. Si el menú se sale por abajo, lo desplazamos hacia arriba
+  if (finalY + menuHeight > screenSize.height) {
+    finalY = screenSize.height - menuHeight - 20; // 20px de margen de seguridad
   }
+
+  // 3. Evitar que se salga por arriba (opcional)
+  if (finalY < 20) finalY = 20;
+
+  late OverlayEntry entry;
+  entry = OverlayEntry(
+    builder: (context) {
+      return Stack(
+        children: [
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: () => entry.remove(),
+              child: Container(color: Colors.transparent),
+            ),
+          ),
+          Positioned(
+            left: position.dx,
+            top: finalY, // Usamos la posición calculada
+            child: _ActionMenuView(
+              items: items,
+              onClose: () => entry.remove(),
+            ),
+          ),
+        ],
+      );
+    },
+  );
+
+  overlay.insert(entry);
+}
 }
 
 class _ActionMenuView extends StatelessWidget {

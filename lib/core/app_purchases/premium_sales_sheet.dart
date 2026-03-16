@@ -36,7 +36,7 @@ Widget build(BuildContext context, WidgetRef ref) {
           ),
           ListView.builder(
             shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(), // El modal ya tiene su scroll
+            physics: const NeverScrollableScrollPhysics(),
             itemCount: products.length,
             itemBuilder: (context, index) {
               final product = products[index];

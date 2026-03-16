@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/ads/ads_disable_provider.dart';
 import 'package:tag_links/core/app_purchases/premium_provider.dart';
 import 'package:tag_links/core/auth/auth_status_provider.dart';
+import 'package:tag_links/core/auth/auth_types.dart';
 import 'package:tag_links/core/sync/sync_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tag_links/core/sync/sync_types.dart';

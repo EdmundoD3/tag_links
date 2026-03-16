@@ -1,12 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-enum AuthMode {
-  guest, // Usuario omitió el login (Solo local)
-  logged, // Usuario logueado (Sync activo)
-  reauth, // Sesión expirada (Necesita re-loguear para volver a sync)
-  initial, // Primera vez abriendo la app
-}
+import 'package:tag_links/core/auth/auth_types.dart';
 
 class AuthStatusNotifier extends Notifier<AuthMode> {
   final _storage = _AuthStatusStorage();
@@ -18,6 +12,7 @@ class AuthStatusNotifier extends Notifier<AuthMode> {
     // o inicializar y luego cargar.
     return AuthMode.initial;
   }
+
   void _relaod() {
     _storage.get().then((mode) {
       if (mode != null) {
@@ -30,18 +25,22 @@ class AuthStatusNotifier extends Notifier<AuthMode> {
     state = mode;
     _storage.save(mode);
   }
+
   void clean() {
     state = AuthMode.initial;
     _storage.clean();
   }
+
   void reauth() {
     state = AuthMode.reauth;
     _storage.save(AuthMode.reauth);
   }
+
   void logged() {
     state = AuthMode.logged;
     _storage.save(AuthMode.logged);
   }
+
   void guest() {
     state = AuthMode.guest;
     _storage.save(AuthMode.guest);

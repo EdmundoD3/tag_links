@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tag_links/core/app_purchases/listen_to_purchase_update.dart';
+import 'package:tag_links/core/app_purchases/suscription_cache.dart';
 
 void main() {
   // Inicializa SharedPreferences para tests
@@ -8,16 +9,19 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  group('Pruebas de InAppPurchaseManager', () {
-    
+  group('Pruebas de InAppPurchaseManager', () async {
+    final pref = await SharedPreferences.getInstance();
+    final subscriptionCache = SubscriptionCache(pref);
+    final premiumManager = PremiumManager(subscriptionCache);
+    final inAppPurchaseManager = InAppPurchaseManager(premiumManager);
     test('includesPremium reconoce correctamente los IDs registrados', () {
-      expect(InAppPurchaseManager.includesPremium('premium_monthly'), true);
-      expect(InAppPurchaseManager.includesPremium('premium_yearly'), true);
-      expect(InAppPurchaseManager.includesPremium('hack_id'), false);
+      expect(inAppPurchaseManager.includesPremium('premium_monthly'), true);
+      expect(inAppPurchaseManager.includesPremium('premium_yearly'), true);
+      expect(inAppPurchaseManager.includesPremium('hack_id'), false);
     });
 
     test('getPremiumStatus devuelve false si no hay datos guardados', () async {
-      final status = await InAppPurchaseManager.getPremiumStatus();
+      final status = await inAppPurchaseManager.getPremiumStatus();
       expect(status, false);
     });
 
@@ -27,7 +31,7 @@ void main() {
       
       await prefs.setInt('premium_expiration_date', futura.millisecondsSinceEpoch);
       
-      final status = await InAppPurchaseManager.getPremiumStatus();
+      final status = await inAppPurchaseManager.getPremiumStatus();
       expect(status, true);
     });
 
@@ -37,7 +41,7 @@ void main() {
       
       await prefs.setInt('premium_expiration_date', pasada.millisecondsSinceEpoch);
       
-      final status = await InAppPurchaseManager.getPremiumStatus();
+      final status = await inAppPurchaseManager.getPremiumStatus();
       expect(status, false);
     });
   });

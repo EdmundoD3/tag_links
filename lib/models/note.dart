@@ -102,6 +102,8 @@ class Note {
     List<Tag>? tags,
     bool? isFavorite,
     DateTime? updatedAt,
+    DateTime? createdAt,
+    DateTime? syncAt,
   }) {
     return Note(
       id: id ?? this.id,
@@ -111,9 +113,9 @@ class Note {
       color: color ?? this.color,
       link: link ?? this.link,
       tags: tags ?? this.tags,
-      createdAt: createdAt,
+      createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      syncAt: syncAt,
+      syncAt: syncAt ?? this.syncAt,
       isFavorite: isFavorite ?? this.isFavorite,
     );
   }

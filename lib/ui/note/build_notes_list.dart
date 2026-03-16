@@ -16,7 +16,6 @@ class BuildNotesList extends ConsumerWidget {
   final List<ActionMenuItem>? actionsItems;
   final void Function(Note note)? goFolder;
 
-
   const BuildNotesList({
     super.key,
     required this.notesAsync,
@@ -32,7 +31,9 @@ class BuildNotesList extends ConsumerWidget {
     return notesAsync.when(
       data: (notes) {
         if (notes.isEmpty) {
-          return EmptyIndicator(title: t(ref, 'emptyNotes', fallback: 'No hay notas'));
+          return EmptyIndicator(
+            title: t(ref, 'emptyNotes', fallback: 'No hay notas'),
+          );
         }
 
         return Stack(
@@ -59,10 +60,12 @@ class BuildNotesList extends ConsumerWidget {
                   await onDeleteNote(note);
                 },
                 onMove: (note) async {
-                      final isConfirm = await ConfirmDialog.moveNote(context, ref);
+                  final isConfirm = await ConfirmDialog.moveNote(context, ref);
 
-    if (isConfirm != true) return;
-    ref.read(pendingNoteProvider.notifier).set(note, TypeMove.move);
+                  if (isConfirm != true) return;
+                  ref
+                      .read(pendingNoteProvider.notifier)
+                      .set(note, TypeMove.move);
                 },
                 actionsItems: [
                   if (actionsItems != null) ...actionsItems!,

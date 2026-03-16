@@ -12,11 +12,12 @@ import 'package:tag_links/core/sync/note_raw_sync.dart';
 class ApiServices {
   static final _paths = ApiUrls();
 
-  static Future<LoginApi> login({
+  static Future<LoginApi?> login({
     required String idToken,
     String? userName,
     EncryptedDataKey? encryptedKey,
   }) async {
+    if(!_paths.isAvailable)return null;
     final response = await _HttpService.post(
       path: _paths.login,
       body: {
@@ -44,10 +45,11 @@ class ApiServices {
     return LoginApi(status: ApiLoginStatus.loginFailed, data: null);
   }
 
-  static Future<ApiSaveResult> registerEncryptedKey({
+  static Future<ApiSaveResult?> registerEncryptedKey({
     required String accessToken,
     required EncryptedDataKey encryptedKey,
   }) async {
+    if(!_paths.isAvailable)return null;
     final response = await _HttpService.post(
       path: _paths.encryptionKey,
       body: {
@@ -65,13 +67,14 @@ class ApiServices {
     return ApiSaveResult(ok: false, error: body['error'] ?? 'Unknown error');
   }
 
-  static Future<SyncApi> sync({
+  static Future<SyncApiRes?> sync({
     required String accessToken,
     required List<NoteRawSync> notes,
     required List<FolderRawSync> folders,
     required int? lastPulledAt,
     required String lastId,
   }) async {
+    if(!_paths.isAvailable)return null;
     try {
       return await _performSync(
         accessToken: accessToken,
@@ -83,13 +86,13 @@ class ApiServices {
     } on TimeoutException catch (_) {
       // 2. Manejo específico si el servidor tarda mucho (Cloudflare Worker frío o mala señal)
       debugPrint('Sync Timeout: El servidor no respondió a tiempo');
-      return SyncApi(
+      return SyncApiRes(
         status: SyncApiStatus.failed,
       ); // O podrías crear un status 'timeout'
     } on Exception catch (e) {
       // 3. Manejo de errores de red (Sin internet, DNS error, etc)
       debugPrint('Sync Network Error: $e');
-      return SyncApi(status: SyncApiStatus.failed);
+      return SyncApiRes(status: SyncApiStatus.failed);
     }
   }
 
@@ -100,6 +103,8 @@ class ApiServices {
     required MethodPurchase platform,
   }) async {
     try {
+      if(!_paths.isAvailable)return null;
+
       final response = await _HttpService.post(
         path: _paths.verifyPurchase,
         body: {
@@ -114,8 +119,8 @@ class ApiServices {
       return null;
     }
   }
-
-  static Future<SyncApi> _performSync({
+// -------------------------- performs ----------------------------
+  static Future<SyncApiRes> _performSync({
     required String accessToken,
     required List<NoteRawSync> notes,
     required List<FolderRawSync> folders,
@@ -134,44 +139,30 @@ class ApiServices {
     );
 
     if (response.statusCode == 401) {
-      return SyncApi(status: SyncApiStatus.unauthorized);
+      return SyncApiRes(status: SyncApiStatus.unauthorized);
     }
 
     final body = jsonDecode(response.body);
 
     if (response.statusCode == 200 || response.statusCode == 403) {
       final data = SyncResponseModel.fromJson(body['data']);
-      return SyncApi(
+      return SyncApiRes(
         status: data.ok ? SyncApiStatus.ok : SyncApiStatus.limitStorageReached,
         data: data,
       );
     }
 
-    return SyncApi(status: SyncApiStatus.failed);
+    return SyncApiRes(status: SyncApiStatus.failed);
   }
 }
 
 // login
-enum ApiLoginStatus { unauthorized, loginFailed, ok }
-
 class LoginApi {
   final ApiLoginStatus status;
   final LoginResponse? data;
 
   LoginApi({required this.status, required this.data});
   bool get isSucces => status == ApiLoginStatus.ok;
-}
-
-// sync
-enum SyncApiStatus { ok, unauthorized, limitStorageReached, failed }
-
-class SyncApi {
-  final SyncApiStatus status;
-  final SyncResponseModel? data;
-
-  SyncApi({required this.status, this.data});
-
-  bool get isOk => status == SyncApiStatus.ok;
 }
 
 class _HttpService {
