@@ -31,84 +31,100 @@ class SupportProjectPage extends ConsumerWidget {
     );
   }
 
-  List<Widget> _buildBody(BuildContext context, WidgetRef ref, bool? adsActive) {
+  List<Widget> _buildBody(
+    BuildContext context,
+    WidgetRef ref,
+    bool? adsActive,
+  ) {
     // 1. Mientras el estado es null, mostramos la opción de "Quitar Publicidad"
     //    o un loader si prefieres esperar a que SharedPreferences responda.
     //    En este caso, asumimos que si es null, es porque nunca ha decidido.
-    
+
     final theme = Theme.of(context);
-
     return [
-        ThemeSelector(),
-        LangSelector(),
+      ThemeSelector(),
+      LangSelector(),
 
-        // 2. Si ya decidió (es true o false), liberamos las opciones de apoyo
-        if (adsActive != null) ...[
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              t(ref, 'supportProject', fallback: '¿Cómo quieres apoyar el proyecto?'),
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: theme.textTheme.titleLarge?.color),
+      // 2. Si ya decidió (es true o false), liberamos las opciones de apoyo
+      if (adsActive != null) ...[
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Text(
+            t(
+              ref,
+              'supportProject',
+              fallback: '¿Cómo quieres apoyar el proyecto?',
             ),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: theme.textTheme.titleLarge?.color,
+            ),
+            textAlign: TextAlign.center
           ),
-          PremiumSalesSheet(showEmpty: null),
-
-          InvitameUnCaffe(),
-
-          const Divider(
-            color: Colors.grey,
-            thickness: 1,
-            indent: 10,
-            endIndent: 10,
-          ),
-          if (ref.read(isAdsActiveProvider))
-            ListTile(
-              leading: const Icon(Icons.video_library, color: Colors.orange),
-              title: Text(
-                t(ref, 'viewLargeAd', fallback: 'Ver un anuncio grande'),
-                style: TextStyle(color: theme.textTheme.bodyMedium?.color),
-              ),
-              subtitle: Text(
-                t(ref,'disableAdsForOneDay', fallback: 'Se desactivará por un día la publicidad'),
-                style: TextStyle(color: theme.hintColor),
-              ),
-              onTap: () => showAdManagementMenu(
-          context,
-          ref,
-          showRewardedAd: () async {
-            // Usamos el servicio que ya tienes
-            return await ref.read(adServiceProvider).showRewardedAd();
-          },
-          processPurchase: () async {
-            // 3. Mostramos el modal de compra que creamos antes
-            showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              builder: (_) => const PremiumSalesSheet(showEmpty: null,),
-            );
-          },
         ),
-            ),
-          
+        PremiumSalesSheet(showEmpty: null),
+
+        InvitameUnCaffe(),
+
+        if (adsActive)
           const Divider(
             color: Colors.grey,
             thickness: 1,
             indent: 10,
             endIndent: 10,
           ),
-
-          const SizedBox(height: 20),
-          Center(
-            child: Text(
-              t(ref,'thanksForUsingApp', fallback: '¡Gracias por usar la App!'),
-              style: TextStyle(
-                color: theme.textTheme.titleMedium?.color,
-                fontStyle: FontStyle.italic,
+        if (adsActive)
+          ListTile(
+            leading: const Icon(Icons.video_library, color: Colors.orange),
+            title: Text(
+              t(ref, 'viewLargeAd', fallback: 'Ver un anuncio grande'),
+              style: TextStyle(color: theme.textTheme.bodyMedium?.color),
+            ),
+            subtitle: Text(
+              t(
+                ref,
+                'disableAdsForOneDay',
+                fallback: 'Se desactivará por un día la publicidad',
               ),
+              style: TextStyle(color: theme.hintColor),
+            ),
+            onTap: () => showAdManagementMenu(
+              context,
+              ref,
+              showRewardedAd: () async {
+                // Usamos el servicio que ya tienes
+                return await ref.read(adServiceProvider).showRewardedAd();
+              },
+              processPurchase: () async {
+                // 3. Mostramos el modal de compra que creamos antes
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  builder: (_) => const PremiumSalesSheet(showEmpty: null),
+                );
+              },
             ),
           ),
-        ],
-      ];
-  }
 
+        const Divider(
+          color: Colors.grey,
+          thickness: 1,
+          indent: 10,
+          endIndent: 10,
+        ),
+
+        const SizedBox(height: 20),
+        Center(
+          child: Text(
+            t(ref, 'thanksForUsingApp', fallback: '¡Gracias por usar la App!'),
+            style: TextStyle(
+              color: theme.textTheme.titleMedium?.color,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ),
+      ],
+    ];
+  }
 }

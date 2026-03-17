@@ -18,7 +18,6 @@ import 'package:tag_links/ui/button/bottom_switch_folder_note.dart';
 import 'package:tag_links/ui/button/create_new_folder_button.dart';
 import 'package:tag_links/ui/button/go_settings_button.dart';
 import 'package:tag_links/ui/button/switch_favorite.dart';
-import 'package:tag_links/ui/button/switch_folder_note.dart';
 import 'package:tag_links/ui/folder/banner_pending_folder.dart';
 import 'package:tag_links/ui/folder/build_folders_list.dart';
 import 'package:tag_links/ui/note/build_notes_list.dart';

@@ -24,8 +24,8 @@ final Map<String, Map<AppLang, String>> rewardedTranslations = {
 
   //Support Project
   'supportProject': {
-    AppLang.es: 'Apoya el proyecto',
-    AppLang.en: 'Support the project',
+    AppLang.es: '¿Te gusta la app? \n Compártela o apóyanos',
+    AppLang.en: 'Enjoying the app? \n Share or support us',
   },
   'viewLargeAd': {
     AppLang.es: 'Ver un anuncio grande',
