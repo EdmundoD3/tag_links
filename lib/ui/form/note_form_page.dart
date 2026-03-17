@@ -313,6 +313,8 @@ class _ContentController extends StatelessWidget {
       keyboardType: TextInputType.multiline,
       onChanged: (_) => onChange(),
       decoration: InputDecoration(
+        filled: true,
+        fillColor: theme.inputDecorationTheme.fillColor?.withAlpha(60),
         labelText: label,
         alignLabelWithHint: true,
         border: const OutlineInputBorder(),

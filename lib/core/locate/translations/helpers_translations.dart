@@ -48,4 +48,8 @@ final Map<String, Map<AppLang, String>> helpersTranslations = {
   'createTag': {AppLang.es: 'Nuevo tag', AppLang.en: 'New tag'},
   'deleteTag': {AppLang.es: 'Eliminar tag', AppLang.en: 'Delete tag'},
   'editTag': {AppLang.es: 'Editar tag', AppLang.en: 'Edit tag'},
+
+  //Switch folder - note
+  'switchFolder': {AppLang.es: 'Carpetas', AppLang.en: 'Folders'},
+  'switchNote': {AppLang.es: 'Notas', AppLang.en: 'Notes'},
 };

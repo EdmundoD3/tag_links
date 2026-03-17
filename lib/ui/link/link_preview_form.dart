@@ -34,7 +34,7 @@ class _LinkPreviewFormState extends State<LinkPreviewForm> {
     super.initState();
     _preview = widget.initialLink;
     _urlCtrl = TextEditingController(text: _preview?.url ?? '');
-    if(_preview?.url != null) _fetchPreview(_preview!.url);
+    if (_preview?.url != null) _fetchPreview(_preview!.url);
   }
 
   @override
@@ -103,6 +103,8 @@ class _LinkPreviewFormState extends State<LinkPreviewForm> {
           maxLength: NoteConfig.urlMaxLength,
           maxLines: NoteConfig.urlMaxLine,
           decoration: InputDecoration(
+            filled: true,
+            fillColor: theme.inputDecorationTheme.fillColor?.withAlpha(60),
             labelText: 'URL',
             prefixIcon: const Icon(Icons.link),
             hintText: 'https://...',

@@ -75,7 +75,7 @@ class AppTheme {
       subtitleColor: Color(0xFFF8F7FF),
       secondSubtitleColor: Color(0xFF757575),
       scaffoldBackgroundColor: Color.fromARGB(255, 239, 245, 255),
-      searchInput: Color.fromARGB(34, 135, 149, 155),
+      searchInput: const Color(0x33AAA1C8),
       searchInputBorder: Color.fromARGB(92, 63, 81, 181),
       searchIcon: Colors.grey,
     );
@@ -218,5 +218,9 @@ ThemeData _generatePalette({
       selectedItemColor: thirdTextColor,
       selectedIconTheme: IconThemeData(color: thirdTextColor),
     ),
+
+
   );
 }
+
+
