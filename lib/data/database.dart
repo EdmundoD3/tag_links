@@ -11,64 +11,59 @@ import 'package:tag_links/models/note_tag.dart';
 import 'package:tag_links/models/tag.dart';
 
 class AppDatabase {
-    Future<String> get dbPath async {
+  Future<String> get dbPath async {
     final path = await getDatabasesPath();
     return join(path, 'app.db');
-    }
+  }
+
   static Database? _db;
-  static String indexes = '''
-      -- NOTES
-        CREATE INDEX idx_notes_folder_updated
-        ON notes(folderId, updatedAt DESC);
+  static List<String> indexes = [
+    // -- NOTES
+    'CREATE INDEX idx_notes_folder_updated ON notes(folderId, updatedAt DESC);',
+    'CREATE INDEX idx_notes_favorite_updated ON notes(isFavorite, updatedAt DESC);',
+    'CREATE INDEX idx_notes_sync ON notes(updatedAt, syncAt);',
 
-        CREATE INDEX idx_notes_favorite_updated
-        ON notes(isFavorite, updatedAt DESC);
+    // -- TAGS
+    'CREATE INDEX idx_note_tags_tag_note ON note_tags(tagId, noteId);',
 
-        CREATE INDEX idx_notes_sync
-        ON notes(updatedAt, syncAt);
-
-        -- TAGS
-        CREATE INDEX idx_note_tags_tag_note
-        ON note_tags(tagId, noteId);
-
-        -- FOLDERS
-        CREATE INDEX idx_folders_parentId
-        ON folders(parentId);
-
-        CREATE INDEX idx_folders_sync
-        ON folders(updatedAt, syncAt);
-
-        -- LINKS
-        CREATE INDEX idx_link_noteId
-        ON link_previews(noteId);
-''';
-  static String triggers = '''
-  -- TRIGGERS PARA NOTAS
-  CREATE TRIGGER IF NOT EXISTS tr_note_tags_insert
-  AFTER INSERT ON note_tags
-  BEGIN
-    UPDATE tags SET usageCount = usageCount + 1 WHERE id = NEW.tagId;
-  END;
-
-  CREATE TRIGGER IF NOT EXISTS tr_note_tags_delete
-  AFTER DELETE ON note_tags
-  BEGIN
-    UPDATE tags SET usageCount = MAX(usageCount - 1, 0) WHERE id = OLD.tagId;
-  END;
-
-  -- TRIGGERS PARA CARPETAS (NUEVOS)
-  CREATE TRIGGER IF NOT EXISTS tr_folder_tags_insert
-  AFTER INSERT ON folder_tags
-  BEGIN
-    UPDATE tags SET usageCount = usageCount + 1 WHERE id = NEW.tagId;
-  END;
-
-  CREATE TRIGGER IF NOT EXISTS tr_folder_tags_delete
-  AFTER DELETE ON folder_tags
-  BEGIN
-    UPDATE tags SET usageCount = MAX(usageCount - 1, 0) WHERE id = OLD.tagId;
-  END;
-''';
+    // -- FOLDERS
+    'CREATE INDEX idx_folders_parentId ON folders(parentId);',
+    'CREATE INDEX idx_folders_sync ON folders(updatedAt, syncAt);',
+    // -- LINKS
+    'CREATE INDEX idx_link_noteId ON link_previews(noteId);',
+  ];
+  static List<String> triggers = [
+    // -- TRIGGERS PARA NOTAS
+    '''
+    CREATE TRIGGER IF NOT EXISTS tr_note_tags_insert
+    AFTER INSERT ON note_tags
+    BEGIN
+      UPDATE tags SET usageCount = usageCount + 1 WHERE id = NEW.tagId;
+    END;
+    ''',
+    '''
+      CREATE TRIGGER IF NOT EXISTS tr_note_tags_delete
+      AFTER DELETE ON note_tags
+      BEGIN
+        UPDATE tags SET usageCount = MAX(usageCount - 1, 0) WHERE id = OLD.tagId;
+      END;
+    ''',
+    // -- TRIGGERS PARA CARPETAS
+    '''
+      CREATE TRIGGER IF NOT EXISTS tr_folder_tags_insert
+      AFTER INSERT ON folder_tags
+      BEGIN
+        UPDATE tags SET usageCount = usageCount + 1 WHERE id = NEW.tagId;
+      END;
+    ''',
+    '''
+      CREATE TRIGGER IF NOT EXISTS tr_folder_tags_delete
+      AFTER DELETE ON folder_tags
+      BEGIN
+        UPDATE tags SET usageCount = MAX(usageCount - 1, 0) WHERE id = OLD.tagId;
+      END;
+    ''',
+  ];
 
   Future<Database> get database async {
     if (_db != null) return _db!;
@@ -97,9 +92,12 @@ class AppDatabase {
         await db.execute(DeletedTables.deletedNotesTable);
 
         //triggers
-        await db.execute(triggers);
-
-        await db.execute(indexes);
+        for (var trigger in triggers) {
+          await db.execute(trigger);
+        }
+        for (var index in indexes) {
+          await db.execute(index);
+        }
       },
       onOpen: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');

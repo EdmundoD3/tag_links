@@ -31,9 +31,12 @@ class TagsRepository {
     String name, {
     required PaginatedByUsage paginated,
   }) => _tagsDao.getByName(name, paginated: paginated);
+
+  Future<Tag?> getByExactlyName(
+    String name) => _tagsDao.getByExactlyName(name);
 }
 
 final tagsRepositoryProvider = Provider<TagsRepository>((ref) {
   final db = ref.watch(databaseProvider);
-  return TagsRepository(db:db);
+  return TagsRepository(db: db);
 });

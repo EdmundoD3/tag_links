@@ -4,10 +4,15 @@ import 'package:tag_links/models/note.dart';
 import 'package:tag_links/pages/folder_page.dart';
 import 'package:tag_links/repository/folder_repository.dart';
 import 'package:tag_links/repository/notes_repository.dart';
+import 'package:tag_links/ui/utils/page_buil.dart';
 import 'package:tag_links/utils/paginated_utils.dart';
 
 class NoteHelpers {
-    static Future<void> goFolder(BuildContext context, WidgetRef ref,Note note) async {
+  static Future<void> goFolder(
+    BuildContext context,
+    WidgetRef ref,
+    Note note,
+  ) async {
     final repoFolder = ref.watch(folderRepositoryProvider);
     final repoNotes = ref.watch(notesRepositoryProvider);
 
@@ -20,16 +25,11 @@ class NoteHelpers {
     if (folder == null) return;
 
     if (!context.mounted) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => FolderPage(
+    goPage(context: context, page: FolderPage(
           folder: folder,
           highlightNoteId: note.id,
           paginated: paginated,
-        ),
-      ),
-    );
+        ));
     return;
   }
 }

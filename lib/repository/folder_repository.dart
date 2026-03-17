@@ -75,7 +75,7 @@ class FolderRepository {
   }
 
   Future<void> savePreference(String folderId, FolderDefaultView view) async {
-    await _preferencesDao.save(
+    await _preferencesDao.upsert(
       FolderPreference(folderId: folderId, defaultView: view),
     );
   }

@@ -8,6 +8,7 @@ import 'package:tag_links/state/pending_folder_provider.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
 import 'package:tag_links/ui/folder/folder_tile.dart';
 import 'package:tag_links/ui/utils/empty_indicator.dart';
+import 'package:tag_links/ui/utils/page_buil.dart';
 
 class BuildFoldersList extends ConsumerWidget {
   final FoldersNotifier notifier;
@@ -89,10 +90,6 @@ class BuildFoldersList extends ConsumerWidget {
   }
 
   Future<void> _goFolder(BuildContext context, Folder folder) async {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => FolderPage(folder: folder)),
-    );
-    return;
+    return goPage(context: context, page: FolderPage(folder: folder));
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tag_links/pages/settings_page.dart';
+import 'package:tag_links/ui/utils/page_buil.dart';
 
 class GoSettingsButton extends StatelessWidget {
   const GoSettingsButton({super.key});
@@ -9,12 +10,7 @@ class GoSettingsButton extends StatelessWidget {
     final theme = Theme.of(context);
 
     return IconButton(
-      onPressed: () => {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => SupportProjectPage()),
-        ),
-      },
+      onPressed: () => goPage(context: context, page: SupportProjectPage()),
       icon: Icon(Icons.settings, color:theme.iconTheme.color),
     );
   }

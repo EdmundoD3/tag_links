@@ -60,5 +60,16 @@ class TagsDao {
     );
     return result.map(Tag.fromMap).toList();
   }
+    Future<Tag?> getByExactlyName(
+    String name) async {
 
+    final result = await _db.query(
+      _tableName,
+      where: 'name LIKE ?',
+      whereArgs: [name],
+      limit: 1,
+    );
+    if(result.isEmpty) return null;
+    return Tag.fromMap(result[0]);
+  }
 }

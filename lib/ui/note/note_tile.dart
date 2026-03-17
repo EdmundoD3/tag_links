@@ -8,6 +8,7 @@ import 'package:tag_links/ui/link/link_preview_widget.dart';
 import 'package:tag_links/ui/menu/menu_container.dart';
 import 'package:tag_links/ui/form/note_form_page.dart';
 import 'package:tag_links/ui/text/decorated_text.dart';
+import 'package:tag_links/ui/utils/page_buil.dart';
 import 'package:tag_links/utils/color_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -115,12 +116,7 @@ class NoteTile extends ConsumerWidget {
   }
 
   void _editNote(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => NoteFormPage(note: note, folderId: note.folderId),
-      ),
-    );
+    goPage(context: context, page: NoteFormPage(note: note, folderId: note.folderId));
   }
 
   // helpers

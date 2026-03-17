@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/state/tags_provider.dart';
 import 'package:tag_links/ui/search/search_bar.dart';
+import 'package:tag_links/ui/tags/show_create_tag_modal.dart';
 import 'package:tag_links/ui/tags/tag_selected_container.dart';
 
 class TagsSelectorMenu extends ConsumerWidget {
@@ -37,8 +38,20 @@ class TagsSelectorMenu extends ConsumerWidget {
             onTagSelected(tag);
             ref.read(tagSearchTextProvider.notifier).state = '';
           },
+          addIconBtnCtrl: (tagName) async {
+            final newTag = await showCreateTagModal(
+              context: context,
+              ref: ref,
+              initText: tagName,
+            );
+            if (newTag != null) onTagSelected(newTag);
+          },
         ),
-        TagsSelectedContainer(tags: tags, onDeleted: onDeletedTag, onGetNewTag: (tag) => onTagSelected(tag)),
+        TagsSelectedContainer(
+          tags: tags,
+          onDeleted: onDeletedTag,
+          onGetNewTag: (tag) => onTagSelected(tag),
+        ),
       ],
     );
   }

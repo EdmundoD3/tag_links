@@ -141,40 +141,62 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
     }
   }
 
-  Future<void> _onSaveAndClose() async {
-    if (_isSaving || !_formKey.currentState!.validate()) return;
+Future<void> _onSaveAndClose() async {
+  // 1. Validar el formulario primero
+  if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isSaving = true);
+  // 2. CANCELAR EL DEBOUNCER INMEDIATAMENTE
+  // Esto evita que el auto-guardado se dispare mientras estamos intentando cerrar
+  _saveDebouncer.dispose();
 
-    try {
+  // 3. Si el autoSave ya estaba escribiendo en la DB, esperamos a que termine
+  while (_isSaving) {
+    await Future.delayed(const Duration(milliseconds: 50));
+  }
+
+  // 4. Bloqueamos para el guardado final
+  setState(() => _isSaving = true);
+
+  try {
+    // 5. Verificamos si realmente hay cambios comparando con el último hash guardado
+    // (Esto evita guardar dos veces lo mismo si el autoSave acaba de terminar)
+    final currentNote = _captureNote();
+    final currentHash = _noteHash(currentNote);
+
+    if (_lastSavedHash != currentHash) {
       await _onSave();
-      // Lógica de Anuncios
-      final adService = ref.read(adServiceProvider);
-      final tocaIntersticial = ref.read(showInterstitialAdsProvider);
-      if (tocaIntersticial) {
-        adService.showInterstitialAd(
-          onAdClosed: () {
-            ref.read(interstitialAdsProvider.notifier).registerAdShown();
-            if (mounted) Navigator.pop(context);
-          },
-        );
-        // Importante: No ponemos _isSaving = false aquí porque vamos a cerrar la pantalla.
-        return;
-      }
-
-      // Si NO toca anuncio, cerramos normalmente
-      if (mounted) Navigator.pop(context);
-    } catch (e) {
-      // Si algo falla (ej. error de red al guardar), reactivamos el botón
-      if (mounted) setState(() => _isSaving = false);
-      // Aquí podrías mostrar un SnackBar de error
     }
-  }
 
-  @override
-  Widget build(BuildContext context) {
-    return BodyForm(formKey: _formKey, appBar: _appBar(), children: _body());
+    // 6. Lógica de Anuncios
+    final adService = ref.read(adServiceProvider);
+    if (ref.read(showInterstitialAdsProvider)) {
+      adService.showInterstitialAd(
+        onAdClosed: () {
+          ref.read(interstitialAdsProvider.notifier).registerAdShown();
+          if (mounted) Navigator.pop(context);
+        },
+      );
+      return;
+    }
+
+    if (mounted) Navigator.pop(context);
+  } catch (e) {
+    debugPrint('Error en guardado final: $e');
+    if (mounted) setState(() => _isSaving = false);
   }
+}
+
+@override
+Widget build(BuildContext context) {
+  return PopScope(
+    canPop: false, // Bloqueamos el cierre automático
+    onPopInvokedWithResult: (didPop, result) async {
+      if (didPop) return;
+      await _onSaveAndClose(); // Forzamos el guardado antes de salir
+    },
+    child: BodyForm(formKey: _formKey, appBar: _appBar(), children: _body()),
+  );
+}
 
   PreferredSizeWidget _appBar() {
     return AppBarForm(

@@ -5,8 +5,12 @@ import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/state/tags_provider.dart';
 import 'package:uuid/uuid.dart';
 
-Future<Tag?> showCreateTagModal(BuildContext context, WidgetRef ref) {
-  final controller = TextEditingController();
+Future<Tag?> showCreateTagModal({
+  required BuildContext context,
+  required WidgetRef ref,
+  String? initText,
+}) {
+  final controller = TextEditingController(text: initText);
   final theme = Theme.of(context);
   return showModalBottomSheet<Tag>(
     context: context,
@@ -82,8 +86,13 @@ void _submit({
 }) async {
   final name = controller.text.trim();
   if (name.isEmpty) return;
+  final notifier = ref.read(tagsProvider.notifier);
+  final existTag = await notifier.getByExactlyName(name);
+  if (existTag != null) {
+    if (context.mounted) Navigator.pop(context, existTag);
+  }
   final Tag newTag = Tag(id: const Uuid().v4(), name: name);
-  await ref.read(tagsProvider.notifier).addTag(newTag);
+  await notifier.addTag(newTag);
   if (!context.mounted) return;
   Navigator.pop(context, newTag);
 }

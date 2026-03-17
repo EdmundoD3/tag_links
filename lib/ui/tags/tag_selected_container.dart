@@ -57,7 +57,7 @@ class TagsSelectedContainer extends ConsumerWidget {
       avatar: Icon(Icons.add, color: theme.textTheme.titleLarge?.color,),
       surfaceTintColor: Colors.transparent,
       onPressed: () async {
-        final newTag = await showCreateTagModal(context, ref);
+        final newTag = await showCreateTagModal(context: context, ref: ref);
         if (newTag != null) {
           
           onGetNewTag?.call(newTag);

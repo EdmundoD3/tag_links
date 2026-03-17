@@ -4,9 +4,10 @@ import 'package:tag_links/core/ads/small_banner.dart';
 class PageScaffold extends StatelessWidget {
   final PreferredSizeWidget appBar;
   final Widget? floatingActionButton;
+  final Widget? bottomButtonBar;
   final List<Widget> body;
 
-  const PageScaffold({super.key, required this.appBar, required this.floatingActionButton, required this.body});
+  const PageScaffold({super.key, required this.appBar, required this.floatingActionButton, required this.body, this.bottomButtonBar});
 
 @override
 Widget build(BuildContext context) {
@@ -24,9 +25,10 @@ Widget build(BuildContext context) {
 
   bottomNavigationBar: Column(
     mainAxisSize: MainAxisSize.min,
-    children: const [
-      SmartBannerAd(key: Key('global_banner')),
-      SizedBox(height: 8),
+    children: [
+      const SmartBannerAd(key: Key('global_banner')),
+      const SizedBox(height: 8),
+      bottomButtonBar?? const SizedBox.shrink(),
     ],
   ),
 );

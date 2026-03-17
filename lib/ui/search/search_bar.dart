@@ -9,7 +9,7 @@ class SearchListBar extends StatefulWidget {
   final void Function(String text) onChangeText;
   final void Function(Tag tag) onTagSelected;
   final Widget? iconLeftBtn;
-  final Widget? iconRightBtn;
+  final Function(String text)? addIconBtnCtrl;
   const SearchListBar({
     super.key,
     required this.queryText,
@@ -17,7 +17,7 @@ class SearchListBar extends StatefulWidget {
     required this.onChangeText,
     required this.onTagSelected,
     this.iconLeftBtn,
-    this.iconRightBtn,
+    this.addIconBtnCtrl,
   });
 
   @override
@@ -72,6 +72,7 @@ class _SearchListBarState extends State<SearchListBar> {
           controller: _controller,
           onChangeText: _onChangeText,
           iconLeftButton: widget.iconLeftBtn,
+          sufixRightIconBtnCtrl: widget.addIconBtnCtrl,
         ),
         const SizedBox(height: 8),
         if (queryText.isNotEmpty)
@@ -82,18 +83,21 @@ class _SearchListBarState extends State<SearchListBar> {
       ],
     );
   }
+
   //Style
 }
 
 class _SearchInput extends ConsumerWidget {
   final TextEditingController controller;
   final Widget? iconLeftButton;
+  final void Function(String text)? sufixRightIconBtnCtrl;
   final void Function(String value) onChangeText;
 
   const _SearchInput({
     required this.controller,
     required this.onChangeText,
     this.iconLeftButton,
+    required this.sufixRightIconBtnCtrl,
   });
 
   @override
@@ -116,15 +120,7 @@ class _SearchInput extends ConsumerWidget {
             hintText: t(ref, 'searchHintText', fallback: 'Buscar...'),
             hintStyle: TextStyle(color: theme.textTheme.labelSmall?.color),
             prefixIcon: Icon(Icons.search, color: theme.hintColor),
-            suffixIcon: value.text.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.clear),
-                    onPressed: () {
-                      controller.clear();
-                      onChangeText('');
-                    },
-                  )
-                : null,
+            suffixIcon: value.text.isNotEmpty ? _sufixIcon(theme, value) : null,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(30),
               borderSide: BorderSide.none,
@@ -134,6 +130,37 @@ class _SearchInput extends ConsumerWidget {
           style: TextStyle(color: theme.textTheme.bodyMedium?.color),
         );
       },
+    );
+  }
+
+  Widget _sufixIcon(ThemeData theme, TextEditingValue value) {
+    final iconColor = theme.hintColor;
+    return Row(
+      mainAxisSize:
+          MainAxisSize.min, // <--- CRUCIAL: Esto evita que el Row se expanda
+      children: [
+        IconButton(
+          visualDensity:
+              VisualDensity.compact, // Reduce el padding interno del botón
+          icon: Icon(Icons.clear, color: iconColor),
+          onPressed: () {
+            controller.clear();
+            onChangeText('');
+          },
+        ),
+        if (sufixRightIconBtnCtrl != null)
+          IconButton(
+            visualDensity:
+                VisualDensity.compact, // Reduce el padding interno del botón
+            icon: Icon(Icons.add, color: iconColor),
+            onPressed: () {
+              sufixRightIconBtnCtrl!(value.text);
+              controller.clear();
+              onChangeText('');
+            },
+          ),
+        const SizedBox(width: 8), // Un pequeño margen al final
+      ],
     );
   }
 }
@@ -176,7 +203,10 @@ class _TagsSuggestionList extends StatelessWidget {
       children: [
         for (final tag in tags)
           ListTile(
-            title: Text(tag.name, style: TextStyle(color: theme.textTheme.labelSmall?.color)),
+            title: Text(
+              tag.name,
+              style: TextStyle(color: theme.textTheme.labelSmall?.color),
+            ),
             onTap: () {
               onTagSelected(tag);
             },

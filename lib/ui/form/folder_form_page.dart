@@ -51,7 +51,14 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
   // ***** builder *******
   @override
   Widget build(BuildContext context) {
-    return BodyForm(formKey: _formKey, appBar: _appBar(), children: _body());
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        await _onSave(); // Ejecuta la lógica de espera y guardado
+      },
+      child: BodyForm(formKey: _formKey, appBar: _appBar(), children: _body()),
+    );
   }
 
   PreferredSizeWidget _appBar() {
@@ -167,14 +174,31 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
   }
 
   Future<void> _onSave() async {
-    if (_isSaving || !_formKey.currentState!.validate()) return;
+    // 1. Validar formulario primero
+    if (!_formKey.currentState!.validate()) return;
 
+    // 2. Detener el debouncer inmediatamente
+    _saveDebouncer.dispose();
+
+    // 3. Si el autosave está trabajando, esperamos a que termine
+    while (_isSaving) {
+      await Future.delayed(const Duration(milliseconds: 50));
+    }
+
+    // 4. Bloqueamos para el guardado final
     setState(() => _isSaving = true);
 
     try {
       final folder = _captureFolder();
-      await _saveFolder(folder);
+      final hash = _folderHash(folder);
 
+      // 5. Solo guardamos si el último autosave no lo hizo ya
+      if (_lastSavedHash != hash) {
+        await _saveFolder(folder);
+        _lastSavedHash = hash;
+      }
+
+      // 6. Lógica de Anuncios
       final adService = ref.read(adServiceProvider);
       final tocaIntersticial = ref.read(showInterstitialAdsProvider);
 
@@ -190,25 +214,34 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
 
       if (mounted) Navigator.pop(context);
     } catch (e) {
+      debugPrint('Error en guardado final de carpeta: $e');
       if (mounted) setState(() => _isSaving = false);
     }
   }
 
   Future<void> _autoSave() async {
+    // Si ya se está guardando (sea por otro autosave o por el cierre), rebotamos
     if (_isSaving) return;
-    if (_formKey.currentState == null) return;
-    if (!_formKey.currentState!.validate()) return;
+    if (_formKey.currentState == null || !_formKey.currentState!.validate())
+      return;
 
     final folder = _captureFolder();
     final hash = _folderHash(folder);
 
     if (_lastSavedHash == hash) return;
 
+    // Marcamos como ocupado
+    _isSaving = true;
+
     try {
       await _saveFolder(folder);
       _lastSavedHash = hash;
     } catch (e) {
       debugPrint('Error autosave folder: $e');
+    } finally {
+      // Liberamos el flag para que otros procesos (como el cierre) puedan entrar
+      _isSaving = false;
+      if (mounted) setState(() {});
     }
   }
 

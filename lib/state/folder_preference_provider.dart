@@ -27,10 +27,16 @@ class FolderPreferenceNotifier extends AsyncNotifier<FolderDefaultView> {
 
   Future<void> updatePreference(FolderDefaultView value) async {
     if (state.value == value) return;
+
+    // Actualizamos la UI inmediatamente (Optimistic)
     state = AsyncData(value);
 
     _debouncer.run(() async {
-      await _repo.savePreference(folderId, value);
+      // Usamos state.value para asegurarnos de guardar lo que la UI está mostrando actualmente
+      final valueToSave = state.value;
+      if (valueToSave != null) {
+        await _repo.savePreference(folderId, valueToSave);
+      }
     });
   }
 }

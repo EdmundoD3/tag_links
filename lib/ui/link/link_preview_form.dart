@@ -34,6 +34,7 @@ class _LinkPreviewFormState extends State<LinkPreviewForm> {
     super.initState();
     _preview = widget.initialLink;
     _urlCtrl = TextEditingController(text: _preview?.url ?? '');
+    if(_preview?.url != null) _fetchPreview(_preview!.url);
   }
 
   @override

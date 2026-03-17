@@ -13,7 +13,7 @@ Map<AppPalette, ThemeData> _palettes = {
 
 ThemeData getPalette({required AppPalette palette}) {
   final theme = _palettes[palette];
-  return theme ?? _palettes[AppPalette.light]!;
+  return theme ?? _palettes[AppPalette.dark]!;
 }
 
 class AppTheme {
@@ -169,6 +169,8 @@ ThemeData _generatePalette({
   return ThemeData(
     useMaterial3: true,
     scaffoldBackgroundColor: scaffoldBackgroundColor,
+    canvasColor:
+        scaffoldBackgroundColor, //Agrega esto para evitar el flash blanco
     highlightColor: Colors.transparent,
     // Configuración global del AppBar
     appBarTheme: AppBarTheme(
@@ -193,18 +195,28 @@ ThemeData _generatePalette({
       labelSmall: TextStyle(color: secondSubtitleColor),
     ),
 
-    // Configuración global de Cards
+    // ------------ Configuración global de Cards
     cardTheme: CardThemeData(color: lighBackground),
     cardColor: cardNoteColor,
 
-    //icon
+    // ------------ icon --------------------------
     iconTheme: IconThemeData(color: icon),
     badgeTheme: BadgeThemeData(textColor: badge),
     chipTheme: ChipThemeData(),
-    
-    //search bar
+
+    // ------------ search bar ------------------------
     inputDecorationTheme: InputDecorationThemeData(fillColor: searchInput),
     focusColor: searchInputBorder,
     hintColor: searchIcon,
+    // ------------ Switch folder - note  ------------------
+    bottomNavigationBarTheme: BottomNavigationBarThemeData(
+      backgroundColor: scaffoldBackgroundColor,
+
+      unselectedItemColor: badge,
+      unselectedIconTheme: IconThemeData(color: badge),
+
+      selectedItemColor: thirdTextColor,
+      selectedIconTheme: IconThemeData(color: thirdTextColor),
+    ),
   );
 }

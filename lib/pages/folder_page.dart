@@ -8,6 +8,7 @@ import 'package:tag_links/state/folder_preference_provider.dart';
 import 'package:tag_links/state/folders_provider.dart';
 import 'package:tag_links/state/notes_provider.dart';
 import 'package:tag_links/ui/app_bar/app_bar_folder.dart';
+import 'package:tag_links/ui/button/bottom_switch_folder_note.dart';
 import 'package:tag_links/ui/button/create_new_folder_button.dart';
 import 'package:tag_links/ui/button/floating_button_base.dart';
 import 'package:tag_links/ui/button/switch_folder_note.dart';
@@ -17,6 +18,7 @@ import 'package:tag_links/ui/note/banner_pending_note.dart';
 import 'package:tag_links/ui/note/build_notes_list.dart';
 import 'package:tag_links/ui/form/note_form_page.dart';
 import 'package:tag_links/ui/page_widgets/page_scaffold.dart';
+import 'package:tag_links/ui/utils/page_buil.dart';
 import 'package:tag_links/utils/paginated_utils.dart';
 
 class FolderPage extends ConsumerStatefulWidget {
@@ -44,10 +46,8 @@ class _FolderPageState extends ConsumerState<FolderPage> {
       notesProvider(widget.folder.id);
   AsyncNotifierProvider<FoldersNotifier, List<Folder>> get _folderProvider =>
       foldersProvider(widget.folder.id);
-  AsyncNotifierProvider<FolderPreferenceNotifier, FolderDefaultView> get _foldersPreferenceProvider =>
-      folderPreferenceProvider(widget.folder.id);
-
-
+  AsyncNotifierProvider<FolderPreferenceNotifier, FolderDefaultView>
+  get _foldersPreferenceProvider => folderPreferenceProvider(widget.folder.id);
 
   @override
   void dispose() {
@@ -89,6 +89,7 @@ class _FolderPageState extends ConsumerState<FolderPage> {
         return PageScaffold(
           appBar: _appBar(showFolders, preference),
           floatingActionButton: _floatingActionButton(showFolders),
+          bottomButtonBar: BottomButtonBar(defaultview: preference, onSelect: (newPreference) => _selectView(newPreference)),
           body: _body(showFolders: showFolders, notes: notes),
         );
       },
@@ -98,24 +99,22 @@ class _FolderPageState extends ConsumerState<FolderPage> {
   PreferredSizeWidget _appBar(bool showFolders, FolderDefaultView preference) {
     return AppBarPages(
       title: widget.folder.title,
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 8.0),
-          child: SwitchFolderNote(
-            isFolder: showFolders,
-            onTap: () => _toggleView(preference),
-            size: 26,
-          ),
-        ),
-        Padding(padding: EdgeInsetsGeometry.directional(end: 4)),
-      ],
     );
   }
 
-  List<Widget> _body({required bool showFolders, required AsyncValue<List<Note>> notes}) {
+  List<Widget> _body({
+    required bool showFolders,
+    required AsyncValue<List<Note>> notes,
+  }) {
     return [
-      BannerPendingNote(toFolderId: widget.folder.id,onToggleView:()=> _toNotesView(),),
-      BannerPendingFolder(toParentId: widget.folder.id, onToggleView:()=> _toFoldersView()),
+      BannerPendingNote(
+        toFolderId: widget.folder.id,
+        onToggleView: () => _selectView(FolderDefaultView.notes),
+      ),
+      BannerPendingFolder(
+        toParentId: widget.folder.id,
+        onToggleView: () => _selectView(FolderDefaultView.folders),
+      ),
       // if (showFolders) _foldersList(subFolders) else _buildNotes(notes),
       Expanded(child: showFolders ? _foldersList() : _buildNotes(notes)),
     ];
@@ -148,18 +147,10 @@ class _FolderPageState extends ConsumerState<FolderPage> {
   }
 
   /// 🔁 Cambiar vista y guardar preferencia
-  Future<void> _toggleView(FolderDefaultView current) async {
-    final newView = current == FolderDefaultView.folders
-        ? FolderDefaultView.notes
-        : FolderDefaultView.folders;
-    await ref.read(_foldersPreferenceProvider.notifier).updatePreference(newView);
-  }
-
-  Future<void> _toNotesView() async {
-    return await ref.read(_foldersPreferenceProvider.notifier).updatePreference(FolderDefaultView.notes);
-  }
-  Future<void> _toFoldersView() async {
-    return await ref.read(_foldersPreferenceProvider.notifier).updatePreference(FolderDefaultView.folders);
+  Future<void> _selectView(FolderDefaultView select) async {
+    return await ref
+        .read(_foldersPreferenceProvider.notifier)
+        .updatePreference(select);
   }
 
   /// 📂 Lista de carpetas
@@ -201,9 +192,9 @@ class _CreateNewNoteButton extends ConsumerWidget {
     return FloatingButtonBase(
       heroTag: t(ref, 'fabAddNote', fallback: 'Add note'),
       icon: Icons.note_add,
-      onPressed: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => NoteFormPage(folderId: folderId)),
+      onPressed: () => goPage(
+        context: context,
+        page: NoteFormPage(folderId: folderId),
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'package:tag_links/core/locate/app_lang.dart';
 import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/ui/form/folder_form_page.dart';
 import 'package:tag_links/ui/menu/menu_container.dart';
+import 'package:tag_links/ui/utils/page_buil.dart';
 
 class FolderTile extends ConsumerWidget {
   final List<ActionMenuItem> actionsItems;
@@ -64,10 +65,7 @@ class FolderTile extends ConsumerWidget {
   }
 
   Future<void> _editFolder(BuildContext context) {
-    return Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => FolderFormPage(folder: folder)),
-    );
+    return goPage(context: context, page: FolderFormPage(folder: folder));
   }
 }
 

@@ -168,7 +168,7 @@ Future<void> updateNote(Note note) async {
     final current = state.asData?.value;
     if (current == null) return;
 
-    state = AsyncValue.data(current.where((note) => note.id != noteForDelete).toList());
+    state = AsyncValue.data(current.where((note) => note.id != noteForDelete.id).toList());
 
     try {
       await _repo.delete(noteForDelete);

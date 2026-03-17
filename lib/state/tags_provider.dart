@@ -52,4 +52,7 @@ class TagsNotifier extends AsyncNotifier<List<Tag>> {
     await _repo.delete(id);
     ref.invalidateSelf();
   }
+  Future<Tag?> getByExactlyName(String name){
+    return _repo.getByExactlyName(name);
+  }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/debug/go_debug_page_buton.dart';
 import 'package:tag_links/core/locate/app_lang.dart';
+import 'package:tag_links/models/folder_preference.dart';
 import 'package:tag_links/models/note.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/state/is_folder_provider.dart';
@@ -13,6 +14,7 @@ import 'package:tag_links/state/tags_provider.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
 import 'package:tag_links/ui/app_bar/app_bar_folder.dart';
 import 'package:tag_links/ui/banners/banner_pending.dart';
+import 'package:tag_links/ui/button/bottom_switch_folder_note.dart';
 import 'package:tag_links/ui/button/create_new_folder_button.dart';
 import 'package:tag_links/ui/button/go_settings_button.dart';
 import 'package:tag_links/ui/button/switch_favorite.dart';
@@ -75,6 +77,17 @@ class _HomePageState extends ConsumerState<HomePage> {
         isRoot: true,
         parentFolderId: null,
       ),
+      bottomButtonBar: BottomButtonBar(
+        defaultview: isFolder
+            ? FolderDefaultView.folders
+            : FolderDefaultView.notes,
+        onSelect: (newPreference) {
+          final isFolder = newPreference == FolderDefaultView.folders;
+            ref.read(isFolderProvider.notifier).set(isFolder);
+            ref.invalidate(foldersProvider(null));
+            ref.invalidate(notesProvider(null));
+          },
+      ),
       body: _body(ref, isFolder, hasPendingNotes, foldersAsync, notesAsync),
     );
   }
@@ -85,16 +98,6 @@ class _HomePageState extends ConsumerState<HomePage> {
       actions: [
         if (kDebugMode) GoDebugPageButon(),
         GoSettingsButton(),
-        SwitchFolderNote(
-          isFolder: isFolder,
-          size: 26,
-          onTap: () {
-            ref.read(isFolderProvider.notifier).set(!isFolder);
-            ref.invalidate(foldersProvider(null));
-            ref.invalidate(notesProvider(null));
-          },
-        ),
-        Padding(padding: EdgeInsetsGeometry.directional(end: 4)),
       ],
     );
   }
@@ -109,7 +112,10 @@ class _HomePageState extends ConsumerState<HomePage> {
     return [
       if (hasPendingNotes) _bannerHasPendingNotes(context, ref),
       //si se almacena siempre sera folder
-      BannerPendingFolder(toParentId: null,onToggleView: () => ref.read(isFolderProvider.notifier).set(true),),
+      BannerPendingFolder(
+        toParentId: null,
+        onToggleView: () => ref.read(isFolderProvider.notifier).set(true),
+      ),
       const SizedBox(height: 16),
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -186,7 +192,6 @@ class _HomePageState extends ConsumerState<HomePage> {
         ref.read(searchQueryProvider.notifier).removeTag(tag);
       },
       isCreateTag: false,
-      
     );
   }
 
