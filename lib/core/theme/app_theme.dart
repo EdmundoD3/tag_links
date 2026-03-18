@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+const defaultTheme = AppPalette.lavender;
+
 enum AppPalette { dark, light, lavender, rosePastel, arcticBlue, lavenderNight }
 
 Map<AppPalette, ThemeData> _palettes = {
@@ -13,7 +15,7 @@ Map<AppPalette, ThemeData> _palettes = {
 
 ThemeData getPalette({required AppPalette palette}) {
   final theme = _palettes[palette];
-  return theme ?? _palettes[AppPalette.dark]!;
+  return theme ?? _palettes[defaultTheme]!;
 }
 
 class AppTheme {

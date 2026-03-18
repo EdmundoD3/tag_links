@@ -14,13 +14,21 @@ class BodyForm extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: appBar,
-      body: Form(
-        key: formKey,
-        child: ListView(padding: const EdgeInsets.fromLTRB(8,8,8,16), children: [...children, const SmartBannerAd()]),
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: appBar,
+    // 1. El cuerpo solo contiene el formulario y la lista
+    body: Form(
+      key: formKey,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(8, 8, 8, 16),
+        children: children, // Quitamos el SmartBannerAd de aquí
       ),
-    );
-  }
+    ),
+    // 2. Colocamos el anuncio aquí para que esté fijo al final
+    bottomNavigationBar: const SafeArea(
+      child: SmartBannerAd(),
+    ),
+  );
+}
 }

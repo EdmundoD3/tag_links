@@ -13,7 +13,7 @@ class PaletteNotifier extends Notifier<AppPalette> {
   @override
   AppPalette build() {
     _load();
-    return AppPalette.light; // fallback inmediato
+    return defaultTheme; // fallback inmediato
   }
 
   Future<void> _load() async {
@@ -42,7 +42,7 @@ class _PaletteStorage {
 
     return AppPalette.values.firstWhere(
       (e) => e.name == value,
-      orElse: () => AppPalette.light,
+      orElse: () => defaultTheme,
     );
   }
 }
