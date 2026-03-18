@@ -40,12 +40,15 @@ Future<Tag?> showCreateTagModal({
             TextField(
               controller: controller,
               autofocus: true,
-              style: TextStyle(color: theme.textTheme.labelSmall?.color),
+              style: TextStyle(color: theme.textTheme.bodyMedium?.color),
               cursorColor: theme.scaffoldBackgroundColor,
               decoration: InputDecoration(
+                filled: true,
+                fillColor: theme.inputDecorationTheme.fillColor?.withAlpha(60),
                 labelText: t(ref, 'tagName', fallback: 'Nombre del tag'),
+                alignLabelWithHint: true,
                 border: OutlineInputBorder(),
-                labelStyle: TextStyle(color: theme.textTheme.labelSmall?.color),
+                labelStyle: TextStyle(color: theme.textTheme.bodyMedium?.color),
                 enabledBorder: OutlineInputBorder(
                   borderSide: BorderSide(color: theme.hintColor, width: 1),
                 ),
@@ -65,7 +68,7 @@ Future<Tag?> showCreateTagModal({
                     _submit(context: context, controller: controller, ref: ref),
                 style: FilledButton.styleFrom(
                   backgroundColor:
-                      theme.inputDecorationTheme.fillColor, // Color de fondo
+                      theme.scaffoldBackgroundColor, // Color de fondo
                   foregroundColor:
                       theme.textTheme.titleLarge?.color, // Color del texto
                 ),

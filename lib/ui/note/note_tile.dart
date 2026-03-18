@@ -182,7 +182,8 @@ class _NoteTileCard extends StatelessWidget {
                 const SizedBox(height: 10),
                 DecoratedText(text: note.content),
                 // Fecha
-                const SizedBox(height: 6),
+                const SizedBox(height: 20),
+                // _lineColorDecorator(note.color),
                 _footer(theme: theme),
               ],
             ),
@@ -283,8 +284,9 @@ class _NoteTileCard extends StatelessWidget {
     String resultado = tags.map((tag) => tag.name).join(', ');
 
     return Text(
-      resultado,
-      style: theme.textTheme.labelSmall?.copyWith(color: theme.hintColor),
+      '#$resultado',
+      // resultado,
+      style: theme.textTheme.labelMedium,
       textAlign: TextAlign.left,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
