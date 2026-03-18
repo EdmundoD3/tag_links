@@ -54,7 +54,8 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
   bool _hasMore = true;
   bool _isLoadingMore = false;
   NotesRepository get _repo => ref.watch(notesRepositoryProvider);
-  LinkPreviewRepository get _repoLinkPreview => ref.watch(linkPreviewRepositoryProvider);
+  LinkPreviewRepository get _repoLinkPreview =>
+      ref.watch(linkPreviewRepositoryProvider);
 
   @override
   Future<List<Note>> build() async {
@@ -101,7 +102,7 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
   bool get hasMore => _hasMore;
   bool get isLoadingMore => _isLoadingMore;
 
-Future<void> loadMore() async {
+  Future<void> loadMore() async {
     if (!_hasMore || _isLoadingMore) return;
 
     _isLoadingMore = true;
@@ -141,34 +142,37 @@ Future<void> loadMore() async {
     state = AsyncValue.data(updated);
   }
 
-Future<void> updateNote(Note note) async {
-    await _repo.update(note);
+  Future<void> upsert(Note note) async {
+    await _repo.upsert(note);
     unawaited(ref.read(syncNotifierProvider.notifier).performSync());
-    
+
     // Actualización optimista: No invalides, solo actualiza el item en la lista
     state.whenData((notes) {
       state = AsyncData(notes.map((n) => n.id == note.id ? note : n).toList());
     });
   }
+
   void updateNoteState(Note note) {
-  state.whenData((currentNotes) {
-    // Si la nota ya existe la actualizamos, si no la insertamos al inicio
-    final index = currentNotes.indexWhere((n) => n.id == note.id);
-    if (index != -1) {
-      final newList = [...currentNotes];
-      newList[index] = note;
-      state = AsyncData(newList);
-    } else {
-      state = AsyncData([note, ...currentNotes]);
-    }
-  });
-}
+    state.whenData((currentNotes) {
+      // Si la nota ya existe la actualizamos, si no la insertamos al inicio
+      final index = currentNotes.indexWhere((n) => n.id == note.id);
+      if (index != -1) {
+        final newList = [...currentNotes];
+        newList[index] = note;
+        state = AsyncData(newList);
+      } else {
+        state = AsyncData([note, ...currentNotes]);
+      }
+    });
+  }
 
   Future<void> deleteNote(Note noteForDelete) async {
     final current = state.asData?.value;
     if (current == null) return;
 
-    state = AsyncValue.data(current.where((note) => note.id != noteForDelete.id).toList());
+    state = AsyncValue.data(
+      current.where((note) => note.id != noteForDelete.id).toList(),
+    );
 
     try {
       await _repo.delete(noteForDelete);
@@ -180,9 +184,9 @@ Future<void> updateNote(Note note) async {
     }
   }
 
-Future<void> _enrichLinks(List<LinkPreview> links) async {
+  Future<void> _enrichLinks(List<LinkPreview> links) async {
     final service = LinkPreviewService();
-    
+
     bool updatedAny = false;
 
     for (final link in links) {
@@ -193,13 +197,13 @@ Future<void> _enrichLinks(List<LinkPreview> links) async {
       }
     }
 
-    // 🚩 CAMBIO CLAVE: En lugar de invalidateSelf (que crea bucles), 
+    // 🚩 CAMBIO CLAVE: En lugar de invalidateSelf (que crea bucles),
     // podrías usar un evento de bus o simplemente dejar que la UI
     // se actualice la próxima vez que el usuario navegue.
     // Si necesitas que sea real-time, actualiza el estado local de la nota.
     if (updatedAny) {
       // Opcional: Solo refrescar si es vital, pero con cuidado del bucle.
-      // ref.invalidateSelf(); 
+      // ref.invalidateSelf();
     }
   }
 }
