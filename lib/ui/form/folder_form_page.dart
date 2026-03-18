@@ -87,12 +87,27 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
     super.dispose();
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false,
+      canPop: false, // Bloqueamos el cierre automático para evaluar
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
+
+        final folder = _captureFolder();
+
+        // Si NO es válida (ej. título vacío) -> preguntar si desea descartar
+        if (!_isFolderValid(folder)) {
+          final discard = await ConfirmDialog.discardForm(context, ref);
+
+          if (discard == true && context.mounted) {
+            // Si confirma descartar, cerramos sin guardar
+            Navigator.pop(context);
+          }
+          return;
+        }
+
+        // Si es válida -> Proceder con el guardado normal y cerrar
         await _onSave();
       },
       child: BodyForm(formKey: _formKey, appBar: _appBar(), children: _body()),
@@ -236,5 +251,9 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
 
     if (!mounted) return;
     Navigator.pop(context);
+  }
+  // ------- validates ----------
+  bool _isFolderValid(Folder folder) {
+    return folder.title.trim().isNotEmpty;
   }
 }
