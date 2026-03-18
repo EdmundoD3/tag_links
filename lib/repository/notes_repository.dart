@@ -48,6 +48,9 @@ class NotesRepository {
     final noteToUpdate = note.ensureForInsert();
     return _dao.update(noteToUpdate);
   }
+  Future<void> upsert(Note note) {
+    return _dao.upsert(note);
+  }
 
   Future<void> upsertAll(List<Note> notes) {
     return _dao.upsertAll(notes);

@@ -11,6 +11,7 @@ import 'package:tag_links/state/pending_note_provider.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
 import 'package:tag_links/ui/form/app_bar_form.dart';
 import 'package:tag_links/ui/form/body_form.dart';
+import 'package:tag_links/ui/form/form_auto_save_controller.dart';
 import 'package:tag_links/ui/form/move_to_folder_button.dart';
 import 'package:tag_links/ui/link/link_preview_form.dart';
 import 'package:tag_links/ui/tags/tags_selector_menu.dart';
@@ -41,15 +42,10 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
 
   late TextEditingController _titleCtrl;
   late TextEditingController _contentCtrl;
-  late final Debouncer _saveDebouncer;
-  bool _isSaving = false;
+  late final FormAutoSaveController<Note> _autoSave;
+  late final Debouncer _debouncer;
+
   List<Tag> _tags = [];
-
-  String? _lastSavedHash;
-
-  String _noteHash(Note n) {
-    return '${n.title}|${n.content}|${n.link?.url}|${n.tags.map((t) => t.id).join(",")}|${n.isFavorite}|${n.folderId}';
-  }
 
   bool _isFavorite = false;
   LinkPreview? _linkPreview;
@@ -64,13 +60,33 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
     _isFavorite = widget.note?.isFavorite ?? false;
     _linkPreview = widget.note?.link;
     _id = widget.note?.id ?? const Uuid().v4();
-    _saveDebouncer = Debouncer(milliseconds: 800);
+
+    _debouncer = Debouncer(milliseconds: 500);
+    _autoSave = FormAutoSaveController<Note>(
+      hash: (n) =>
+          '${n.title}|${n.content}|${n.link?.url}|${n.tags.map((t) => t.id).join(",")}|${n.isFavorite}|${n.folderId}',
+      onSave: (note) async {
+        final provider = notesProvider(note.folderId);
+
+        if (widget.isPending) {
+          await ref
+              .read(noteMoveProvider)
+              .move(note: note, toFolderId: note.folderId);
+        } else {
+          if (widget.isEdit) {
+            await ref.read(provider.notifier).upsert(note);
+          } else {
+            await ref.read(provider.notifier).addNote(note);
+          }
+        }
+      },
+    );
   }
 
   @override
   void dispose() {
     //** último guardado, antes de limpiar todo, siempre al principio
-    _saveDebouncer.dispose();
+    _debouncer.dispose();
     //**
     _titleCtrl.dispose();
     _contentCtrl.dispose();
@@ -97,78 +113,23 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
     return note;
   }
 
-  Future<void> _onSave() async {
-    final note = _captureNote();
-
-    final hash = _noteHash(note);
-    if (_lastSavedHash == hash) return;
-
-    // Lógica de guardado
-    if (widget.isPending) {
-      await ref
-          .read(noteMoveProvider)
-          .move(note: note, toFolderId: widget.folderId);
-    } else {
-      final provider = notesProvider(widget.folderId);
-
-      if (widget.isEdit) {
-        await ref.read(provider.notifier).updateNote(note);
-      } else {
-        await ref.read(provider.notifier).addNote(note);
-      }
-    }
-
-    _lastSavedHash = hash;
+  void _onUserChange() {
+    _debouncer.run(() {
+      final note = _captureNote();
+      _autoSave.schedule(note);
+    });
   }
 
-  Future<void> _autoSave() async {
-    if (_isSaving) return;
-    if (_formKey.currentState == null) return;
+  Future<void> _onSaveAndClose() async {
     if (!_formKey.currentState!.validate()) return;
 
-    _isSaving = true;
+    final note = _captureNote();
 
-    try {
-      await _onSave();
-    } catch (e) {
-      debugPrint('Error al guardar: $e');
-    } finally {
-      if (mounted) {
-        setState(() => _isSaving = false);
-      } else {
-        _isSaving = false;
-      }
-    }
-  }
+    // 🔥 guarda lo último sí o sí
+    await _autoSave.flush(note);
 
-Future<void> _onSaveAndClose() async {
-  // 1. Validar el formulario primero
-  if (!_formKey.currentState!.validate()) return;
-
-  // 2. CANCELAR EL DEBOUNCER INMEDIATAMENTE
-  // Esto evita que el auto-guardado se dispare mientras estamos intentando cerrar
-  _saveDebouncer.dispose();
-
-  // 3. Si el autoSave ya estaba escribiendo en la DB, esperamos a que termine
-  while (_isSaving) {
-    await Future.delayed(const Duration(milliseconds: 50));
-  }
-
-  // 4. Bloqueamos para el guardado final
-  setState(() => _isSaving = true);
-
-  try {
-    // 5. Verificamos si realmente hay cambios comparando con el último hash guardado
-    // (Esto evita guardar dos veces lo mismo si el autoSave acaba de terminar)
-    final currentNote = _captureNote();
-    final currentHash = _noteHash(currentNote);
-
-    if (_lastSavedHash != currentHash) {
-      await _onSave();
-    }
-
-    // 6. Lógica de Anuncios
     final adService = ref.read(adServiceProvider);
+
     if (ref.read(showInterstitialAdsProvider)) {
       adService.showInterstitialAd(
         onAdClosed: () {
@@ -179,32 +140,30 @@ Future<void> _onSaveAndClose() async {
       return;
     }
 
-    if (mounted) Navigator.pop(context);
-  } catch (e) {
-    debugPrint('Error en guardado final: $e');
-    if (mounted) setState(() => _isSaving = false);
+    if (!mounted) return;
+    Navigator.pop(context);
   }
-}
 
-@override
-Widget build(BuildContext context) {
-  return PopScope(
-    canPop: false, // Bloqueamos el cierre automático
-    onPopInvokedWithResult: (didPop, result) async {
-      if (didPop) return;
-      await _onSaveAndClose(); // Forzamos el guardado antes de salir
-    },
-    child: BodyForm(formKey: _formKey, appBar: _appBar(), children: _body()),
-  );
-}
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false, // Bloqueamos el cierre automático
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        await _onSaveAndClose(); // Forzamos el guardado antes de salir
+      },
+      child: BodyForm(formKey: _formKey, appBar: _appBar(), children: _body()),
+    );
+  }
 
   PreferredSizeWidget _appBar() {
     return AppBarForm(
-      title: widget.isEdit ? _titleCtrl.text : t(ref, 'newNote', fallback: 'Nota nueva'),
+      title: t(ref, 'newNote', fallback: 'Nota nueva'),
+      titleListenable: _titleCtrl,
       isFavorite: _isFavorite,
       onFavoriteToogle: _isFavoriteToogle,
       onSave: _onSaveAndClose,
-      isSaving: _isSaving,
+      isSaving: _autoSave.isSaving,
     );
   }
 
@@ -218,7 +177,7 @@ Widget build(BuildContext context) {
           'titleRequired',
           fallback: 'El título es obligatorio',
         ),
-        onChange: () => _saveDebouncer.run(_autoSave),
+        onChange: () => _onUserChange(),
       ),
       const SizedBox(height: 16),
       LinkPreviewForm(
@@ -230,7 +189,7 @@ Widget build(BuildContext context) {
       _ContentController(
         contentCtrl: _contentCtrl,
         label: t(ref, 'content', fallback: 'Contenido'),
-        onChange: () => _saveDebouncer.run(_autoSave),
+        onChange: () => _onUserChange(),
       ),
       const SizedBox(height: 16),
       TagsSelectorMenu(
@@ -251,7 +210,7 @@ Widget build(BuildContext context) {
     setState(() {
       _linkPreview = linkPreview;
     });
-    _saveDebouncer.run(_autoSave);
+    _onUserChange();
   }
 
   // controllers
@@ -261,14 +220,14 @@ Widget build(BuildContext context) {
     setState(() {
       _tags = [..._tags, tag];
     });
-    _saveDebouncer.run(_autoSave);
+    _onUserChange();
   }
 
   void _onDeletedTag(Tag tag) {
     setState(() {
       _tags = _tags.where((t) => t.id != tag.id).toList();
     });
-    _saveDebouncer.run(_autoSave);
+    _onUserChange();
   }
 
   Future<void> _onChangeFolder() async {
@@ -287,7 +246,7 @@ Widget build(BuildContext context) {
     setState(() {
       _isFavorite = !_isFavorite;
     });
-    _saveDebouncer.run(_autoSave);
+    _onUserChange();
   }
 }
 
@@ -309,7 +268,7 @@ class _ContentController extends StatelessWidget {
       controller: contentCtrl,
       maxLength: NoteConfig.contentMaxLength,
       maxLines: null, // Permite que crezca infinitamente según el texto
-      minLines: 10,   // Altura inicial (puedes ajustarlo a tu gusto)
+      minLines: 10, // Altura inicial (puedes ajustarlo a tu gusto)
       keyboardType: TextInputType.multiline,
       onChanged: (_) => onChange(),
       decoration: InputDecoration(

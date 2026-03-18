@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class AppBarForm extends StatelessWidget implements PreferredSizeWidget {
@@ -7,6 +8,8 @@ class AppBarForm extends StatelessWidget implements PreferredSizeWidget {
   final void Function() onSave;
   final List<Widget>? actions;
   final bool isSaving;
+  final ValueListenable<TextEditingValue>? titleListenable;
+
 
   const AppBarForm({
     super.key,
@@ -15,14 +18,27 @@ class AppBarForm extends StatelessWidget implements PreferredSizeWidget {
     required this.onSave,
     required this.isFavorite,
     required this.onFavoriteToogle,
-    required this.isSaving,
+    required this.isSaving, this.titleListenable,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    Widget titleWidget;
+
+    if (titleListenable != null) {
+      titleWidget = ValueListenableBuilder<TextEditingValue>(
+        valueListenable: titleListenable!,
+        builder: (_, value, __) {
+          return Text(value.text);
+        },
+      );
+    } else {
+      titleWidget = Text(title);
+    }
     return AppBar(
-      title: Text(title),
+      title: titleWidget,
       actions: [
         isFavorite
             ? IconButton(

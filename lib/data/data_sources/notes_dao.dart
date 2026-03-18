@@ -57,6 +57,9 @@ class NotesDao {
   Future<void> delete(String noteId) async {
     await _fetch.delete(noteId);
   }
+  Future<void> upsert(Note note)async {
+    await _fetch.upsert(note);
+  }
 
   Future<void> upsertAll(List<Note> notes) async {
     await _fetch.upsertAll(notes);
@@ -568,6 +571,50 @@ class FetchersNotesDao {
     });
   }
 
+  Future<void> upsert(Note note) async {
+    await _db.transaction((txn) async {
+      // 1. Upsert de la nota principal
+      await txn.rawInsert(
+        '''
+      INSERT INTO notes (id, folderId, title, content, color, createdAt, updatedAt, syncAt, isFavorite)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        folderId = excluded.folderId,
+        title = excluded.title,
+        content = excluded.content,
+        color = excluded.color,
+        updatedAt = excluded.updatedAt,
+        isFavorite = excluded.isFavorite
+      WHERE excluded.updatedAt > updatedAt
+      ''',
+        [
+          note.id,
+          note.folderId,
+          note.title,
+          note.content,
+          note.color,
+          note.createdAt.millisecondsSinceEpoch,
+          note.updatedAt.millisecondsSinceEpoch,
+          note.syncAt?.millisecondsSinceEpoch,
+          note.isFavorite ? 1 : 0,
+        ],
+      );
+
+      // 2. Actualizar Tags (Borrar y Re-insertar es lo más limpio)
+      await txn.delete('note_tags', where: 'noteId = ?', whereArgs: [note.id]);
+      for (final tag in note.tags) {
+        await txn.insert('note_tags', {'noteId': note.id, 'tagId': tag.id});
+      }
+
+      // 3. Actualizar Link Preview
+      if (note.link != null) {
+        await _linkDao.replace(txn: txn, noteId: note.id, link: note.link!);
+      } else {
+        await _linkDao.delete(txn, note.id);
+      }
+    });
+  }
+
   Future<void> upsertAll(List<Note> notes) async {
     if (notes.isEmpty) return;
 
@@ -578,27 +625,17 @@ class FetchersNotesDao {
         // 1. Upsert de la Nota
         batch.rawInsert(
           '''
-            INSERT INTO notes (
-              id,
-              folderId,
-              title,
-              content,
-              color,
-              createdAt,
-              updatedAt,
-              syncAt,
-              isFavorite
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(id) DO UPDATE SET
-              folderId = excluded.folderId,
-              title = excluded.title,
-              content = excluded.content,
-              color = excluded.color,
-              updatedAt = excluded.updatedAt,
-              isFavorite = excluded.isFavorite
-            WHERE excluded.updatedAt > notes.updatedAt
-            ''',
+        INSERT INTO notes (id, folderId, title, content, color, createdAt, updatedAt, syncAt, isFavorite)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+          folderId = excluded.folderId,
+          title = excluded.title,
+          content = excluded.content,
+          color = excluded.color,
+          updatedAt = excluded.updatedAt,
+          isFavorite = excluded.isFavorite
+        WHERE excluded.updatedAt > updatedAt 
+        ''',
           [
             note.id,
             note.folderId,
