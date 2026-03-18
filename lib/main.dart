@@ -9,10 +9,10 @@ import 'package:tag_links/core/ads/ads_service_provider.dart';
 import 'package:tag_links/core/app_purchases/premium_provider.dart';
 import 'package:tag_links/core/theme/theme_provider.dart';
 import 'package:tag_links/data/database.dart';
+import 'package:tag_links/pages/folder_page.dart';
 import 'package:tag_links/state/url_provider.dart';
 import 'package:tag_links/core/theme/app_theme.dart';
 import 'package:tag_links/utils/handle_media_in_coming_url.dart';
-import 'pages/home_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -107,7 +107,9 @@ class _MyAppState extends ConsumerState<MyApp> {
 
     return MaterialApp(
       theme: getPalette(palette: palette),
-      home: const HomePage(),
+      home: const FolderPage(
+        folder: null,
+      ),
     );
   }
 }

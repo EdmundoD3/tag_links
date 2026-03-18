@@ -40,3 +40,9 @@ class SearchQuery {
   List<String> get includeTagsIds => includeTags.map((t) => t.id).toList();
   List<String> get excludeTagsIds => excludeTags.map((t) => t.id).toList();
 }
+
+enum FolderFilter {
+  all,     // todas las notas
+  root,    // solo sin folder
+  specific // una carpeta específica
+}

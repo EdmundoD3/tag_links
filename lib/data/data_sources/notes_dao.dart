@@ -18,12 +18,14 @@ class NotesDao {
     SearchQuery query, {
     required PaginatedByDate paginated,
     String? folderId,
+    required FolderFilter folderFilter,
   }) async {
     try {
       final rows = await _fetch.searchByQuery(
         query,
         folderId: folderId,
         paginated: paginated,
+        folderFilter: folderFilter,
       );
       return _hydrate(rows);
     } catch (e) {
@@ -57,7 +59,8 @@ class NotesDao {
   Future<void> delete(String noteId) async {
     await _fetch.delete(noteId);
   }
-  Future<void> upsert(Note note)async {
+
+  Future<void> upsert(Note note) async {
     await _fetch.upsert(note);
   }
 
@@ -76,9 +79,10 @@ class NotesDao {
   }
 
   Future<List<Note>> getByFolder(
-    String folderId, {
+    String? folderId, {
     required PaginatedByDate pagination,
   }) async {
+
     final rows = await _fetch.byFolder(folderId, pagination);
     return _hydrate(rows);
   }
@@ -110,27 +114,6 @@ class NotesDao {
     return _fetch.getPageForNoteId(note, paginated: paginated);
   }
 
-  Future<int> countByFolder(String folderId) async {
-    return _fetch.countByFolder(folderId);
-  }
-
-  Future<int> countByTags(String folderId, List<String> tagIds) async {
-    return _fetch.countByTags(folderId, tagIds);
-  }
-
-  Future<List<Note>> search(
-    String folderId,
-    String query, {
-    required PaginatedByDate pagination,
-  }) async {
-    final rows = await _fetch.search(folderId, query, pagination);
-    return _hydrate(rows);
-  }
-
-  Future<int> countSearch(String folderId, String query) async {
-    return _fetch.countSearch(folderId, query);
-  }
-
   // ******* SYNC section *******
   Future<List<Note>> getForSync({int limit = 200}) async {
     final rows = await _fetch.getForSync(limit: limit);
@@ -138,8 +121,9 @@ class NotesDao {
   }
 
   Future<bool> updateNotesSyncAt(List<String> ids, int syncAt) async {
-    if (ids.isEmpty)
+    if (ids.isEmpty) {
       return true; //si no habia nada entonces fue un exito actualizar 0 datos
+    }
     final success = await _fetch.updateNotesSyncAt(ids, syncAt);
     return success >= ids.length;
   }
@@ -213,11 +197,12 @@ class FetchersNotesDao {
     SearchQuery searchQuery, {
     required PaginatedByDate paginated,
     String? folderId,
+    required FolderFilter folderFilter,
   }) async {
     final ids = await _fetchNoteIds(
       searchQuery,
-      folderId: folderId,
       paginated: paginated,
+      folderFilter: folderFilter,
     );
     if (ids.isEmpty) return [];
 
@@ -252,49 +237,81 @@ class FetchersNotesDao {
     return result.map(NoteJoinRow.fromMap).toList();
   }
 
-  Future<List<NoteJoinRow>> byFolder(String folderId, PaginatedByDate p) async {
-    final rows = await _db.rawQuery(
-      '''
-      ${NoteJoinRow.selectQuery}
-      WHERE n.id IN (
-        SELECT id
-        FROM notes
-        WHERE folderId = ?
-        ORDER BY ${p.orderSql}
-        LIMIT ? OFFSET ?
-      )
+  Future<List<NoteJoinRow>> byFolder(
+    String? folderId,
+    PaginatedByDate p,
+  ) async {
+    String where = '';
+    final args = <Object?>[];
+
+    if (folderId != null) {
+      where = 'WHERE n2.folderId = ?';
+      args.add(folderId);
+    } else {
+      where = 'WHERE n2.folderId IS NULL';
+    }
+
+    args.addAll([p.limit, p.offset]);
+
+    final rows = await _db.rawQuery('''
+    ${NoteJoinRow.selectQuery}
+    WHERE n.id IN (
+      SELECT n2.id
+      FROM notes n2
+      $where
       ORDER BY ${p.orderSql}
-      ''',
-      [folderId, p.limit, p.offset],
-    );
+      LIMIT ? OFFSET ?
+    )
+    ORDER BY ${p.orderSql}
+  ''', args);
+
     return rows.map(NoteJoinRow.fromMap).toList();
   }
 
   Future<List<NoteJoinRow>> byTags(
-    String folderId,
+    String? folderId,
     List<String> tagIds,
     PaginatedByDate p,
   ) async {
     final placeholders = List.filled(tagIds.length, '?').join(',');
 
-    final rows = await _db.rawQuery(
-      '''
-      ${NoteJoinRow.selectQuery}
-      WHERE n.id IN (
-        SELECT n2.id
-        FROM notes n2
-        INNER JOIN note_tags nt2 ON nt2.noteId = n2.id
-        WHERE n2.folderId = ?
-          AND nt2.tagId IN ($placeholders)
-        GROUP BY n2.id
-        HAVING COUNT(DISTINCT nt2.tagId) = ?
-        ORDER BY ${p.orderSql}
-        LIMIT ? OFFSET ?
-      )
+    final whereFolder = folderId != null
+        ? 'n2.folderId = ?'
+        : 'n2.folderId IS NULL';
+
+    final List<Object> args;
+    if(folderId != null) {
+      args = [
+       folderId,
+      ...tagIds,
+      tagIds.length,
+      p.limit,
+      p.offset,
+    ];
+    } else {
+      args = [
+      ...tagIds,
+      tagIds.length,
+      p.limit,
+      p.offset,
+    ];
+    }
+
+    final rows = await _db.rawQuery('''
+    ${NoteJoinRow.selectQuery}
+    WHERE n.id IN (
+      SELECT n2.id
+      FROM notes n2
+      INNER JOIN note_tags nt2 ON nt2.noteId = n2.id
+      WHERE $whereFolder
+        AND nt2.tagId IN ($placeholders)
+      GROUP BY n2.id
+      HAVING COUNT(DISTINCT nt2.tagId) = ?
       ORDER BY ${p.orderSql}
-      ''',
-      [folderId, ...tagIds, tagIds.length, p.limit, p.offset],
-    );
+      LIMIT ? OFFSET ?
+    )
+    ORDER BY ${p.orderSql}
+    ''', args);
 
     return rows.map(NoteJoinRow.fromMap).toList();
   }
@@ -325,16 +342,22 @@ class FetchersNotesDao {
     final field = _buildOrderField(paginated);
     final whereClause = paginated.order == OrderDate.updatedDesc ? '>' : '<';
 
+    final whereFolder = note.folderId != null
+        ? 'folderId = ?'
+        : 'folderId IS NULL';
+
+    final args = [if (note.folderId != null) note.folderId, note.id];
+
     final query =
         '''
-  SELECT COUNT(*) as count
-  FROM notes
-  WHERE folderId = ?
-    AND $field $whereClause (
-      SELECT $field FROM notes WHERE id = ?
-    );
-''';
-    final args = [note.folderId, note.id];
+    SELECT COUNT(*) as count
+    FROM notes
+    WHERE $whereFolder
+      AND $field $whereClause (
+        SELECT $field FROM notes WHERE id = ?
+      );
+  ''';
+
     final result = await _db.rawQuery(query, args);
 
     final rawCount = result.first['count'];
@@ -352,26 +375,43 @@ class FetchersNotesDao {
   Future<List<String>> _fetchNoteIds(
     SearchQuery searchQuery, {
     required PaginatedByDate paginated,
+    required FolderFilter folderFilter,
     String? folderId,
   }) async {
     final where = <String>[];
     final args = <Object?>[];
 
+    // 🔎 Texto
     if (searchQuery.text.isNotEmpty) {
       where.add('(n.title LIKE ? OR n.content LIKE ?)');
       args.add('%${searchQuery.text}%');
       args.add('%${searchQuery.text}%');
     }
 
-    if (folderId != null && folderId.isNotEmpty) {
-      where.add('n.folderId = ?');
-      args.add(folderId);
-    }
-
+    // ⭐ Favoritos
     if (searchQuery.isFavorite == true) {
-      where.add('isFavorite = 1');
+      where.add('n.isFavorite = 1');
     }
 
+    // 📂 Folder filter (🔥 aquí está lo importante)
+    switch (folderFilter) {
+      case FolderFilter.all:
+        break;
+
+      case FolderFilter.root:
+        where.add('n.folderId IS NULL');
+        break;
+
+      case FolderFilter.specific:
+        if (folderId == null) {
+          throw ArgumentError('folderId is required for FolderFilter.specific');
+        }
+        where.add('n.folderId = ?');
+        args.add(folderId);
+        break;
+    }
+
+    // 🏷 Include tags
     if (searchQuery.hasIncludeTags) {
       final placeholders = List.filled(
         searchQuery.includeTagsIds.length,
@@ -391,6 +431,7 @@ class FetchersNotesDao {
       args.addAll(searchQuery.includeTagsIds);
     }
 
+    // 🚫 Exclude tags
     if (searchQuery.hasExcludeTags) {
       final placeholders = List.filled(
         searchQuery.excludeTagsIds.length,
@@ -438,82 +479,6 @@ class FetchersNotesDao {
     return rows.map(NoteJoinRow.fromMap).toList();
   }
 
-  Future<int> countByFolder(String folderId) async {
-    final result = await _db.rawQuery(
-      '''
-    SELECT COUNT(*) as total
-    FROM notes
-    WHERE folderId = ?
-    ''',
-      [folderId],
-    );
-
-    return Sqflite.firstIntValue(result) ?? 0;
-  }
-
-  Future<int> countByTags(String folderId, List<String> tagIds) async {
-    final placeholders = List.filled(tagIds.length, '?').join(',');
-
-    final result = await _db.rawQuery(
-      '''
-    SELECT COUNT(*) as total
-    FROM (
-      SELECT n.id
-      FROM notes n
-      INNER JOIN note_tags nt ON nt.noteId = n.id
-      WHERE n.folderId = ?
-        AND nt.tagId IN ($placeholders)
-      GROUP BY n.id
-      HAVING COUNT(DISTINCT nt.tagId) = ?
-    )
-    ''',
-      [folderId, ...tagIds, tagIds.length],
-    );
-
-    return Sqflite.firstIntValue(result) ?? 0;
-  }
-
-  Future<List<NoteJoinRow>> search(
-    String folderId,
-    String query,
-    PaginatedByDate p,
-  ) async {
-    final q = '%$query%';
-
-    final rows = await _db.rawQuery(
-      '''
-    ${NoteJoinRow.selectQuery}
-    WHERE n.id IN (
-      SELECT id
-      FROM notes
-      WHERE folderId = ?
-        AND (title LIKE ? OR content LIKE ?)
-      ORDER BY ${p.orderSql}
-      LIMIT ? OFFSET ?
-    )
-    ORDER BY ${p.orderSql}
-    ''',
-      [folderId, q, q, p.limit, p.offset],
-    );
-
-    return rows.map(NoteJoinRow.fromMap).toList();
-  }
-
-  Future<int> countSearch(String folderId, String query) async {
-    final q = '%$query%';
-
-    final result = await _db.rawQuery(
-      '''
-    SELECT COUNT(*)
-    FROM notes
-    WHERE folderId = ?
-      AND (title LIKE ? OR content LIKE ?)
-    ''',
-      [folderId, q, q],
-    );
-
-    return Sqflite.firstIntValue(result) ?? 0;
-  }
   /* ----------------------------------------------------------------------
    * INSERT
    * -------------------------------------------------------------------- */
@@ -545,7 +510,9 @@ class FetchersNotesDao {
       // 1️⃣ Update base note
       await txn.update(
         'notes',
-        note.copyWith(updatedAt: DateTime.now()).toMap(),
+        note
+            .copyWith(updatedAt: DateTime.now(), folderId: note.folderId)
+            .toMap(),
         where: 'id = ?',
         whereArgs: [note.id],
       );
@@ -703,15 +670,6 @@ class FetchersNotesDao {
   }
 
   //helpers
-
-  // String _buildOrderWhereClause(PaginatedByDate paginated) {
-  //   return switch (paginated.order) {
-  //     OrderDate.updatedDesc => 'updatedAt > ?',
-  //     OrderDate.updatedAsc => 'updatedAt < ?',
-  //     OrderDate.createdDesc => 'createdAt > ?',
-  //     OrderDate.createdAsc => 'createdAt < ?',
-  //   };
-  // }
 
   String _buildOrderField(PaginatedByDate paginated) {
     return switch (paginated.order) {

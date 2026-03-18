@@ -8,13 +8,14 @@ import 'package:tag_links/ui/form/note_form_page.dart';
 
 class BannerPendingNote extends ConsumerWidget {
   final Future<void> Function() onToggleView;
+  final String? toFolderId;
   const BannerPendingNote({
     super.key,
     required this.toFolderId,
     required this.onToggleView,
   });
 
-  final String toFolderId;
+  
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

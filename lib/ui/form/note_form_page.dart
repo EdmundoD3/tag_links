@@ -21,7 +21,7 @@ import 'package:uuid/uuid.dart';
 
 class NoteFormPage extends ConsumerStatefulWidget {
   final Note? note;
-  final String folderId;
+  final String? folderId;
   final bool isPending;
 
   const NoteFormPage({
@@ -51,6 +51,10 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
   LinkPreview? _linkPreview;
   String _id = '';
 
+  // getters
+  NotesNotifier get _notesProvider =>
+      ref.read(notesProvider(widget.folderId).notifier);
+
   @override
   void initState() {
     super.initState();
@@ -66,17 +70,15 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
       hash: (n) =>
           '${n.title}|${n.content}|${n.link?.url}|${n.tags.map((t) => t.id).join(",")}|${n.isFavorite}|${n.folderId}',
       onSave: (note) async {
-        final provider = notesProvider(note.folderId);
-
         if (widget.isPending) {
           await ref
               .read(noteMoveProvider)
               .move(note: note, toFolderId: note.folderId);
         } else {
           if (widget.isEdit) {
-            await ref.read(provider.notifier).upsert(note);
+            await _notesProvider.upsert(note);
           } else {
-            await ref.read(provider.notifier).addNote(note);
+            await _notesProvider.addNote(note);
           }
         }
       },
@@ -144,13 +146,29 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
     Navigator.pop(context);
   }
 
+  // -----------build-----------
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false, // Bloqueamos el cierre automático
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
-        await _onSaveAndClose(); // Forzamos el guardado antes de salir
+
+        final note = _captureNote();
+
+        // Si NO es válida → preguntar
+        if (!_isNoteValid(note)) {
+          final discard = await ConfirmDialog.discardForm(context, ref);
+
+          if (discard == true && context.mounted) {
+            Navigator.pop(context);
+          }
+          return;
+        }
+
+        // Si es válida → guardar normal
+        await _onSaveAndClose();
       },
       child: BodyForm(formKey: _formKey, appBar: _appBar(), children: _body()),
     );
@@ -247,6 +265,11 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
       _isFavorite = !_isFavorite;
     });
     _onUserChange();
+  }
+
+  // ------- validates ----------
+  bool _isNoteValid(Note note) {
+    return note.title.trim().isNotEmpty;
   }
 }
 

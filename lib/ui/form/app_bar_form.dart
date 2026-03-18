@@ -30,7 +30,7 @@ class AppBarForm extends StatelessWidget implements PreferredSizeWidget {
     if (titleListenable != null) {
       titleWidget = ValueListenableBuilder<TextEditingValue>(
         valueListenable: titleListenable!,
-        builder: (_, value, __) {
+        builder: (_, value, _) {
           return Text(value.text);
         },
       );

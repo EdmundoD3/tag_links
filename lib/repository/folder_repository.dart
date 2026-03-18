@@ -66,7 +66,7 @@ class FolderRepository {
   }
 
   Future<void> toggleFavorite(Folder folder) {
-    return update(folder.copyWith(isFavorite: !folder.isFavorite));
+    return update(folder.copyWith(isFavorite: !folder.isFavorite,parentId: folder.parentId));
   }
   // --------------------- PREFERENCES section ----------------------//
 

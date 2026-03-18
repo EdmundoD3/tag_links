@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/sync/sync_notifier.dart';
 import 'package:tag_links/models/link_preview.dart';
@@ -31,7 +32,7 @@ final noteSearchProvider =
     ) {
       final repo = ref.watch(notesRepositoryProvider);
 
-      return repo.searchByQuery(params.$1, paginated: params.$2);
+      return repo.searchByQuery(params.$1, paginated: params.$2, folderFilter: FolderFilter.all);
     });
 
 final notePaginationProvider =
@@ -72,10 +73,7 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
       pageSize: _pageSize,
       order: OrderDate.updatedDesc,
     );
-
-    final newItems = folderId == null
-        ? await _repo.getFavorites(pagination: pagination)
-        : await _repo.getByFolder(folderId!, pagination: pagination);
+    final newItems = await _repo.getByFolder(folderId, pagination: pagination);
 
     if (newItems.length < _pageSize) {
       _hasMore = false;
@@ -143,6 +141,7 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
   }
 
   Future<void> upsert(Note note) async {
+    debugPrint('guardando nota con folder: ${note.folderId}');
     await _repo.upsert(note);
     unawaited(ref.read(syncNotifierProvider.notifier).performSync());
 

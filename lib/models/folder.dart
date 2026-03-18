@@ -80,7 +80,7 @@ class Folder {
 
   Folder copyWith({
     String? id,
-    String? parentId,
+    required String? parentId,
     String? title,
     List<Tag>? tags,
     String? description,

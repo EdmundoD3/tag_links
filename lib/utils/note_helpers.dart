@@ -13,6 +13,9 @@ class NoteHelpers {
     WidgetRef ref,
     Note note,
   ) async {
+    if(note.folderId == null) return;
+    if(note.folderId!.isEmpty) return;
+
     final repoFolder = ref.watch(folderRepositoryProvider);
     final repoNotes = ref.watch(notesRepositoryProvider);
 
@@ -20,7 +23,8 @@ class NoteHelpers {
       note,
       paginated: const PaginatedByDate(),
     );
-    final folder = await repoFolder.getById(note.folderId);
+    
+    final folder = await repoFolder.getById(note.folderId!);
 
     if (folder == null) return;
 

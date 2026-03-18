@@ -1,7 +1,7 @@
 
 class NoteJoinRow {
   final String noteId;
-  final String folderId;
+  final String? folderId;
   final String title;
   final String? content;
   final String? color;
@@ -22,7 +22,7 @@ class NoteJoinRow {
 
   NoteJoinRow.fromMap(Map<String, Object?> map)
     : noteId = map['note_id'] as String,
-      folderId = map['folder_id'] as String,
+      folderId = map['folder_id'] as String?,
       title = map['title'] as String,
       content = map['content'] as String?,
       color = map['color'] as String?,

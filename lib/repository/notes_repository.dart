@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/sync/note_raw_sync.dart';
-import 'package:tag_links/core/sync/sync_manager.dart';
 import 'package:tag_links/core/sync/sync_types.dart';
 import 'package:tag_links/data/data_sources/deleted_dao.dart';
 import 'package:tag_links/data/data_sources/notes_dao.dart';
@@ -18,12 +17,13 @@ class NotesRepository {
   Future<List<Note>> searchByQuery(
     SearchQuery query, {
     required PaginatedByDate paginated,
+    required FolderFilter folderFilter
   }) async {
-    return _dao.searchByQuery(query, paginated: paginated);
+    return _dao.searchByQuery(query, paginated: paginated, folderFilter: folderFilter);
   }
 
   Future<List<Note>> getByFolder(
-    String folderId, {
+    String? folderId, {
     required PaginatedByDate pagination,
   }) => _dao.getByFolder(folderId, pagination: pagination);
 

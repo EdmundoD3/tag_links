@@ -6,7 +6,7 @@ import 'package:uuid/uuid.dart';
 
 class Note {
   final String id;
-  final String folderId;
+  final String? folderId;
   final String title;
   final String content;
   final String? color;
@@ -44,7 +44,7 @@ class Note {
   }) {
     return Note(
       id: id?.isEmpty ?? true ? const Uuid().v4() : id!,
-      folderId: folderId ?? '',
+      folderId: folderId,
       title: title ?? 'Nueva nota',
       content: content ?? '',
       color: color,
@@ -94,7 +94,7 @@ class Note {
 
   Note copyWith({
     String? id,
-    String? folderId,
+    required String? folderId,
     String? title,
     String? content,
     String? color,
@@ -107,7 +107,7 @@ class Note {
   }) {
     return Note(
       id: id ?? this.id,
-      folderId: folderId ?? this.folderId,
+      folderId: folderId,
       title: title ?? this.title,
       content: content ?? this.content,
       color: color ?? this.color,
@@ -121,15 +121,10 @@ class Note {
   }
 
   Note ensureForInsert() {
-    if (folderId.isEmpty) {
-      throw StateError('Note cannot be inserted without folderId');
-    }
-
     if (link != null && link!.noteId != id) {
       throw StateError('LinkPreview.noteId does not match Note.id');
     }
-
-    return copyWith(updatedAt: DateTime.now());
+    return copyWith(updatedAt: DateTime.now(), folderId: folderId);
   }
   static Note fromDecryptedJson(String id, String decryptedPayload) {
     final Map<String, dynamic> json = jsonDecode(decryptedPayload);
@@ -137,7 +132,7 @@ class Note {
 
     return Note(
       id: id,
-      folderId: json['folderId'] as String,
+      folderId: json['folderId'] as String?,
       title: json['title'] as String,
       content: json['content'] as String,
       color: json['color'] as String?,
@@ -169,7 +164,7 @@ class NoteConfig {
 String noteTable = '''
           CREATE TABLE notes(
             id TEXT PRIMARY KEY,
-            folderId TEXT NOT NULL,
+            folderId TEXT,
             title TEXT NOT NULL,
             content TEXT,
             color TEXT,

@@ -78,6 +78,18 @@ class ConfirmDialog {
       ref: ref,
     );
   }
+    static Future<bool?> discardForm(BuildContext context, WidgetRef ref) async {
+    return showConfirmDialog(
+      context,
+      title: t(ref, 'alertDiscardFormTitle', fallback: 'Descatar cambios'),
+      message: t(
+        ref,
+        'alertDiscardFormTitle',
+        fallback: 'Falta el título. ¿Quieres descartarla?',
+      ),
+      ref: ref,
+    );
+  }
 }
 
 Future<void> _deleteAction(
