@@ -36,6 +36,7 @@ class AppTheme {
       searchInput: const Color(0xFFEDEFF1),
       searchInputBorder: const Color(0xFFD1D5DB),
       searchIcon: const Color(0xFF8A8D93),
+      tags: const Color(0xFF1A1C1E),
     );
   }
 
@@ -57,6 +58,7 @@ class AppTheme {
       searchInput: Color.fromARGB(122, 131, 133, 141),
       searchInputBorder: Color(0xFFEDE7F6),
       searchIcon: Colors.grey,
+      tags: Color(0xFFE2E2E6),
     );
   }
 
@@ -78,6 +80,7 @@ class AppTheme {
       searchInput: const Color(0x33AAA1C8),
       searchInputBorder: Color.fromARGB(92, 63, 81, 181),
       searchIcon: Colors.grey,
+      tags: Colors.deepPurpleAccent,
     );
   }
 
@@ -100,6 +103,7 @@ class AppTheme {
       searchInput: const Color(0x33FF95B5), // rosa transparente
       searchInputBorder: const Color(0x66FF92C2),
       searchIcon: Colors.grey,
+      tags: Colors.pinkAccent,
     );
   }
 
@@ -122,6 +126,7 @@ class AppTheme {
       searchInput: const Color(0x33A1C6EA),
       searchInputBorder: const Color(0x88507DBC),
       searchIcon: const Color(0xFF6C7A80),
+      tags: Colors.blueAccent,
     );
   }
 
@@ -144,6 +149,7 @@ class AppTheme {
       searchInput: const Color(0x33AAA1C8),
       searchInputBorder: const Color(0x88967AA1),
       searchIcon: const Color(0xFF6E6A86),
+      tags: Color(0xFFB388FF),
     );
   }
 }
@@ -165,6 +171,8 @@ ThemeData _generatePalette({
   required Color subtitleColor,
   required Color cardNoteColor,
   required Color secondSubtitleColor,
+  required Color tags,
+
 }) {
   return ThemeData(
     useMaterial3: true,
@@ -193,6 +201,7 @@ ThemeData _generatePalette({
       titleSmall: TextStyle(color: thirdTextColor),
       titleMedium: TextStyle(color: secondTextColor),
       labelSmall: TextStyle(color: secondSubtitleColor),
+      labelMedium: TextStyle(color: tags),
     ),
 
     // ------------ Configuración global de Cards

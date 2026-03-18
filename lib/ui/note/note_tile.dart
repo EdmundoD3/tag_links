@@ -284,7 +284,7 @@ class _NoteTileCard extends StatelessWidget {
 
     return Text(
       resultado,
-      style: theme.textTheme.labelSmall?.copyWith(color: theme.hintColor),
+      style: theme.textTheme.labelMedium,
       textAlign: TextAlign.left,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
