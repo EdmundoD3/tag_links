@@ -7,10 +7,7 @@ import 'package:tag_links/ui/folder/build_folders_list.dart';
 class FoldersSection extends ConsumerStatefulWidget {
   final String? parentId;
 
-  const FoldersSection({
-    super.key,
-    required this.parentId,
-  });
+  const FoldersSection({super.key, required this.parentId});
 
   @override
   ConsumerState<FoldersSection> createState() => _FoldersSectionState();
@@ -41,11 +38,18 @@ class _FoldersSectionState extends ConsumerState<FoldersSection> {
 
   @override
   Widget build(BuildContext context) {
-    final folders = ref.watch(_provider);
-    final notifier = ref.read(_provider.notifier);
+    // 1. Definimos qué fuente de datos usar
+    // Si estamos en Root (null), dejamos que foldersViewProvider decida (Lista o Búsqueda)
+    // Si estamos en Subcarpeta, vamos directo al foldersProvider
+    final foldersAsync = widget.parentId == null
+        ? ref.watch(foldersViewProvider)
+        : ref.watch(foldersProvider(widget.parentId));
+
+    // 2. El notifier siempre lo obtenemos del provider original para las acciones (CRUD/Paginación)
+    final notifier = ref.read(foldersProvider(widget.parentId).notifier);
 
     return BuildFoldersList(
-      foldersAsync: folders,
+      foldersAsync: foldersAsync,
       scrollController: _scrollController,
       notifier: notifier,
       onDeleteFolder: (id) => notifier.deleteFolder(id),

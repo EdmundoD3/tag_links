@@ -62,7 +62,6 @@ class FoldersNotifier extends AsyncNotifier<List<Folder>> {
     _page = 1;
     _hasMore = true;
     _isLoadingMore = false;
-
     return _fetchPage(reset: true);
   }
 

@@ -41,12 +41,12 @@ class NotesRepository {
 
   Future<void> create(Note note) {
     final noteToSave = note.ensureForInsert();
-    return _dao.insert(noteToSave);
+    return _dao.upsert(noteToSave);
   }
 
   Future<void> update(Note note) {
     final noteToUpdate = note.ensureForInsert();
-    return _dao.update(noteToUpdate);
+    return _dao.upsert(noteToUpdate);
   }
   Future<void> upsert(Note note) {
     return _dao.upsert(note);
@@ -63,7 +63,7 @@ class NotesRepository {
   }
 
   Future<void> deleteByIds(List<String> ids) {
-    return _dao.deleteByIds(ids);
+    return _dao.serverDeleteByIds(ids);
   }
   Future<void> clearDeletedNotes(List<String> ids){
     return _deletedDao.deleteIds(ids);

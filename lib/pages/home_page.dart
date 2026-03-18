@@ -109,7 +109,6 @@ class _FolderPageState extends ConsumerState<HomePage> {
   Widget _floatingActionButton(bool showFolders) {
     return showFolders
         ? CreateNewFolderButton(
-            isRoot: false,
             parentFolderId: widget.folder?.id,
           )
         : CreateNewNoteButton(folderId: widget.folder?.id);

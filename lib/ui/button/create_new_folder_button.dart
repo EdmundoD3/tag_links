@@ -6,12 +6,10 @@ import 'package:tag_links/ui/form/folder_form_page.dart';
 
 class CreateNewFolderButton extends ConsumerWidget {
   final String? parentFolderId;
-  final bool isRoot;
 
   const CreateNewFolderButton({
     super.key,
-    this.parentFolderId,
-    this.isRoot = false,
+    required this.parentFolderId,
   });
 
   @override
@@ -23,7 +21,8 @@ class CreateNewFolderButton extends ConsumerWidget {
         context,
         MaterialPageRoute(
           builder: (_) =>
-              FolderFormPage(parentFolderId: parentFolderId, isRoot: isRoot),
+          //el se usa el parentId de donde provenga
+              FolderFormPage(parentFolderId: parentFolderId),
         ),
       ),
     );

@@ -121,16 +121,27 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
       _autoSave.schedule(note);
     });
   }
+Future<void> _onSaveAndClose() async {
+if (!_formKey.currentState!.validate()) return;
 
-  Future<void> _onSaveAndClose() async {
-    if (!_formKey.currentState!.validate()) return;
+  _debouncer.flush(); 
+  final note = _captureNote();
 
-    final note = _captureNote();
+  try {
+    // Pon un timeout o asegúrate de que el flush no sea eterno
+    // Si tu FormAutoSaveController es de los que se quedan esperando,
+    // es mejor forzar el guardado final directamente aquí:
+    if (widget.isEdit) {
+      await _notesProvider.upsert(note);
+    } else {
+      await _notesProvider.addNote(note);
+    }
+  } catch (e) {
+    debugPrint("Error en guardado final: $e");
+  }
 
-    // 🔥 guarda lo último sí o sí
-    await _autoSave.flush(note);
-
-    final adService = ref.read(adServiceProvider);
+  // Continuar con los anuncios y cerrar...
+  final adService = ref.read(adServiceProvider);
 
     if (ref.read(showInterstitialAdsProvider)) {
       adService.showInterstitialAd(
@@ -145,6 +156,7 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
     if (!mounted) return;
     Navigator.pop(context);
   }
+
 
   // -----------build-----------
 
@@ -214,6 +226,7 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
         tags: _tags,
         onTagSelected: _onTagSelected,
         onDeletedTag: _onDeletedTag,
+        onClearSave:_onClearSave
       ),
       const SizedBox(height: 8),
       MoveToFolderButton(
@@ -222,6 +235,10 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
       ),
     ];
   }
+void _onClearSave(){
+  debugPrint("📥 Forzando guardado de nota antes de gestionar Tags");
+  _debouncer.flush(); // En lugar de dispose(), usamos flush para no perder cambios previos
+}
 
   void _onLinkChanged(LinkPreview? linkPreview) {
     if (_linkPreview == linkPreview) return;
@@ -232,21 +249,49 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
   }
 
   // controllers
-  void _onTagSelected(Tag tag) {
-    final hasSameId = _tags.any((t) => t.id == tag.id);
-    if (hasSameId) return;
-    setState(() {
-      _tags = [..._tags, tag];
-    });
-    _onUserChange();
-  }
 
-  void _onDeletedTag(Tag tag) {
-    setState(() {
-      _tags = _tags.where((t) => t.id != tag.id).toList();
-    });
-    _onUserChange();
+  void _onTagSelected(Tag tag) {
+  final hasSameId = _tags.any((t) => t.id == tag.id);
+  if (hasSameId) return;
+
+  setState(() {
+    _tags = [..._tags, tag];
+  });
+
+  // ⚡ FORZAMOS EL GUARDADO INMEDIATO
+  _forceImmediateSave();
+}
+
+void _onDeletedTag(Tag tag) {
+  setState(() {
+    _tags = _tags.where((t) => t.id != tag.id).toList();
+  });
+
+  // ⚡ FORZAMOS EL GUARDADO INMEDIATO
+  _forceImmediateSave();
+}
+
+void _forceImmediateSave() async {
+  _debouncer.dispose(); 
+  final note = _captureNote();
+  
+  try {
+    // 1. Guardado directo al Provider (Salta el debounce)
+    if (widget.isEdit) {
+      await _notesProvider.upsert(note);
+    } else {
+      await _notesProvider.addNote(note);
+    }
+
+    // 2. Avisamos al AutoSave que ya terminamos
+    _autoSave.sync(note);
+    
+    // Forzamos actualización visual de la UI (para quitar el círculo si existía)
+    setState(() {}); 
+  } catch (e) {
+    debugPrint("Error guardando Tag: $e");
   }
+}
 
   Future<void> _onChangeFolder() async {
     final isConfirm = await ConfirmDialog.moveNote(context, ref);

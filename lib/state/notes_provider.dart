@@ -16,7 +16,8 @@ final notesViewProvider = Provider<AsyncValue<List<Note>>>((ref) {
   final pagination = ref.watch(notePaginationProvider);
 
   final hasSearch =
-      searchQuery.text.isNotEmpty || searchQuery.includeTags.isNotEmpty;
+      searchQuery.text.isNotEmpty || searchQuery.includeTags.isNotEmpty ||
+      searchQuery.isFavorite;
 
   if (!hasSearch) {
     return ref.watch(notesProvider(null)); // favoritas

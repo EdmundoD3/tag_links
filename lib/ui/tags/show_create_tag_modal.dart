@@ -64,8 +64,8 @@ Future<Tag?> showCreateTagModal({
             Align(
               alignment: Alignment.centerRight,
               child: FilledButton(
-                onPressed: () =>
-                    _submit(context: context, controller: controller, ref: ref),
+                onPressed: () async =>
+                    await _submit(context: context, controller: controller, ref: ref),
                 style: FilledButton.styleFrom(
                   backgroundColor:
                       theme.scaffoldBackgroundColor, // Color de fondo
@@ -82,20 +82,29 @@ Future<Tag?> showCreateTagModal({
   );
 }
 
-void _submit({
+Future<void> _submit({
   required BuildContext context,
   required WidgetRef ref,
   required TextEditingController controller,
 }) async {
   final name = controller.text.trim();
   if (name.isEmpty) return;
-  final notifier = ref.read(tagsProvider.notifier);
-  final existTag = await notifier.getByExactlyName(name);
-  if (existTag != null) {
-    if (context.mounted) Navigator.pop(context, existTag);
+
+  // 1. Quitar el foco inmediatamente para liberar el teclado
+  FocusScope.of(context).unfocus();
+
+  try {
+    final notifier = ref.read(tagsProvider.notifier);
+
+    // 3. Si no existe, crear el nuevo
+    final Tag newTag = Tag(id: const Uuid().v4(), name: name);
+
+    // Guardamos DESPUÉS (en segundo plano)
+    final savedTag = await notifier.addTag(newTag);
+
+    // Cerramos PRIMERO para liberar la UI
+    if (context.mounted) Navigator.pop(context, savedTag);
+  } catch (e) {
+    debugPrint("Error en _submit: $e");
   }
-  final Tag newTag = Tag(id: const Uuid().v4(), name: name);
-  await notifier.addTag(newTag);
-  if (!context.mounted) return;
-  Navigator.pop(context, newTag);
 }

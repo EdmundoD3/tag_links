@@ -77,6 +77,14 @@ class AppDatabase {
     return openDatabase(
       path,
       version: 1,
+      onConfigure: (db) async {
+        await db.rawQuery('PRAGMA journal_mode=WAL');
+        await db.rawQuery('PRAGMA synchronous=NORMAL');
+        // 🚀 Activar llaves foráneas aquí es más seguro
+        await db.rawQuery('PRAGMA foreign_keys = ON');
+        // 🚀 Opcional: Activar triggers recursivos si quieres que el CASCADE dispare tus triggers
+        await db.rawQuery('PRAGMA recursive_triggers = ON');
+      },
       onCreate: (db, version) async {
         await db.execute('PRAGMA foreign_keys = ON');
 

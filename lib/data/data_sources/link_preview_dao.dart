@@ -7,16 +7,18 @@ class LinkPreviewDao {
   final Database _db;
   const LinkPreviewDao(this._db);
 
-
   Future<void> replace({
     required String noteId,
     Transaction? txn,
     LinkPreview? link,
   }) async {
-    await delete(txn, noteId);
-
-    if (link != null) {
-      await insert(txn: txn,noteId: noteId, link: link);
+    if (link == null) {
+      // Si no hay link, solo borramos el que exista para esa nota
+      await delete(txn, noteId);
+    } else {
+      // Si hay link, el upsert (ConflictAlgorithm.replace) se encarga de todo
+      // Nota: Esto asume que el ID del link es el mismo o que solo quieres un link por nota.
+      await upsert(txn: txn, link: link);
     }
   }
 
@@ -25,22 +27,32 @@ class LinkPreviewDao {
     await db.delete(_tableName, where: 'noteId = ?', whereArgs: [noteId]);
   }
 
-  Future<int?> insert({required String noteId, required LinkPreview link, Transaction? txn}) async {
-    final db = txn ?? _db;
+  Future<void> upsert({required LinkPreview link, Transaction? txn}) async {
     try {
-      return db.insert(_tableName, {
-      'id': link.id,
-      'noteId': noteId,
-      'url': link.url,
-      'title': link.title,
-      'description': link.description,
-      'image': link.image,
-      'siteName': link.siteName,
-    });
+      // Usamos el ejecutor disponible (transacción o base de datos base)
+      final executor = txn ?? _db;
+
+      await executor.insert(
+        _tableName,
+        link.toMap(),
+        // 🚀 UPSERT: Si el link ya existe (mismo id), lo actualiza con la nueva metadata
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
     } catch (e) {
-      debugPrint('error LinkPreviewDao.insert: $e');
-      return null;
+      debugPrint('❌ error LinkPreviewDao.upsert: $e');
+      rethrow; // Es mejor lanzar el error para que la transacción padre falle si es necesario
     }
-    
+  }
+
+  void upsertBatch(Batch batch, LinkPreview link) {
+    batch.insert(
+      _tableName,
+      link.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  void deleteBatch(Batch batch, String noteId) {
+    batch.delete(_tableName, where: 'noteId = ?', whereArgs: [noteId]);
   }
 }

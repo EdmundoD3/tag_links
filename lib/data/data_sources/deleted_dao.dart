@@ -21,11 +21,12 @@ class DeletedData {
 
 class DeletedFoldersDao {
   final _DeletedDao _dao;
-  DeletedFoldersDao({required Database db}) : _dao = _DeletedDao(tableName: DeletedFoldersDao.table, db: db);
+  DeletedFoldersDao({required Database db})
+    : _dao = _DeletedDao(tableName: DeletedFoldersDao.table, db: db);
 
   static String get table => _DeletedDao.getTable('deleted_folders');
 
-  Future<void> saveId(String id) => _dao.saveId(id);
+  Future<void> saveId(String id, {Transaction? executor}) => _dao.saveId(id,executor: executor);
 
   Future<List<DeletedData>> Function({int limit}) get getBatch => _dao.getBatch;
   Future<void> Function(List<String> ids) get deleteIds => _dao.deleteIds;
@@ -33,11 +34,12 @@ class DeletedFoldersDao {
 
 class DeletedNotesDao {
   final _DeletedDao _dao;
-  DeletedNotesDao({required Database db}) : _dao = _DeletedDao(tableName: DeletedNotesDao.table, db: db);
+  DeletedNotesDao({required Database db})
+    : _dao = _DeletedDao(tableName: DeletedNotesDao.table, db: db);
 
   static String get table => _DeletedDao.getTable('deleted_notes');
 
-  Future<void> saveId(String id) => _dao.saveId(id);
+  Future<void> saveId(String id, {Transaction? executor}) => _dao.saveId(id,executor: executor);
 
   Future<List<DeletedData>> Function({int limit}) get getBatch => _dao.getBatch;
   Future<void> Function(List<String> ids) get deleteIds => _dao.deleteIds;
@@ -45,27 +47,26 @@ class DeletedNotesDao {
 
 class _DeletedDao {
   final String tableName;
-
+  final Database _db;
+// Fix: Asignación correcta en el constructor
   _DeletedDao({required this.tableName, required Database db}) : _db = db;
 
-  static String getTable(String tableName) =>
-      '''
+  static String getTable(String tableName) => '''
     CREATE TABLE IF NOT EXISTS $tableName (
       id TEXT PRIMARY KEY,
       deletedAt INTEGER NOT NULL
     );
   ''';
 
-  final Database _db;
-
-  Future<void> saveId(String id) async {
+  // Usamos 'dynamic' para que acepte tanto Database como Transaction
+  Future<void> saveId(String id, {dynamic executor}) async {
     final now = DateTime.now().millisecondsSinceEpoch;
-    final data = DeletedData(id: id, deletedAt: now);
+    final db = executor ?? _db; 
 
-    await _db.insert(
+    await db.insert(
       tableName,
-      data.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.ignore,
+      {'id': id, 'deletedAt': now},
+      conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 

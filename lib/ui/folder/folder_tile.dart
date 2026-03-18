@@ -65,7 +65,8 @@ class FolderTile extends ConsumerWidget {
   }
 
   Future<void> _editFolder(BuildContext context) {
-    return goPage(context: context, page: FolderFormPage(folder: folder));
+    //conservamos el parentId
+    return goPage(context: context, page: FolderFormPage(folder: folder, parentFolderId: folder.parentId));
   }
 }
 

@@ -10,12 +10,14 @@ class TagsSelectorMenu extends ConsumerWidget {
   final List<Tag> tags;
   final void Function(Tag tag) onTagSelected;
   final ValueChanged<Tag> onDeletedTag;
+  final void Function()? onClearSave;
 
   const TagsSelectorMenu({
     super.key,
     required this.tags,
     required this.onTagSelected,
     required this.onDeletedTag,
+    this.onClearSave,
   });
 
   @override
@@ -39,6 +41,7 @@ class TagsSelectorMenu extends ConsumerWidget {
             ref.read(tagSearchTextProvider.notifier).state = '';
           },
           addIconBtnCtrl: (tagName) async {
+             onClearSave?.call();
             final newTag = await showCreateTagModal(
               context: context,
               ref: ref,
@@ -50,7 +53,10 @@ class TagsSelectorMenu extends ConsumerWidget {
         TagsSelectedContainer(
           tags: tags,
           onDeleted: onDeletedTag,
-          onGetNewTag: (tag) => onTagSelected(tag),
+          onGetNewTag: (tag) {
+            onClearSave?.call();
+            onTagSelected(tag);
+          },
         ),
       ],
     );

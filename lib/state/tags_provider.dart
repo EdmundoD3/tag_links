@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:tag_links/models/tag.dart';
@@ -38,9 +39,11 @@ class TagsNotifier extends AsyncNotifier<List<Tag>> {
     );
   }
 
-  Future<void> addTag(Tag tag) async {
-    await _repo.insert(tag);
+  Future<Tag?> addTag(Tag tag) async {
+    debugPrint(tag.toMap().toString());
+    final savedTag = await _repo.upsert(tag);
     ref.invalidateSelf();
+    return savedTag;
   }
 
   Future<void> updateTag(Tag tag) async {

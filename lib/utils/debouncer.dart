@@ -1,25 +1,33 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
 class Debouncer {
   final int milliseconds;
   Timer? _timer;
-  VoidCallback? _action;
+  VoidCallback? _currentAction; // Guardamos la referencia real
 
   Debouncer({required this.milliseconds});
 
   void run(VoidCallback action) {
-    _action = action;
+    _currentAction = action; // Actualizamos la acción más reciente
     _timer?.cancel();
-    _timer = Timer(Duration(milliseconds: milliseconds), action);
+    _timer = Timer(Duration(milliseconds: milliseconds), () {
+      _currentAction?.call();
+      _currentAction = null; // Limpiamos al terminar
+    });
   }
 
   void flush() {
-    _timer?.cancel();
-    _action?.call();
+    if (_timer?.isActive ?? false) {
+      _timer?.cancel();
+      _currentAction?.call();
+      _currentAction = null;
+    }
   }
 
   void dispose() {
     _timer?.cancel();
+    _currentAction = null;
   }
 }

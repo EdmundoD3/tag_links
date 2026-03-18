@@ -4,6 +4,7 @@ import 'package:tag_links/core/sync/folder_raw_sync.dart';
 import 'package:tag_links/core/sync/sync_types.dart';
 import 'package:tag_links/data/data_sources/deleted_dao.dart';
 import 'package:tag_links/data/data_sources/folder_preferences_dao.dart';
+import 'package:tag_links/data/data_sources/folder_tags_dao.dart';
 import 'package:tag_links/data/data_sources/folders_dao.dart';
 import 'package:tag_links/data/database.dart';
 import 'package:tag_links/models/folder.dart';
@@ -31,19 +32,19 @@ class FolderRepository {
   }
 
   Future<void> deleteByIds(List<String> ids) {
-    return _dao.deleteByIds(ids);
+    return _dao.serverDeleteByIds(ids);
   }
 
   Future<void> create(Folder folder) async {
     final folderToSave = folder.ensureForInsert();
-    return _dao.insert(folderToSave);
+    return _dao.upsert(folderToSave);
   }
 
   Future<void> update(Folder folder) {
     debugPrint(folder.parentId);
 
     final folderToUpdate = folder.ensureForInsert();
-    return _dao.update(folderToUpdate);
+    return _dao.upsert(folderToUpdate);
   }
 
   Future<void> delete(String folderId) => _dao.delete(folderId);
@@ -110,7 +111,7 @@ class FolderRepository {
 
 final folderRepositoryProvider = Provider<FolderRepository>((ref) {
   final db = ref.watch(databaseProvider);
-  final foldersDao = FoldersDao(db: db);
+  final foldersDao = FoldersDao(db: db, folderTagsDao: FolderTagsDao(db),deletedFoldersDao: DeletedFoldersDao(db: db));
   final deleteDao = DeletedFoldersDao(db: db);
   final preferencesDao = FolderPreferencesDao(db: db);
 

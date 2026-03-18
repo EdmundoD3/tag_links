@@ -30,15 +30,15 @@ class Folder {
     this.isFavorite = false,
   });
 
-  factory Folder.empty(){
+  factory Folder.empty({required bool hasId, String? parentId}){
     final folder = Folder(
-      id: '',
-      parentId: '',
+      id: hasId?const Uuid().v4():'',
+      parentId: parentId,
       title: '',
       tags: [],
-      description: '',
-      image: '',
-      color: '',
+      description: null,
+      image: null,
+      color: null,
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
       syncAt: null,

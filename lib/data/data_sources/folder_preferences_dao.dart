@@ -18,19 +18,11 @@ class FolderPreferencesDao {
   }
 
   Future<void> upsert(FolderPreference folderPreference) async {
-    int count = await _db.update(
+    await _db.insert(
       _tableName,
       folderPreference.toMap(),
-      where: 'folderId = ?',
-      whereArgs: [folderPreference.folderId],
+      // Esto hace todo el trabajo de "Update or Insert" por ti
+      conflictAlgorithm: ConflictAlgorithm.replace,
     );
-
-    if (count == 0) {
-      await _db.insert(
-        _tableName,
-        folderPreference.toMap(),
-        conflictAlgorithm: ConflictAlgorithm.ignore, // Por seguridad
-      );
-    }
   }
 }

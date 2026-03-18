@@ -14,20 +14,13 @@ import 'package:tag_links/ui/form/move_to_folder_button.dart';
 import 'package:tag_links/ui/tags/tags_selector_menu.dart';
 import 'package:tag_links/ui/form/title_form_controller.dart';
 import 'package:tag_links/utils/debouncer.dart';
-import 'package:uuid/uuid.dart';
 import 'package:tag_links/core/locate/app_lang.dart';
 
 class FolderFormPage extends ConsumerStatefulWidget {
-  final Folder? folder;
-  final String? parentFolderId;
-  final bool isRoot;
+  final Folder? folder; //null significa que es nuevo
+  final String? parentFolderId; // null significa que es root
 
-  const FolderFormPage({
-    super.key,
-    this.folder,
-    this.parentFolderId,
-    this.isRoot = false,
-  });
+  const FolderFormPage({super.key, this.folder, this.parentFolderId});
 
   bool get isEdit => folder != null;
 
@@ -39,19 +32,23 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController _titleCtrl;
-  Folder? _folder;
+  late Folder _folder;
   List<Tag> _tags = [];
   bool _isFavorite = false;
-  String? parentId;
+  bool _didAutoSaveAtLeastOnce = false;
 
   late final Debouncer _saveDebouncer;
   late final FormAutoSaveController<Folder> _autoSave;
+  AsyncNotifierProvider<FoldersNotifier, List<Folder>> get _provider =>
+      foldersProvider(widget.parentFolderId);
 
   @override
   void initState() {
     super.initState();
 
-    _folder = widget.folder;
+    _folder =
+        widget.folder ??
+        Folder.empty(hasId: true, parentId: widget.parentFolderId);
     _tags = widget.folder?.tags ?? [];
 
     _titleCtrl = TextEditingController(text: widget.folder?.title ?? '');
@@ -59,18 +56,13 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
 
     _saveDebouncer = Debouncer(milliseconds: 800);
 
-    parentId = widget.isRoot
-        ? null
-        : widget.parentFolderId ?? _folder?.parentId;
-
     _autoSave = FormAutoSaveController<Folder>(
       onSave: (folder) async {
-        final provider = foldersProvider(folder.parentId);
-
+        _didAutoSaveAtLeastOnce = true; 
         if (widget.isEdit) {
-          await ref.read(provider.notifier).updateFolder(folder);
+          await ref.read(_provider.notifier).updateFolder(folder);
         } else {
-          await ref.read(provider.notifier).addFolder(folder);
+          await ref.read(_provider.notifier).addFolder(folder);
         }
       },
       hash: (f) {
@@ -87,7 +79,7 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
     super.dispose();
   }
 
-@override
+  @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false, // Bloqueamos el cierre automático para evaluar
@@ -96,18 +88,21 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
 
         final folder = _captureFolder();
 
-        // Si NO es válida (ej. título vacío) -> preguntar si desea descartar
         if (!_isFolderValid(folder)) {
           final discard = await ConfirmDialog.discardForm(context, ref);
-
-          if (discard == true && context.mounted) {
-            // Si confirma descartar, cerramos sin guardar
-            Navigator.pop(context);
+          
+          // 🔥 El borrado debe ocurrir SOLO si el usuario aceptó salir (discard == true)
+          if (discard == true) {
+            if (widget.folder == null && _didAutoSaveAtLeastOnce) {
+              await ref.read(_provider.notifier).deleteFolder(_folder.id);
+            }
+            
+            if (context.mounted) Navigator.pop(context);
           }
+          // Si discard es false o null, no hacemos nada y el usuario se queda en la página
           return;
         }
 
-        // Si es válida -> Proceder con el guardado normal y cerrar
         await _onSave();
       },
       child: BodyForm(formKey: _formKey, appBar: _appBar(), children: _body()),
@@ -197,12 +192,13 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
     final now = DateTime.now();
 
     final folder = Folder(
-      id: _folder?.id ?? const Uuid().v4(),
-      parentId: parentId,
+      id: _folder.id,
+      parentId: widget.parentFolderId,
       title: _titleCtrl.text.trim(),
       tags: _tags,
-      image: _folder?.image,
-      createdAt: _folder?.createdAt ?? now,
+      image: _folder.image,
+      // se usa la fecha donde se almaceno en caso de ser folder nuevo
+      createdAt: widget.folder != null? _folder.createdAt : now,
       updatedAt: now,
       isFavorite: _isFavorite,
     );
@@ -252,6 +248,7 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
     if (!mounted) return;
     Navigator.pop(context);
   }
+
   // ------- validates ----------
   bool _isFolderValid(Folder folder) {
     return folder.title.trim().isNotEmpty;

@@ -24,23 +24,21 @@ class _NotesSectionState extends ConsumerState<NotesSection> {
   final Map<String, GlobalKey> _itemKeys = {};
 
   @override
-  void initState() {
-    super.initState();
-
-    _scrollController.addListener(_onScroll);
-  }
-
-@override
   Widget build(BuildContext context) {
-    ref.listen<AsyncValue<List<Note>>>(_notesProvider, (prev, next) {
+    // Determinamos la fuente de datos una sola vez
+    final sourceProvider = widget.folderId != null
+        ? _notesProvider
+        : notesViewProvider;
+
+    // Escuchamos la fuente correcta para el scroll
+    ref.listen<AsyncValue<List<Note>>>(sourceProvider, (prev, next) {
       if (widget.highlightNoteId != null) {
         _scrollToHighlightedNote(next);
       }
     });
 
-    final notes = ref.watch(_notesProvider);
+    final notes = ref.watch(sourceProvider);
     final notifier = ref.read(_notesProvider.notifier);
-
     return BuildNotesList(
       notesAsync: notes,
       scrollController: _scrollController,
@@ -48,6 +46,13 @@ class _NotesSectionState extends ConsumerState<NotesSection> {
       onDeleteNote: (id) => notifier.deleteNote(id),
       getKey: _getKey,
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    _scrollController.addListener(_onScroll);
   }
 
   @override
@@ -68,15 +73,17 @@ class _NotesSectionState extends ConsumerState<NotesSection> {
     }
   }
 
-void _scrollToHighlightedNote(AsyncValue<List<Note>> notesAsync) {
+  void _scrollToHighlightedNote(AsyncValue<List<Note>> notesAsync) {
     if (_didScrollToHighlight) return;
 
     notesAsync.whenData((notes) {
       final index = notes.indexWhere((n) => n.id == widget.highlightNoteId);
-      
+
       // 1. Verificar si la nota existe en la lista actual
       if (index == -1) {
-        debugPrint('🔍 Scroll: Nota ${widget.highlightNoteId} no encontrada aún. Cargando más...');
+        debugPrint(
+          '🔍 Scroll: Nota ${widget.highlightNoteId} no encontrada aún. Cargando más...',
+        );
         final notifier = ref.read(_notesProvider.notifier);
 
         if (notifier.hasMore && !notifier.isLoadingMore) {
@@ -90,12 +97,16 @@ void _scrollToHighlightedNote(AsyncValue<List<Note>> notesAsync) {
 
       // 2. Verificar si tenemos la GlobalKey y si tiene contexto
       if (key == null) {
-        debugPrint('⚠️ Scroll: No se encontró la GlobalKey para la nota ${note.id}');
+        debugPrint(
+          '⚠️ Scroll: No se encontró la GlobalKey para la nota ${note.id}',
+        );
         return;
       }
 
       if (key.currentContext == null) {
-        debugPrint('⏳ Scroll: Key encontrada pero el Contexto aún es null (esperando renderizado)');
+        debugPrint(
+          '⏳ Scroll: Key encontrada pero el Contexto aún es null (esperando renderizado)',
+        );
         return;
       }
 
@@ -106,9 +117,11 @@ void _scrollToHighlightedNote(AsyncValue<List<Note>> notesAsync) {
         if (ctx == null) return;
 
         // 3. Confirmación de inicio de movimiento
-        debugPrint('🚀 Scroll: ¡Iniciando scroll hacia la nota: ${note.title} (Index: $index)!');
-        
-        _didScrollToHighlight = true; 
+        debugPrint(
+          '🚀 Scroll: ¡Iniciando scroll hacia la nota: ${note.title} (Index: $index)!',
+        );
+
+        _didScrollToHighlight = true;
 
         Scrollable.ensureVisible(
           ctx,
