@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/locate/app_lang.dart';
 import 'package:tag_links/models/folder.dart';
+import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/ui/form/folder_form_page.dart';
 import 'package:tag_links/ui/menu/menu_container.dart';
 import 'package:tag_links/ui/utils/page_buil.dart';
@@ -77,36 +78,96 @@ class _FolderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    
     return Card(
-      elevation: 3, // La sombra que le da profundidad
-      surfaceTintColor: Colors.transparent, // Color de fondo
+      elevation: 3,
+      surfaceTintColor: Colors.transparent,
       shadowColor: Colors.white.withValues(alpha: 0.5),
-      margin: const EdgeInsets.only(
-        top: 10,
-        left: 12,
-        right: 12,
-      ), // Margen exterior
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ), // Bordes redondeados
+      margin: const EdgeInsets.only(top: 10, left: 12, right: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       color: theme.cardTheme.color,
-      child: ListTile(
-        contentPadding: EdgeInsetsDirectional.only(start: 16.0, end: 24.0,top: 2.0, bottom: 2.0),
-        leading: Icon(
-          Icons.folder,
-          color: theme.badgeTheme.textColor,
-        ), // Un toque de color
-        title: Text(
-          folder.title,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: theme.textTheme.titleMedium?.color,
-          ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0), // Espaciado interno uniforme
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // PARTE SUPERIOR: Icono, Título y Favorito
+            Row(
+              children: [
+                Icon(
+                  Icons.folder,
+                  color: theme.badgeTheme.textColor,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    folder.title,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: theme.textTheme.titleMedium?.color,
+                    ),
+                  ),
+                ),
+                if (folder.isFavorite)
+                  const Icon(Icons.favorite, color: Colors.red, size: 20),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _footer(theme: theme),
+          ],
         ),
-        trailing: folder.isFavorite
-            ? Icon(Icons.favorite, color: Colors.red, size: 20)
-            : null,
       ),
     );
   }
+
+  Widget _footer({required ThemeData theme}) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end, // Alinea la fecha abajo si los tags crecen
+      children: [
+        Expanded(
+          child: _miniTags(theme: theme, tags: folder.tags),
+        ),
+        const SizedBox(width: 8),
+        _dateWidget(theme: theme, date: folder.updatedAt),
+      ],
+    );
+  }
+
+  Widget _dateWidget({
+    required ThemeData theme,
+    required DateTime date,
+  }) {
+    return Text(
+      _formatDate(date),
+      style: theme.textTheme.labelSmall?.copyWith(color: theme.hintColor),
+      textAlign: TextAlign.right,
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    String horas = date.hour.toString().padLeft(2, '0');
+    String minutos = date.minute.toString().padLeft(2, '0');
+    String day = date.day.toString().padLeft(2, '0');
+    String month = date.month.toString().padLeft(2, '0');
+    String year = date.year.toString();
+    return '$day/$month/$year | $horas:$minutos';
+  }
+
+  Widget _miniTags({required ThemeData theme, List<Tag> tags = const []}) {
+    String resultado = tags.map((tag) => '#${tag.name}').join(' ');
+
+    return Text(
+      resultado,
+      style: theme.textTheme.labelMedium?.copyWith(
+        color: theme.primaryColor.withValues(alpha: 0.8),
+        fontWeight: FontWeight.w500,
+      ),
+      textAlign: TextAlign.left,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
 }
+
