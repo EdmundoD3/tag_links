@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/locate/app_lang.dart';
 import 'package:tag_links/models/folder.dart';
-import 'package:tag_links/pages/folder_page.dart';
+import 'package:tag_links/pages/home_page.dart';
 import 'package:tag_links/state/folders_provider.dart';
 import 'package:tag_links/state/pending_folder_provider.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
@@ -90,6 +90,6 @@ class BuildFoldersList extends ConsumerWidget {
   }
 
   Future<void> _goFolder(BuildContext context, Folder folder) async {
-    return goPage(context: context, page: FolderPage(folder: folder));
+    return goPage(context: context, page: HomePage(folder: folder));
   }
 }
