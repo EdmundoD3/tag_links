@@ -69,8 +69,8 @@ class AppTheme {
       strongBackground: const Color(0xFFBFCBFF),
       strongBackgroundText: Color(0xFF1A1C1E),
       icon: Colors.deepPurple,
-      badge: Colors.deepPurple,
-      lighBackground: Color.fromARGB(255, 200, 210, 255),
+      badge: Color(0xFF9E80D1),
+      lighBackground: Color(0xFFC8D2FF),
       titleColor: Color(0xFF240046),
       textColor: Color(0xFF1A1C1E),
       secondTextColor: Color(0xFF1A1C1E),
@@ -86,72 +86,27 @@ class AppTheme {
     );
   }
 
-  // static ThemeData get rosePastelTheme {
-  //   const mentaBlanco = Color.fromARGB(255, 245, 255, 251);
-  //   return _generatePalette(
-  //     strongBackground: const Color(0xFFFF92C2),
-  //     strongBackgroundText: mentaBlanco,
-  //     icon: mentaBlanco,
-  //     badge: const Color(0xFFF8517F),
-  //     lighBackground: const Color(0xFFFFC2D1),
-  //     titleColor: const Color(0xFF590D22),
-  //     textColor: const Color(0xFF3A2A30),
-  //     secondTextColor: const Color.fromARGB(255, 1, 31, 19),
-  //     thirdTextColor: const Color(0xFFFF92C2),
-  //     cardNoteColor: mentaBlanco,
-  //     subtitleColor: mentaBlanco,
-  //     secondSubtitleColor: const Color(0xFF8A7A80),
-  //     scaffoldBackgroundColor: const Color.fromARGB(255, 252, 240, 243),
-  //     searchInput: const Color(0x33FF95B5),
-  //     searchInputBorder: const Color(0x66FF92C2),
-  //     searchIcon: Colors.grey,
-  //     tags: Colors.pinkAccent,
-  //   );
-  // }
   static ThemeData get rosePastelTheme {
   const mentaBlanco = Color.fromARGB(255, 245, 255, 251);
-  const strongRose = Color(0xFFFF92C2); // Tu base
-  
+  const strongRose = Color(0xFFFF92C2);
   return _generatePalette(
     strongBackground: strongRose,
     strongBackgroundText: mentaBlanco,
     icon: mentaBlanco,
-    
-    // Un rosa más profundo y elegante para los detalles importantes
-    badge: const Color(0xFFE05780), 
-    
-    // Un rosa pastel mucho más suave para que no compita con el blanco
+    badge: const Color(0xFFFF8FAB), 
     lighBackground: const Color(0xFFFFE5EC), 
-    
-    // Color vino profundo para títulos (contrasta excelente con el rosa)
     titleColor: const Color(0xFF590D22), 
-    
-    // Gris muy oscuro con un toque de rojo para que el texto sea legible
     textColor: const Color(0xFF2B1B1F), 
-    
-    // Verde menta oscuro para dar el "toque" complementario al rosa
     secondTextColor: const Color(0xFF1B4332), 
-    
-    // Rosa vibrante para resaltar datos específicos
-    thirdTextColor: const Color(0xFFFF4D94), 
-    
+    thirdTextColor: const Color.fromARGB(255, 223, 56, 98), 
     cardNoteColor: mentaBlanco,
     subtitleColor: mentaBlanco,
-    
-    // Gris malva para subtítulos secundarios
     secondSubtitleColor: const Color(0xFF9D8189), 
-    
     scaffoldBackgroundColor: const Color.fromARGB(255, 252, 240, 243),
-    
-    // Usamos .withValues para una búsqueda más elegante
     searchInput: strongRose.withValues(alpha: 0.1), 
     searchInputBorder: strongRose.withValues(alpha: 0.4),
-    
-    // Un gris que combine con el vino del título
     searchIcon: const Color(0xFF805B65), 
-    
-    // Los tags ahora tienen un rosa pétalo que no cansa la vista
-    tags: const Color(0xFFFF70A6), 
+    tags: const Color.fromARGB(255, 120, 194, 174), 
   );
 }
 
@@ -161,7 +116,7 @@ class AppTheme {
       strongBackground: const Color(0xFF507DBC),
       strongBackgroundText: cafeClaro,
       icon: cafeClaro,
-      badge: const Color(0xFF507DBC),
+      badge: const Color(0xFF779ACB),
       lighBackground: const Color(0xFFBBD1EA),
       titleColor: const Color(0xFF04080F),
       textColor: const Color(0xFF04080F),
@@ -184,12 +139,12 @@ class AppTheme {
       strongBackground: const Color(0xFF967AA1),
       strongBackgroundText: verdeClaro,
       icon: verdeClaro,
-      badge: const Color(0xFFAAA1C8),
+      badge: const Color(0xFF967AA1),
       lighBackground: const Color(0xFFD5C6E0),
       titleColor: const Color(0xFF192A51),
       textColor: const Color(0xFF192A51),
       secondTextColor: const Color(0xFF3A3F5C),
-      thirdTextColor: const Color(0xFF967AA1),
+      thirdTextColor: const Color(0xFF675E85),
       cardNoteColor: verdeClaro,
       subtitleColor: verdeClaro,
       secondSubtitleColor: const Color(0xFF6E6A86),
@@ -197,7 +152,7 @@ class AppTheme {
       searchInput: const Color(0x33AAA1C8),
       searchInputBorder: const Color(0x88967AA1),
       searchIcon: const Color(0xFF6E6A86),
-      tags: Color(0xFFB388FF),
+      tags: Color.fromARGB(211, 0, 139, 139),
     );
   }
 }
