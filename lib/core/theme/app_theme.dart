@@ -86,28 +86,74 @@ class AppTheme {
     );
   }
 
+  // static ThemeData get rosePastelTheme {
+  //   const mentaBlanco = Color.fromARGB(255, 245, 255, 251);
+  //   return _generatePalette(
+  //     strongBackground: const Color(0xFFFF92C2),
+  //     strongBackgroundText: mentaBlanco,
+  //     icon: mentaBlanco,
+  //     badge: const Color(0xFFF8517F),
+  //     lighBackground: const Color(0xFFFFC2D1),
+  //     titleColor: const Color(0xFF590D22),
+  //     textColor: const Color(0xFF3A2A30),
+  //     secondTextColor: const Color.fromARGB(255, 1, 31, 19),
+  //     thirdTextColor: const Color(0xFFFF92C2),
+  //     cardNoteColor: mentaBlanco,
+  //     subtitleColor: mentaBlanco,
+  //     secondSubtitleColor: const Color(0xFF8A7A80),
+  //     scaffoldBackgroundColor: const Color.fromARGB(255, 252, 240, 243),
+  //     searchInput: const Color(0x33FF95B5),
+  //     searchInputBorder: const Color(0x66FF92C2),
+  //     searchIcon: Colors.grey,
+  //     tags: Colors.pinkAccent,
+  //   );
+  // }
   static ThemeData get rosePastelTheme {
-    const mentaBlanco = Color.fromARGB(255, 245, 255, 251);
-    return _generatePalette(
-      strongBackground: const Color(0xFFFF92C2),
-      strongBackgroundText: mentaBlanco,
-      icon: mentaBlanco,
-      badge: const Color(0xFFF8517F),
-      lighBackground: const Color(0xFFFFC2D1),
-      titleColor: const Color(0xFF590D22),
-      textColor: const Color(0xFF3A2A30),
-      secondTextColor: const Color.fromARGB(255, 1, 31, 19),
-      thirdTextColor: const Color(0xFFFF92C2),
-      cardNoteColor: mentaBlanco,
-      subtitleColor: mentaBlanco,
-      secondSubtitleColor: const Color(0xFF8A7A80),
-      scaffoldBackgroundColor: const Color.fromARGB(255, 252, 240, 243),
-      searchInput: const Color(0x33FF95B5), // rosa transparente
-      searchInputBorder: const Color(0x66FF92C2),
-      searchIcon: Colors.grey,
-      tags: Colors.pinkAccent,
-    );
-  }
+  const mentaBlanco = Color.fromARGB(255, 245, 255, 251);
+  const strongRose = Color(0xFFFF92C2); // Tu base
+  
+  return _generatePalette(
+    strongBackground: strongRose,
+    strongBackgroundText: mentaBlanco,
+    icon: mentaBlanco,
+    
+    // Un rosa más profundo y elegante para los detalles importantes
+    badge: const Color(0xFFE05780), 
+    
+    // Un rosa pastel mucho más suave para que no compita con el blanco
+    lighBackground: const Color(0xFFFFE5EC), 
+    
+    // Color vino profundo para títulos (contrasta excelente con el rosa)
+    titleColor: const Color(0xFF590D22), 
+    
+    // Gris muy oscuro con un toque de rojo para que el texto sea legible
+    textColor: const Color(0xFF2B1B1F), 
+    
+    // Verde menta oscuro para dar el "toque" complementario al rosa
+    secondTextColor: const Color(0xFF1B4332), 
+    
+    // Rosa vibrante para resaltar datos específicos
+    thirdTextColor: const Color(0xFFFF4D94), 
+    
+    cardNoteColor: mentaBlanco,
+    subtitleColor: mentaBlanco,
+    
+    // Gris malva para subtítulos secundarios
+    secondSubtitleColor: const Color(0xFF9D8189), 
+    
+    scaffoldBackgroundColor: const Color.fromARGB(255, 252, 240, 243),
+    
+    // Usamos .withValues para una búsqueda más elegante
+    searchInput: strongRose.withValues(alpha: 0.1), 
+    searchInputBorder: strongRose.withValues(alpha: 0.4),
+    
+    // Un gris que combine con el vino del título
+    searchIcon: const Color(0xFF805B65), 
+    
+    // Los tags ahora tienen un rosa pétalo que no cansa la vista
+    tags: const Color(0xFFFF70A6), 
+  );
+}
 
   static ThemeData get arcticBlueTheme {
     const cafeClaro = Color.fromARGB(255, 255, 251, 245);
