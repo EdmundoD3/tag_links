@@ -161,10 +161,7 @@ class _FolderCard extends StatelessWidget {
 
     return Text(
       resultado,
-      style: theme.textTheme.labelMedium?.copyWith(
-        color: theme.primaryColor.withValues(alpha: 0.8),
-        fontWeight: FontWeight.w500,
-      ),
+      style: theme.textTheme.labelMedium,
       textAlign: TextAlign.left,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
