@@ -16,11 +16,24 @@ class BannerPendingFolder extends ConsumerWidget {
   });
   //nivel 0 es root o sea sin folder, 1 es folder y 2 es subFolder
   bool get _isInFolder => toParent != null;
+  bool get _isSubFolder => _isInFolder && toParent?.id != null;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final folder = ref.watch(pendingFolderProvider);
+    //si no ha
     if (folder == null) return const SizedBox.shrink();
+
+    if (_isSubFolder) {
+      return BannerPending(
+        title: t(
+          ref,
+          'alertMoveFolderErrorIsDeepFolder',
+          fallback: "No puedes almacenar carpetas aquí, elije otra carpeta",
+        ),
+        actions: [_discard(context, ref)],
+      );
+    }
 
     // 1. Forzamos la lectura del provider de validación
     final validationAsync = ref.watch(folderValidationProvider(folder.id));
@@ -61,8 +74,6 @@ class BannerPendingFolder extends ConsumerWidget {
                         await ConfirmDialog.moveFormLimitReached(context, ref);
                     debugPrint('confirm:${confirm.toString()}');
                     if (confirm == true && context.mounted) {
-                      
-
                       await onToggleView();
                       await ref
                           .read(folderMoveProvider)
