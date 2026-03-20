@@ -7,11 +7,10 @@ class FolderTagsDao {
   FolderTagsDao(this._db);
 
   // 1. Operación Individual o Transaccional
-  // Usamos 'dynamic' para que acepte tanto la Database como una Transaction
   Future<void> upsert({
     required String folderId,
     required String tagId,
-    dynamic executor,
+    Transaction? executor,
   }) async {
     final db = executor ?? _db;
     await db.insert(
@@ -29,7 +28,7 @@ class FolderTagsDao {
   Future<void> delete({
     required String folderId,
     required String tagId,
-    dynamic executor,
+    Transaction? executor,
   }) async {
     final db = executor ?? _db;
     await db.delete(

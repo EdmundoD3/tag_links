@@ -22,7 +22,6 @@ class ConfirmDialog {
       errorText: t(ref, 'alertDeleteNoteError', fallback: 'Error al eliminar'),
       ref: ref,
     );
-
   }
 
   static Future<void> deleteFolder(
@@ -78,7 +77,8 @@ class ConfirmDialog {
       ref: ref,
     );
   }
-    static Future<bool?> discardForm(BuildContext context, WidgetRef ref) async {
+
+  static Future<bool?> discardForm(BuildContext context, WidgetRef ref) async {
     return showConfirmDialog(
       context,
       title: t(ref, 'alertDiscardFormTitle', fallback: 'Descatar cambios'),
@@ -90,12 +90,26 @@ class ConfirmDialog {
       ref: ref,
     );
   }
+
+  static Future<bool?> moveFormLimitReached(BuildContext context, WidgetRef ref) async {
+    return showConfirmDialog(
+      context,
+      ref: ref,
+      title: t(ref, 'limitReached', fallback: 'Límite de niveles'),
+      message: t(
+        ref,
+        'flattenMessage',
+        fallback:
+            "Esta carpeta tiene hijos. Se moverán a la raíz.",
+      ),
+    );
+  }
 }
 
 Future<void> _deleteAction(
   BuildContext context,
   Future<void> Function() onDelete, {
-    required WidgetRef ref,
+  required WidgetRef ref,
   required String title,
   required String message,
   required String succesText,
@@ -136,9 +150,12 @@ Future<bool?> showConfirmDialog(
     builder: (context) {
       return AlertDialog(
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
-        title: Text(title, style: theme.textTheme.titleLarge,),
+        title: Text(title, style: theme.textTheme.titleLarge),
         content: message != null
-            ? Text(message, style: TextStyle(color: theme.textTheme.bodySmall?.color))
+            ? Text(
+                message,
+                style: TextStyle(color: theme.textTheme.bodySmall?.color),
+              )
             : null,
         actions: [
           TextButton(
@@ -152,8 +169,10 @@ Future<bool?> showConfirmDialog(
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: theme.inputDecorationTheme.fillColor, // Color de fondo
-              foregroundColor: theme.textTheme.titleLarge?.color, // Color del texto
+              backgroundColor:
+                  theme.inputDecorationTheme.fillColor, // Color de fondo
+              foregroundColor:
+                  theme.textTheme.titleLarge?.color, // Color del texto
             ),
 
             onPressed: () {

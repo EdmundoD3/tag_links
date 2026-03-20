@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/core/ads/small_banner.dart';
 import 'package:tag_links/core/debug/go_debug_page_buton.dart';
 import 'package:tag_links/core/locate/app_lang.dart';
 import 'package:tag_links/models/folder.dart';
@@ -15,7 +16,6 @@ import 'package:tag_links/ui/folder/build_folders_section.dart';
 import 'package:tag_links/ui/note/banner_pending_note.dart';
 import 'package:tag_links/ui/note/build_notes_section.dart';
 import 'package:tag_links/ui/note/create_new_note_btn.dart';
-import 'package:tag_links/ui/page_widgets/page_scaffold.dart';
 import 'package:tag_links/ui/search/root_search_section.dart';
 import 'package:tag_links/utils/paginated_utils.dart';
 
@@ -41,26 +41,71 @@ class _FolderPageState extends ConsumerState<HomePage> {
   get _foldersPreferenceProvider => folderPreferenceProvider(widget.folder?.id);
 
   bool get _isRoot => widget.folder == null;
+  bool get _isLimitFolder => widget.folder?.parentId != null;
 
   @override
   Widget build(BuildContext context) {
+    debugPrint("-------------- Entro al home ----------------");
     final preferenceAsync = ref.watch(_foldersPreferenceProvider);
-
+    final theme = Theme.of(context);
     return preferenceAsync.when(
-      loading: () =>
-          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      loading: () => const Scaffold(
+        backgroundColor: Colors.purple,
+        body: Center(child: CircularProgressIndicator()),
+      ),
       error: (err, _) => Scaffold(body: Center(child: Text('Error: $err'))),
       data: (preference) {
-        final showFolders = preference == FolderDefaultView.folders;
-
-        return PageScaffold(
+        final showFolders = _isLimitFolder
+            ? false
+            : preference == FolderDefaultView.folders;
+        return Scaffold(
+          backgroundColor: theme.scaffoldBackgroundColor,
           appBar: _appBar(showFolders, preference),
           floatingActionButton: _floatingActionButton(showFolders),
-          bottomButtonBar: BottomButtonBar(
-            defaultview: preference,
-            onSelect: (newPreference) => _selectView(newPreference),
+          //--------------------- body ---------------------
+          body: SafeArea(
+            child: Column(
+              children: [
+                BannerPendingNote(
+                  key: const ValueKey('banner_note'),
+                  toFolderId: widget.folder?.id,
+                  onToggleView: () => _selectView(
+                    FolderDefaultView.notes,
+                  ), // Cambia a notas al guardar
+                ),
+                BannerPendingFolder(
+                  key: const ValueKey('banner_folder'),
+                  toParent: widget.folder,
+                  onToggleView:
+                      () => _selectView(
+                    FolderDefaultView.folders,
+                  ), // Cambia a
+                ),
+                if (_isRoot) const RootSearchSection(),
+                Expanded(
+                  child: showFolders
+                      ? FoldersSection(parentId: widget.folder?.id)
+                      : NotesSection(
+                          folderId: widget.folder?.id,
+                          highlightNoteId: widget.highlightNoteId,
+                        ),
+                ),
+              ],
+            ),
           ),
-          body: _body(showFolders: showFolders),
+          // --------------------- footer ---------------------
+          bottomNavigationBar: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SmartBannerAd(key: Key('global_banner')),
+              const SizedBox(height: 8),
+              if (!_isLimitFolder)
+                BottomButtonBar(
+                  defaultview: preference,
+                  onSelect: (newPreference) => _selectView(newPreference),
+                ),
+            ],
+          ),
         );
       },
     );
@@ -76,28 +121,6 @@ class _FolderPageState extends ConsumerState<HomePage> {
     return AppBarPages(title: widget.folder!.title);
   }
 
-  List<Widget> _body({required bool showFolders}) {
-    return [
-      BannerPendingNote(
-        toFolderId: widget.folder?.id,
-        onToggleView: () => _selectView(FolderDefaultView.notes),
-      ),
-      BannerPendingFolder(
-        toParentId: widget.folder?.id,
-        onToggleView: () => _selectView(FolderDefaultView.folders),
-      ),
-      if (_isRoot) const RootSearchSection(),
-      Expanded(
-        child: showFolders
-            ? FoldersSection(parentId: widget.folder?.id)
-            : NotesSection(
-                folderId: widget.folder?.id,
-                highlightNoteId: widget.highlightNoteId,
-              ),
-      ),
-    ];
-  }
-
   /// 🔁 Cambiar vista y guardar preferencia
   Future<void> _selectView(FolderDefaultView select) async {
     return await ref
@@ -108,9 +131,7 @@ class _FolderPageState extends ConsumerState<HomePage> {
   /// ➕ FAB dinámico
   Widget _floatingActionButton(bool showFolders) {
     return showFolders
-        ? CreateNewFolderButton(
-            parentFolderId: widget.folder?.id,
-          )
+        ? CreateNewFolderButton(parentFolderId: widget.folder?.id)
         : CreateNewNoteButton(folderId: widget.folder?.id);
   }
 }

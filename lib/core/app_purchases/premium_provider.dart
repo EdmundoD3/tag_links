@@ -4,7 +4,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tag_links/core/app_purchases/listen_to_purchase_update.dart';
+import 'package:tag_links/core/app_purchases/in_app_purchase_manager.dart';
 import 'package:tag_links/core/app_purchases/suscription_cache.dart';
 
 final premiumNotifierProvider = NotifierProvider<PremiumNotifier, bool>(
@@ -17,28 +17,37 @@ class PremiumNotifier extends Notifier<bool> {
 
   @override
   bool build() {
-    // Al cerrar el notifier, cancelamos la suscripción
-    ref.onDispose(() => _subscription?.cancel());
-
-    _init();
-    return false; // Estado inicial
+    ref.onDispose(() => _subscription?.cancel()); // <--- ¡Importante!
+    Future.microtask(() => _init());
+    return false;
   }
 
   Future<void> _init() async {
-    final inAppPurchaseManager = await _getInAppPurchaseManager();
-    // 1. Verificación inmediata (Offline)
-    state = await inAppPurchaseManager.getPremiumStatus();
+    try {
+      final inAppPurchaseManager = await _getInAppPurchaseManager();
 
-    // 2. Conexión con la tienda (Online)
-    final bool available = await InAppPurchase.instance.isAvailable();
-    if (available) {
-      _subscription = InAppPurchase.instance.purchaseStream.listen((
-        purchases,
-      ) async {
-        await inAppPurchaseManager.listenToPurchaseUpdated(purchases);
-        // Actualizamos el estado de Riverpod con lo que se guardó en SharedPreferences
-        state = await inAppPurchaseManager.getPremiumStatus();
-      }, onError: (error) => debugPrint("Error en tienda: $error"));
+      // CARGA OFFLINE (Rápida, no bloquea)
+      final isPremium = await inAppPurchaseManager.getPremiumStatus();
+      state = isPremium;
+
+      // CARGA ONLINE (Peligrosa en emulador)
+      // Ponemos un timeout o verificamos disponibilidad con cuidado
+      final bool available = await InAppPurchase.instance.isAvailable().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () => false,
+      );
+
+      if (available) {
+        final inAppPurchaseManager = await _getInAppPurchaseManager();
+        _subscription = InAppPurchase.instance.purchaseStream.listen((
+          purchases,
+        ) async {
+          await inAppPurchaseManager.listenToPurchaseUpdated(purchases);
+          state = await inAppPurchaseManager.getPremiumStatus();
+        }, onError: (error) => debugPrint("Error en tienda: $error"));
+      }
+    } catch (e) {
+      debugPrint("Error inicializando Premium: $e");
     }
   }
 

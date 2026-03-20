@@ -15,8 +15,6 @@ class BannerPendingNote extends ConsumerWidget {
     required this.onToggleView,
   });
 
-  
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final pendingNote = ref.watch(pendingNoteProvider);
@@ -24,11 +22,11 @@ class BannerPendingNote extends ConsumerWidget {
     final note = pendingNote.note;
 
     return BannerPending(
-      title: t(
+      title: '''${t(
         ref,
         'bannerPendingNote',
         fallback: 'Tienes una nota pendiente de almacenar',
-      ),
+      )}: ${note.title}''',
       actions: [
         // ───────── Almacenar directo
         BannerOptionsTile(

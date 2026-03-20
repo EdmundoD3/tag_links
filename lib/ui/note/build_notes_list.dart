@@ -38,50 +38,42 @@ class BuildNotesList extends ConsumerWidget {
           );
         }
 
-        return Stack(
-          children: [
-            if (isLoadingMore)
-              const Positioned(
-                top: 8,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                ),
-              ),
-            ListView.builder(
-              controller: scrollController,
-              itemCount: notes.length,
-              itemBuilder: (_, i) => NoteTile(
-                key: getKey(notes[i].id),
-                note: notes[i],
-                onDeleteNote: (note) async {
-                  await onDeleteNote(note);
-                },
-                onMove: (note) async {
-                  final isConfirm = await ConfirmDialog.moveNote(context, ref);
+        return ListView.builder(
+          controller: scrollController,
+          // Aplicamos el +1 para el spinner al final
+          itemCount: notes.length + (isLoadingMore ? 1 : 0),
+          itemBuilder: (_, i) {
+            // Spinner al final de la lista
+            if (i == notes.length) {
+              return const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+              );
+            }
 
-                  if (isConfirm != true) return;
-                  ref
-                      .read(pendingNoteProvider.notifier)
-                      .set(note, TypeMove.move);
-                },
-                actionsItems: [
-                  if (actionsItems != null) ...actionsItems!,
-                  if (goFolder != null)
-                    ActionMenuItem(
-                      icon: Icons.drive_folder_upload,
-                      label: t(ref, 'goToFolder', fallback: 'Ir a la carpeta'),
-                      onTap: () => goFolder!(notes[i]),
-                    ),
-                ],
-              ),
-            ),
-          ],
+            final note = notes[i];
+            return NoteTile(
+              // Cambiamos GlobalKey por ValueKey si es posible
+              key: ValueKey(note.id),
+              note: note,
+              onDeleteNote: (n) async => await onDeleteNote(n),
+              onMove: (n) async {
+                final isConfirm = await ConfirmDialog.moveNote(context, ref);
+                if (isConfirm == true) {
+                  ref.read(pendingNoteProvider.notifier).set(n, TypeMove.move);
+                }
+              },
+              actionsItems: [
+                if (actionsItems != null) ...actionsItems!,
+                if (goFolder != null)
+                  ActionMenuItem(
+                    icon: Icons.drive_folder_upload,
+                    label: t(ref, 'goToFolder', fallback: 'Ir a la carpeta'),
+                    onTap: () => goFolder!(note),
+                  ),
+              ],
+            );
+          },
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),

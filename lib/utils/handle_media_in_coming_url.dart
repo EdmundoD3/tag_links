@@ -14,28 +14,31 @@ void handleMedia(SharedMedia? media, WidgetRef ref) {
   final text = media.content!;
   _handleIncomingUrl(text, ref);
 }
-
 void _handleIncomingUrl(String text, WidgetRef ref) {
   final notifier = ref.read(pendingNoteProvider.notifier);
-
+  
+  // Regex un poco más flexible
   final urlRegex = RegExp(r'(https?:\/\/[^\s]+)', caseSensitive: false);
   final match = urlRegex.firstMatch(text);
 
-  String content = text;
+  String url = "";
+  String description = text;
+
   if (match != null) {
-    content = text.replaceFirst(match.group(0)!, '').trim();
+    url = match.group(0)!;
+    // Removemos la URL del texto original para dejar solo el comentario del usuario
+    description = text.replaceFirst(url, '').trim();
   }
 
-  // 1. Crear nota base con todo el texto
-  final note = Note.baseNote(content: content,);
+  // Si el usuario compartió SOLO el link, la descripción queda vacía.
+  // Podrías dejarla así o ponerle un placeholder.
+  final note = Note.baseNote(content: description);
 
-  // 2. Si hay URL, crear link mínimo
-  if (match != null) {
-    final url = match.group(0)!;
-
+  if (url.isNotEmpty) {
+    // Usamos el LinkPreview que ya tiene tu lógica de enriquecimiento
     note.link = LinkPreview.create(noteId: note.id, url: url);
   }
 
-  // 3. Guardar nota temporal
-  notifier.set(note,TypeMove.newNote);
+  // 🚀 IMPORTANTE: Esto debe disparar una reacción en la UI
+  notifier.set(note, TypeMove.newNote);
 }

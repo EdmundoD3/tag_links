@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tag_links/core/ads/ad_mob_config.dart';
@@ -29,22 +30,32 @@ class InterstitialAdsNotifier extends Notifier<DateTime?> {
 
   static const int _cooldownDays = AdMobConfig.interstitialAdUnitDays;
 
-  @override
+@override
   DateTime? build() {
-    _load();
-    return null;
+    // Iniciamos con una fecha lejana para bloquear anuncios mientras carga el disco
+    final loadingLock = DateTime.now().add(const Duration(days: 365));
+    
+    // Usamos microtask para no bloquear el renderizado inicial
+    Future.microtask(() => _load()); 
+    
+    return loadingLock; 
   }
-  
-  Future<void> _load() async {
-    final stored = await _storage.getLastShown();
 
-    if (stored == null) {
-      // Primera vez que usa la app
-      final firstDelay = DateTime.now().add(const Duration(days: 2));
-      state = firstDelay;
-      await _storage.saveLastShown(firstDelay);
-    } else {
-      state = stored;
+  Future<void> _load() async {
+    try {
+      final stored = await _storage.getLastShown();
+      if (stored != null) {
+        state = stored;
+      } else {
+        // Usuario nuevo: 2 días de gracia
+        final firstDelay = DateTime.now().add(const Duration(days: 2));
+        await _storage.saveLastShown(firstDelay);
+        state = firstDelay; // Actualizamos el estado al final
+      }
+    } catch (e) {
+      debugPrint("Error cargando ads storage: $e");
+      // En caso de error, mantenemos el bloqueo o ponemos una fecha segura
+      state = DateTime.now().add(const Duration(days: 1));
     }
   }
 

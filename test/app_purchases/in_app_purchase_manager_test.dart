@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tag_links/core/app_purchases/listen_to_purchase_update.dart';
+import 'package:tag_links/core/app_purchases/in_app_purchase_manager.dart';
 import 'package:tag_links/core/app_purchases/suscription_cache.dart';
 
 void main() {

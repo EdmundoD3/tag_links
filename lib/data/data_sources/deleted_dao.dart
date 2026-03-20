@@ -58,8 +58,7 @@ class _DeletedDao {
     );
   ''';
 
-  // Usamos 'dynamic' para que acepte tanto Database como Transaction
-  Future<void> saveId(String id, {dynamic executor}) async {
+  Future<void> saveId(String id, {Transaction? executor}) async {
     final now = DateTime.now().millisecondsSinceEpoch;
     final db = executor ?? _db; 
 

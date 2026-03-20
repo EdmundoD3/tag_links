@@ -10,15 +10,25 @@ class TagsDao {
 
   Future<Tag?> upsert(Tag tag) async {
     try {
-      final existedTag = await getByExactlyName(tag.name);
-      if(existedTag != null) return existedTag;
-      final newTag = await _db.insert(
+      // 1. Aseguramos que tenga un ID válido antes de intentar nada
+      final tagToInsert = tag.ensureForInsert();
+
+      // 2. Intentamos el INSERT con IGNORE.
+      // Si el 'name' ya existe (UNIQUE), no hará nada y devolverá 0 o el ID existente.
+      final idResult = await _db.insert(
         _tableName,
-        tag.toMap(),
+        tagToInsert.toMap(),
         conflictAlgorithm: ConflictAlgorithm.ignore,
       );
-      debugPrint("TagsDao.upsert: $newTag");
-      return tag;
+
+      // 3. Si idResult es > 0, significa que se insertó correctamente.
+      if (idResult > 0) {
+        return tagToInsert;
+      }
+
+      // 4. Si no se insertó (porque ya existía el nombre), lo buscamos y lo devolvemos.
+      // Así garantizamos que la app siempre use el ID que ya está en la DB.
+      return await getByExactlyName(tag.name);
     } catch (e) {
       debugPrint('TagsDao.upsert error: ${e.toString()}');
       return null;

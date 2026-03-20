@@ -1,34 +1,27 @@
 {
-    // Use IntelliSense para saber los atributos posibles.
-    // Mantenga el puntero para ver las descripciones de los existentes atributos.
-    // Para más información, visite: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "tag_links",
-            "request": "launch",
-            "type": "dart"
-        },
-        {
-            "name": "tag_links (profile mode)",
-            "request": "launch",
-            "type": "dart",
-            "flutterMode": "profile"
-        },
-        {
-            "name": "tag_links (release mode)",
-            "request": "launch",
-            "type": "dart",
-            "flutterMode": "release"
-        },
-        {
-      "name": "TagLinks Debug",
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "tag_links",
       "request": "launch",
       "type": "dart",
-      "toolArgs": [
-        "--dart-define",
-        "API_BASE_URL=https://192.168.1.10/api"
-      ]
+      "flutterMode": "debug", // <--- Forzamos el modo debug explícitamente
+      "console": "debugConsole", // <--- Aseguramos que use la consola de debug
+    },
+    {
+      "name": "tag_links (profile mode)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "profile"
+    },
+    {
+      "name": "tag_links (release mode)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "release"
     }
-    ]
+  ]
 }

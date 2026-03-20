@@ -124,7 +124,7 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
   Future<void> addNote(Note note) async {
     await _repo.create(note);
     // Disparamos el sync sin esperar (await) su respuesta aquí
-    unawaited(ref.read(syncNotifierProvider.notifier).performSync());
+    // unawaited(ref.read(syncNotifierProvider.notifier).performSync());
     ref.invalidateSelf();
   }
 
@@ -144,7 +144,7 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
   Future<void> upsert(Note note) async {
     debugPrint('guardando nota con folder: ${note.folderId}');
     await _repo.upsert(note);
-    unawaited(ref.read(syncNotifierProvider.notifier).performSync());
+    // unawaited(ref.read(syncNotifierProvider.notifier).performSync());
 
     // Actualización optimista: No invalides, solo actualiza el item en la lista
     state.whenData((notes) {
@@ -176,7 +176,7 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
 
     try {
       await _repo.delete(noteForDelete);
-      unawaited(ref.read(syncNotifierProvider.notifier).performSync());
+      // unawaited(ref.read(syncNotifierProvider.notifier).performSync());
     } catch (e) {
       // ❌ rollback si falla
       state = AsyncValue.data(current);
@@ -184,28 +184,40 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
     }
   }
 
-  Future<void> _enrichLinks(List<LinkPreview> links) async {
-    final service = LinkPreviewService();
+// Fuera de la clase o como variable privada
+final Set<String> _processingUrls = {};
 
-    bool updatedAny = false;
+Future<void> _enrichLinks(List<LinkPreview> links) async {
+  final service = LinkPreviewService();
+  
+  // Filtramos las que ya se están procesando para no repetir peticiones
+  final toProcess = links.where((l) => !_processingUrls.contains(l.url)).toList();
+  _processingUrls.addAll(toProcess.map((l) => l.url));
 
-    for (final link in links) {
-      final updated = await service.enrich(link);
-      if (updated != null && updated.hasMetadata) {
-        await _repoLinkPreview.replace(updated);
-        updatedAny = true;
-      }
+  try {
+    for (final link in toProcess) {
+       final updated = await service.enrich(link);
+       if (updated != null && updated.hasMetadata) {
+         await _repoLinkPreview.replace(updated);
+         // En lugar de invalidateSelf, actualiza solo la nota en el state actual
+         _updateLocalNoteWithMetadata(updated);
+       }
     }
-
-    // 🚩 CAMBIO CLAVE: En lugar de invalidateSelf (que crea bucles),
-    // podrías usar un evento de bus o simplemente dejar que la UI
-    // se actualice la próxima vez que el usuario navegue.
-    // Si necesitas que sea real-time, actualiza el estado local de la nota.
-    if (updatedAny) {
-      // Opcional: Solo refrescar si es vital, pero con cuidado del bucle.
-      // ref.invalidateSelf();
-    }
+  } finally {
+    // Opcional: limpiar después de un tiempo o dejarlo para evitar re-procesar
   }
+}
+
+void _updateLocalNoteWithMetadata(LinkPreview enrichedLink) {
+  state.whenData((notes) {
+    state = AsyncData(notes.map((n) {
+      if (n.link?.url == enrichedLink.url) {
+        return n.copyWith(link: enrichedLink,folderId: n.folderId);
+      }
+      return n;
+    }).toList());
+  });
+}
 }
 
 class NotePaginationNotifier extends Notifier<PaginatedByDate> {

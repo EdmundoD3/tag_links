@@ -1,21 +1,47 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart'; // Para debugPrint
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/repository/folder_repository.dart';
 import 'package:tag_links/state/folders_provider.dart';
 
-final pendingFolderProvider =
-    NotifierProvider<PendingFolderNotifier, Folder?>(
+// --- VALIDACIÓN ---
+
+class FolderValidation {
+  final Set<String> forbiddenIds;
+  final bool hasChildren;
+
+  FolderValidation({required this.forbiddenIds, required this.hasChildren});
+}
+
+final folderValidationProvider = FutureProvider.autoDispose.family<FolderValidation, String>((ref, folderId) async {
+  debugPrint("🔍 Iniciando validación para: $folderId");
+  final repo = ref.watch(folderRepositoryProvider);
+  
+  try {
+    // Si esto tarda más de 2 segundos, algo está mal en el SQL
+    final results = await Future.wait([
+      repo.getAllDescendantIds(folderId),
+      repo.hasChildren(folderId),
+    ]).timeout(const Duration(seconds: 2));
+
+    debugPrint("✨ Validación completada con éxito");
+    return FolderValidation(
+      forbiddenIds: results[0] as Set<String>,
+      hasChildren: results[1] as bool,
+    );
+  } catch (e, stack) {
+    debugPrint("🚨 ERROR CRÍTICO EN PROVIDER: $e");
+    debugPrint(stack.toString());
+    rethrow;
+  }
+});
+
+// --- ESTADO DE CARPETA PENDIENTE ---
+
+final pendingFolderProvider = NotifierProvider<PendingFolderNotifier, Folder?>(
   PendingFolderNotifier.new,
 );
-
-// Este provider nos dirá qué carpetas son "prohibidas" para el movimiento actual
-final forbiddenDestinationsProvider = FutureProvider<Set<String>>((ref) async {
-  final pendingFolder = ref.watch(pendingFolderProvider);
-  if (pendingFolder == null) return {};
-
-  final repo = ref.watch(folderRepositoryProvider);
-  return await repo.getAllDescendantIds(pendingFolder.id);
-});
 
 class PendingFolderNotifier extends Notifier<Folder?> {
   @override
@@ -25,13 +51,15 @@ class PendingFolderNotifier extends Notifier<Folder?> {
   void clear() => state = null;
 }
 
-final folderMoveProvider = Provider((ref) {
-  return FolderMoveService(ref);
-});
+// --- SERVICIO DE MOVIMIENTO ---
+
+final folderMoveProvider = Provider((ref) => FolderMoveService(ref));
 
 class FolderMoveService {
   final Ref ref;
   FolderMoveService(this.ref);
+
+  FolderRepository get _repo => ref.read(folderRepositoryProvider);
 
   Future<void> move({
     required Folder folder,
@@ -39,24 +67,78 @@ class FolderMoveService {
   }) async {
     final fromParentId = folder.parentId;
 
-    // 1. Creamos el objeto con el nuevo destino
     final moved = folder.copyWith(
       parentId: toParentId,
       updatedAt: DateTime.now(),
+      syncAt: null, // Aseguramos que el sync lo detecte
     );
 
-    // 2. PERSISTENCIA Y ACTUALIZACIÓN DEL DESTINO
-    // Llamamos a updateFolder del notifier de la carpeta DESTINO.
-    // Esto ejecutará el await _repo.update(folder) que agregamos al Notifier.
-    await ref.read(foldersProvider(toParentId).notifier).updateFolder(moved);
+    await _repo.upsert(moved);
 
-    // 3. ACTUALIZACIÓN DEL ORIGEN
-    // Si la carpeta se movió a un padre distinto, la quitamos de la lista vieja.
-    if (fromParentId != toParentId) {
+    _updateUi(
+      folder: folder, 
+      fromParentId: fromParentId, 
+      toParentId: toParentId, 
+      updatedFolder: moved
+    );
+
+    _cleanup();
+  }
+
+  Future<void> moveAndFlatten({
+    required Folder folder,
+    required String? toParentId,
+    bool toRoot = true,
+  }) async {
+    final fromParentId = folder.parentId;
+    final childrenParentId = toRoot ? null : fromParentId;
+
+    // 1. DB: Operación atómica (Recuerda que aquí rescatamos hijos antes de mover)
+    await _repo.moveAndFlatten(folder, toParentId, toRoot: toRoot);
+
+    // 2. UI: Actualizar la carpeta principal
+    final moved = folder.copyWith(
+      parentId: toParentId, 
+      updatedAt: DateTime.now(),
+      syncAt: null,
+    );
+    
+    _updateUi(
+      folder: folder, 
+      fromParentId: fromParentId, 
+      toParentId: toParentId, 
+      updatedFolder: moved
+    );
+
+    // 3. UI: Invalidadción estratégica
+    // Invalidamos el destino donde cayeron los hijos (Raíz o antiguo padre)
+    ref.invalidate(foldersProvider(childrenParentId));
+    // Invalidamos la carpeta que se movió porque ahora está vacía
+    ref.invalidate(foldersProvider(folder.id));
+
+    _cleanup();
+  }
+
+  void _updateUi({
+    required Folder folder,
+    required String? fromParentId,
+    required String? toParentId,
+    required Folder updatedFolder,
+  }) {
+    // Solo actualizamos el notifier si el provider está "vivo" (evita errores de creación/destrucción)
+    if (ref.exists(foldersProvider(fromParentId))) {
       ref.read(foldersProvider(fromParentId).notifier).removeFolder(folder.id);
     }
 
-    // 4. Limpiar estado temporal
+    if (ref.exists(foldersProvider(toParentId))) {
+      ref.read(foldersProvider(toParentId).notifier).updateFolder(updatedFolder);
+    } else {
+      // Si el destino no está cargado, invalidamos para que cargue fresco al entrar
+      ref.invalidate(foldersProvider(toParentId));
+    }
+  }
+
+  void _cleanup() {
     ref.read(pendingFolderProvider.notifier).clear();
   }
 }

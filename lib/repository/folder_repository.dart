@@ -40,7 +40,7 @@ class FolderRepository {
     return _dao.upsert(folderToSave);
   }
 
-  Future<void> update(Folder folder) {
+  Future<void> upsert(Folder folder) {
     debugPrint(folder.parentId);
 
     final folderToUpdate = folder.ensureForInsert();
@@ -67,7 +67,12 @@ class FolderRepository {
   }
 
   Future<void> toggleFavorite(Folder folder) {
-    return update(folder.copyWith(isFavorite: !folder.isFavorite,parentId: folder.parentId));
+    return upsert(
+      folder.copyWith(
+        isFavorite: !folder.isFavorite,
+        parentId: folder.parentId,
+      ),
+    );
   }
   // --------------------- PREFERENCES section ----------------------//
 
@@ -81,7 +86,18 @@ class FolderRepository {
     );
   }
 
-  // ----------------------- SYNC section -------------------------//
+  // ---------------------------- MOVE ---------------------------- //
+  Future<void> moveAndFlatten(
+    Folder folder,
+    String? newParentId, {
+    bool toRoot = true,
+  }) => _dao.moveAndFlatten(folder, newParentId,toRoot: true);
+
+  Future<bool> hasChildren(String folderId) async {
+    return _dao.hasChildren(folderId);
+  }
+
+  // ----------------------- SYNC section ------------------------- //
 
   Future<SyncData<FolderRawSync>> getForSync() async {
     final limit = 200;
@@ -111,7 +127,11 @@ class FolderRepository {
 
 final folderRepositoryProvider = Provider<FolderRepository>((ref) {
   final db = ref.watch(databaseProvider);
-  final foldersDao = FoldersDao(db: db, folderTagsDao: FolderTagsDao(db),deletedFoldersDao: DeletedFoldersDao(db: db));
+  final foldersDao = FoldersDao(
+    db: db,
+    folderTagsDao: FolderTagsDao(db),
+    deletedFoldersDao: DeletedFoldersDao(db: db),
+  );
   final deleteDao = DeletedFoldersDao(db: db);
   final preferencesDao = FolderPreferencesDao(db: db);
 

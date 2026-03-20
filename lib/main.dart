@@ -16,12 +16,12 @@ import 'package:tag_links/utils/handle_media_in_coming_url.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  MobileAds.instance.initialize();
+  // Si tienes un splash screen o algo que espere, asegúrate que no se quede trabado
   final db = await AppDatabase().database;
   runApp(
     ProviderScope(
       overrides: [databaseProvider.overrideWithValue(db)],
-      child: MyApp(),
+      child: const MyApp(),
     ),
   );
 }
@@ -41,63 +41,44 @@ class _MyAppState extends ConsumerState<MyApp> {
   void initState() {
     super.initState();
 
+    MobileAds.instance.initialize();
+
     _subHandleUrl = ShareListener.stream.listen(_handleMedia);
     ShareListener.getInitial().then(_handleMedia);
+    // 1. PremiumNotifier: Usamos read una sola vez para despertar el provider
+    // sin crear un bucle de reconstrucción en el primer frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(premiumNotifierProvider);
+    });
+    // 2. 🚀 CARGA DE ADS (Solo si NO es Premium)
+    Future.delayed(const Duration(seconds: 8), () {
+      // Verificamos si el usuario es premium antes de cargar basura visual
+      final isPremium = ref.read(premiumNotifierProvider);
 
-    // 1. Activar PremiumNotifier inmediatamente (es ligero)
-    Future.microtask(() => ref.read(premiumNotifierProvider));
+      if (isPremium) {
+        return;
+      }
 
-    // 2. 🚀 CARGA DE ADS MUCHO DESPUÉS
-    // Esperamos 6 segundos para que el emulador cargue WebView e Impeller
-    Future.delayed(const Duration(seconds: 6), () {
-      if (!mounted) return;
       try {
         final ads = ref.read(adServiceProvider);
         ads.loadRewardedAd();
         ads.loadInterstitialAd();
-        debugPrint('AdMob: Carga inicial programada ejecutada.');
+        debugPrint('AdMob: Carga inicial ejecutada tras espera.');
       } catch (e) {
-        debugPrint('AdMob: Error en carga diferida: $e');
+        debugPrint('AdMob: Fallo silencioso en emulador: $e');
       }
     });
   }
 
   void _handleMedia(SharedMedia? media) {
+    if (media == null) return;
     return handleMedia(media, ref);
   }
-
-  // Future<void> _initPurchaseStream() async {
-  //   if (_subscription != null) return;
-
-  //   final available = await InAppPurchase.instance.isAvailable();
-  //   if (!available || !mounted) return;
-
-  //   _subscription = InAppPurchase.instance.purchaseStream.listen(
-  //     _listenToPurchaseUpdated,
-  //     onDone: () => _subscription?.cancel(),
-  //     onError: (error, stack) {
-  //       debugPrint('Purchase stream error: $error');
-  //     },
-  //   );
-
-  //   // IMPORTANTE: Pedimos a la tienda que nos envíe las compras activas
-  //   // para actualizar la fecha de expiración (Heartbeat).
-  //   await InAppPurchase.instance.restorePurchases();
-  // }
-
-  // void _listenToPurchaseUpdated(List<PurchaseDetails> list) {
-  //   assert(() {
-  //     debugPrint('Purchase update: ${list.length}');
-  //     return true;
-  //   }());
-
-  //   InAppPurchaseManager.listenToPurchaseUpdated(list);
-  // }
 
   @override
   void dispose() {
     _subHandleUrl.cancel();
-    _subscription?.cancel();
+    // _subscription?.cancel(); // ELIMINAR (Ya lo hace el Notifier solo)
     super.dispose();
   }
 
@@ -107,9 +88,7 @@ class _MyAppState extends ConsumerState<MyApp> {
 
     return MaterialApp(
       theme: getPalette(palette: palette),
-      home: const HomePage(
-        folder: null,
-      ),
+      home: const HomePage(folder: null),
     );
   }
 }

@@ -24,70 +24,48 @@ class BuildFoldersList extends ConsumerWidget {
     required this.onDeleteFolder,
   });
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return foldersAsync.when(
-      data: (folders) {
-        if (folders.isEmpty) {
-          return EmptyIndicator(
-            title: t(ref, 'noFolders', fallback: 'No folders'),
+@override
+Widget build(BuildContext context, WidgetRef ref) {
+  return foldersAsync.when(
+    data: (folders) {
+      if (folders.isEmpty) {
+        return EmptyIndicator(title: t(ref, 'noFolders', fallback: 'No folders'));
+      }
+
+      return ListView.builder(
+        controller: scrollController,
+        // Añadimos +1 al count si está cargando para mostrar el spinner al final
+        itemCount: folders.length + (notifier.isLoadingMore ? 1 : 0),
+        itemBuilder: (_, i) {
+          // Si es el último índice y estamos cargando, mostramos el spinner
+          if (i == folders.length) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+            );
+          }
+
+          final folder = folders[i];
+          return FolderTile(
+            key: ValueKey(folder.id), // Importante para que Flutter no se pierda al mover
+            folder: folder,
+            actionsItems: const [],
+            goFolder: () => _goFolder(context, folder),
+            onDeleteFolder: () => onDeleteFolder(folder.id),
+            onMove: (f) async {
+              final isConfirm = await ConfirmDialog.moveFolder(context, ref);
+              if (isConfirm == true) {
+                ref.read(pendingFolderProvider.notifier).set(f);
+              }
+            },
           );
-        }
-
-        return Stack(
-          children: [
-            ListView.builder(
-              controller: scrollController,
-              itemCount: folders.length,
-              itemBuilder: (_, i) => FolderTile(
-                folder: folders[i],
-                actionsItems: [],
-                goFolder: () => _goFolder(context, folders[i]),
-                onDeleteFolder: () => onDeleteFolder(folders[i].id),
-                onMove: (folder) async {
-                  final isConfirm = await ConfirmDialog.moveFolder(
-                    context,
-                    ref,
-                  );
-
-                  if (isConfirm != true) return;
-
-                  ref.read(pendingFolderProvider.notifier).set(folder);
-                },
-              ),
-            ),
-
-            if (notifier.isLoadingMore) _loadingMoreIndicator(),
-          ],
-        );
-      },
-      loading: () => _loading(),
-      error: (error, _) => _error(error.toString()),
-    );
-  }
-
-  Widget _loading() {
-    return const Center(child: CircularProgressIndicator());
-  }
-
-  Widget _error(String error) {
-    return Center(child: Text('Error: $error'));
-  }
-
-  Widget _loadingMoreIndicator() {
-    return const Positioned(
-      top: 8,
-      left: 0,
-      right: 0,
-      child: Center(
-        child: SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
-      ),
-    );
-  }
+        },
+      );
+    },
+    loading: () => const Center(child: CircularProgressIndicator()),
+    error: (error, _) => Center(child: Text('Error: $error')),
+  );
+}
 
   Future<void> _goFolder(BuildContext context, Folder folder) async {
     return goPage(context: context, page: HomePage(folder: folder));

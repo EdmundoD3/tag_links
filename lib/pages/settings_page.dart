@@ -8,7 +8,6 @@ import 'package:tag_links/core/locate/lang_selector.dart';
 import 'package:tag_links/core/locate/app_lang.dart';
 import 'package:tag_links/core/ads/ads_disable_provider.dart';
 import 'package:tag_links/core/theme/theme_selector_widget.dart';
-import 'package:tag_links/ui/page_widgets/page_scaffold.dart';
 
 class SupportProjectPage extends ConsumerWidget {
   const SupportProjectPage({super.key});
@@ -19,7 +18,7 @@ class SupportProjectPage extends ConsumerWidget {
     final adsActive = ref.watch(isAdsActiveProvider);
 
     final theme = Theme.of(context);
-    return PageScaffold(
+    return Scaffold(
       appBar: AppBar(
         title: Text(
           t(ref, 'settingsTitle', fallback: 'Configuración'),
@@ -27,7 +26,7 @@ class SupportProjectPage extends ConsumerWidget {
         ),
       ),
       floatingActionButton: null,
-      body: _buildBody(context, ref, adsActive),
+      body: SafeArea(child: Column(children: _buildBody(context, ref, adsActive))),
     );
   }
 

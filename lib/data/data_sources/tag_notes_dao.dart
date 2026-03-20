@@ -8,25 +8,24 @@ class TagsNotesDao {
   TagsNotesDao(this._db);
 
   // 1. Método para INSERT/UPSERT
-  // Usamos dynamic o un tipo genérico si prefieres,
   // pero lo importante es que acepte Batch, Transaction o Database.
   Future<void> upsert({
     required String tagId,
     required String noteId,
-    dynamic executor, // Puede ser Transaction o Database
+    Transaction? executor, // Puede ser Transaction o Database
   }) async {
     final db = executor ?? _db;
     await db.insert(_tableName, {
       'noteId': noteId,
       'tagId': tagId,
-    }, conflictAlgorithm: ConflictAlgorithm.replace);
+    }, conflictAlgorithm: ConflictAlgorithm.ignore);
   }
 
   // 2. Método para DELETE
   Future<void> delete({
     required String tagId,
     required String noteId,
-    dynamic executor,
+    Transaction? executor,
   }) async {
     final db = executor ?? _db;
     await db.delete(

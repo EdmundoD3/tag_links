@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/core/sync/sync_notifier.dart';
 import 'package:tag_links/repository/notes_repository.dart';
 import 'package:tag_links/state/notes_provider.dart';
 import '../models/note.dart';
@@ -46,6 +45,7 @@ class NoteMoveService {
       folderId: toFolderId,
       updatedAt: DateTime.now(),
     );
+    if (fromFolderId == toFolderId) return;
 
     // 2. Persistencia real en la DB primero
     // Usamos el repositorio directamente para asegurar que el cambio esté en disco
@@ -62,8 +62,6 @@ class NoteMoveService {
     // 4. Limpiar estado temporal
     ref.read(pendingNoteProvider.notifier).clear();
     
-    // 5. Notificar al sistema de sincronización
-    unawaited(ref.read(syncNotifierProvider.notifier).performSync());
   }
   Future<void> save({required Note note, required String? toFolderId}) async {
     final newNote = note.copyWith(
@@ -81,8 +79,6 @@ class NoteMoveService {
     // 4. Limpiar estado temporal
     ref.read(pendingNoteProvider.notifier).clear();
     
-    // 5. Notificar al sistema de sincronización
-    unawaited(ref.read(syncNotifierProvider.notifier).performSync());
   }
 }
 

@@ -87,19 +87,24 @@ class FoldersNotifier extends AsyncNotifier<List<Folder>> {
     if (!_hasMore || _isLoadingMore) return;
 
     _isLoadingMore = true;
-    _page++;
+    // page++ debería ir después de confirmar que se cargaron datos
 
-    final nextItems = await _fetchPage();
-    state = AsyncData(nextItems);
-
-    _isLoadingMore = false;
+    try {
+      _page++;
+      final nextItems = await _fetchPage();
+      // Riverpod se encarga de que esto sea seguro, pero
+      // asegúrate de que _fetchPage use el estado actual correctamente.
+      state = AsyncData(nextItems);
+    } finally {
+      _isLoadingMore = false;
+    }
   }
 
   // ───────────── CRUD ─────────────
 
   Future<void> addFolder(Folder folder) async {
     await _repo.create(folder);
-    unawaited(ref.read(syncNotifierProvider.notifier).performSync());
+    // unawaited(ref.read(syncNotifierProvider.notifier).performSync());
     // En el caso de añadir, invalidateSelf está bien para traer el orden correcto de DB
     ref.invalidateSelf();
   }
@@ -108,10 +113,10 @@ class FoldersNotifier extends AsyncNotifier<List<Folder>> {
 
   Future<void> updateFolder(Folder folder) async {
     // 1. Guardar en DB para que el cambio sea permanente
-    await _repo.update(folder);
+    await _repo.upsert(folder);
 
     // 2. Sync
-    unawaited(ref.read(syncNotifierProvider.notifier).performSync());
+    // unawaited(ref.read(syncNotifierProvider.notifier).performSync());
 
     // 3. Actualizar UI manualmente para que el movimiento sea fluido
     state.whenData((currentItems) {
@@ -139,13 +144,10 @@ class FoldersNotifier extends AsyncNotifier<List<Folder>> {
     await _repo.delete(id);
 
     // 2. Sync
-    unawaited(ref.read(syncNotifierProvider.notifier).performSync());
+    // unawaited(ref.read(syncNotifierProvider.notifier).performSync());
 
     // 3. Quitar de la UI
     removeFolder(id);
-
-    // 4. Invalida para asegurar que la paginación se recalcule bien
-    ref.invalidateSelf();
   }
 
   Future<void> toggleFavorite(Folder folder) async {

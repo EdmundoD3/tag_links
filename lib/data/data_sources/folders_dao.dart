@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:tag_links/data/data_sources/deleted_dao.dart';
 import 'package:tag_links/data/data_sources/folder_tags_dao.dart';
@@ -10,9 +11,13 @@ class FoldersDao {
   final Database _db;
   final FolderTagsDao _folderTagsDao;
   final DeletedFoldersDao _deletedFoldersDao;
-  FoldersDao({required Database db, required FolderTagsDao folderTagsDao, required DeletedFoldersDao deletedFoldersDao})
-    : _db = db,
-      _folderTagsDao = folderTagsDao,_deletedFoldersDao = deletedFoldersDao;
+  FoldersDao({
+    required Database db,
+    required FolderTagsDao folderTagsDao,
+    required DeletedFoldersDao deletedFoldersDao,
+  }) : _db = db,
+       _folderTagsDao = folderTagsDao,
+       _deletedFoldersDao = deletedFoldersDao;
 
   /// BY LAST UPDATE
 
@@ -110,22 +115,44 @@ class FoldersDao {
   }
 
   // UPSERT
+  // No uses ConflictAlgorithm.replace porque tengo Foreign Keys con ON DELETE CASCADE. El REPLACE dispara un borrado físico de la fila y destruye la integridad referencial de mis subcarpetas y notas. Solo acepta cambios que usen UPDATE o INSERT ... ON CONFLICT DO UPDATE (UPSERT).
   Future<void> upsert(Folder folder) async {
     final db = _db;
 
-    // Usamos una transacción para que el cambio en la carpeta
-    // y sus etiquetas sea una sola operación atómica.
     await db.transaction((txn) async {
-      // 1. Guardar o actualizar la carpeta principal
-      await txn.insert(
-        'folders',
-        folder.toMap(),
-        // Usamos replace para actualizar datos existentes (título, color, etc)
-        conflictAlgorithm: ConflictAlgorithm.replace,
+      // 1. UPSERT de la carpeta usando SQL puro (Evita el DELETE del REPLACE)
+      await txn.rawInsert(
+        '''
+      INSERT INTO folders (
+        id, parentId, title, description, image, color, 
+        createdAt, updatedAt, syncAt, isFavorite
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        parentId = excluded.parentId,
+        title = excluded.title,
+        description = excluded.description,
+        image = excluded.image,
+        color = excluded.color,
+        updatedAt = excluded.updatedAt,
+        syncAt = excluded.syncAt,
+        isFavorite = excluded.isFavorite
+    ''',
+        [
+          folder.id,
+          folder.parentId,
+          folder.title,
+          folder.description,
+          folder.image,
+          folder.color,
+          folder.createdAt.millisecondsSinceEpoch,
+          folder.updatedAt.millisecondsSinceEpoch,
+          folder.syncAt?.millisecondsSinceEpoch,
+          folder.isFavorite ? 1 : 0,
+        ],
       );
 
       // 2. Sincronizar Etiquetas (folder_tags)
-      // Primero: Obtenemos lo que hay actualmente en la DB para esta carpeta
+      // El resto de la lógica de etiquetas se mantiene igual, ya que no afecta a la jerarquía
       final currentTagRows = await txn.query(
         'folder_tags',
         columns: ['tagId'],
@@ -138,11 +165,7 @@ class FoldersDao {
           .toSet();
 
       final newTagIds = folder.tags.map((t) => t.id).toSet();
-
-      // 3. Agregar etiquetas nuevas (las que están en el objeto pero no en la DB)
       final tagsToAdd = newTagIds.difference(currentTagIds);
-
-      // 4. Eliminar etiquetas que ya no están (están en la DB pero no en el nuevo objeto)
       final tagsToRemove = currentTagIds.difference(newTagIds);
 
       for (final tagId in tagsToAdd) {
@@ -218,11 +241,11 @@ class FoldersDao {
   }
 
   /// DELETE
-Future<void> delete(String id) async {
+  Future<void> delete(String id) async {
     await _db.transaction((txn) async {
       // 1. Obtener todos los hijos recursivamente (incluyendo el ID actual)
       // Nota: Modifica getAllDescendantIds para que acepte un 'executor' (txn)
-      final idsToDelete = await _getAllDescendantIds(id, executor: txn);
+      final idsToDelete = await getAllDescendantIds(id, executor: txn);
 
       // 2. Verificar cuáles de esos IDs ya conocen el servidor
       final placeholders = List.filled(idsToDelete.length, '?').join(',');
@@ -240,9 +263,9 @@ Future<void> delete(String id) async {
 
       // 4. Borrado físico (El ON DELETE CASCADE limpiará las tablas hijas)
       await txn.delete(
-        'folders', 
-        where: 'id IN ($placeholders)', 
-        whereArgs: idsToDelete.toList()
+        'folders',
+        where: 'id IN ($placeholders)',
+        whereArgs: idsToDelete.toList(),
       );
     });
   }
@@ -299,31 +322,13 @@ Future<void> delete(String id) async {
     return Future.wait(result.map((f) => _mapFolderWithTags(db, f)));
   }
 
-  Future<Set<String>> getAllDescendantIds(String folderId) async {
-    // Esta consulta busca la carpeta inicial y luego se une a sí misma
-    // buscando todos los registros cuyo parentId sea el id de la carpeta anterior
-    final List<Map<String, dynamic>> results = await _db.rawQuery(
-      '''
-    WITH RECURSIVE family AS (
-      -- Caso base: empezar por la carpeta que queremos mover
-      SELECT id FROM folders WHERE id = ?
-      UNION ALL
-      -- Paso recursivo: buscar hijos cuyo parentId sea un ID ya encontrado en 'family'
-      SELECT f.id FROM folders f
-      INNER JOIN family ON f.parentId = family.id
-    )
-    SELECT id FROM family;
-  ''',
-      [folderId],
-    );
-
-    // Retornamos un Set para que la búsqueda sea O(1) (instantánea)
-    return results.map((row) => row['id'] as String).toSet();
-  }
   // Cambia a private si solo se usa internamente o mantén público
-  Future<Set<String>> _getAllDescendantIds(String folderId, {dynamic executor}) async {
-    final db = executor ?? _db; 
-    
+  Future<Set<String>> getAllDescendantIds(
+    String folderId, {
+    Transaction? executor,
+  }) async {
+    final db = executor ?? _db;
+
     final List<Map<String, dynamic>> results = await db.rawQuery(
       '''
       WITH RECURSIVE family AS (
@@ -339,6 +344,53 @@ Future<void> delete(String id) async {
 
     return results.map((row) => row['id'] as String).toSet();
   }
+
+  Future<bool> hasChildren(String folderId) async {
+    // Usamos SELECT COUNT para que la DB solo nos devuelva un número
+    final result = await _db.rawQuery(
+      'SELECT COUNT(*) as total FROM folders WHERE parentId = ? LIMIT 1',
+      [folderId],
+    );
+
+    // sqflite devuelve una lista de mapas, extraemos el primer entero
+    final int? count = Sqflite.firstIntValue(result);
+    return (count ?? 0) > 0;
+  }
+
+  // ------------- move ---------------
+Future<void> moveAndFlatten(
+  Folder folder,
+  String? newParentId, {
+  bool toRoot = true,
+}) async {
+  final now = DateTime.now().millisecondsSinceEpoch;
+  // Si toRoot es true, los hijos van a null (Raíz)
+  // Si no, van al parentId que tenía la carpeta (suben un nivel)
+  final childrenNewParentId = toRoot ? null : folder.parentId;
+
+  await _db.transaction((txn) async {
+    // 1. "Subir" a los hijos
+    await txn.update(
+      'folders',
+      {
+        'parentId': childrenNewParentId,
+        'updatedAt': now,
+      },
+      where: 'parentId = ?',
+      whereArgs: [folder.id],
+    );
+
+    // 2. Mover la carpeta padre
+    final rowsPadre = await txn.update(
+      'folders',
+      {'parentId': newParentId, 'updatedAt': now},
+      where: 'id = ?',
+      whereArgs: [folder.id],
+    );
+
+    if (rowsPadre == 0) throw Exception('Error: Carpeta no encontrada');
+  });
+}
 
   /// MAP FOLDER + TAGS
   Future<Folder> _mapFolderWithTags(
