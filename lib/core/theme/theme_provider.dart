@@ -1,48 +1,55 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tag_links/core/theme/app_theme.dart';
+import 'package:tag_links/data/shared_prefs_provider.dart';
 
-final paletteProvider =
-    NotifierProvider<PaletteNotifier, AppPalette>(
+// --- El Almacenamiento ---
+final _paletteStorageProvider = Provider((ref) {
+  final prefs = ref.watch(sharedPrefsProvider);
+  return _PaletteStorage(prefs);
+});
+
+// --- El Notifier ---
+final paletteProvider = NotifierProvider<PaletteNotifier, AppPalette>(
   PaletteNotifier.new,
 );
 
 class PaletteNotifier extends Notifier<AppPalette> {
-  final _storage = _PaletteStorage();
-
   @override
   AppPalette build() {
-    _load();
-    return defaultTheme; // fallback inmediato
+    // 1. Obtenemos el almacenamiento (que ya tiene las prefs del main)
+    final storage = ref.watch(_paletteStorageProvider);
+
+    // 2. Cargamos sincrónicamente.
+    // Al retornar esto directamente, MyApp ya tiene el color correcto
+    // desde el primer frame.
+    return storage.load();
   }
 
-  Future<void> _load() async {
-    final palette = await _storage.load();
+  void set(AppPalette palette) {
+    // 3. Actualizamos estado UI
     state = palette;
-  }
 
-  Future<void> set(AppPalette palette) async {
-    state = palette;
-    await _storage.save(palette);
+    // 4. Persistimos en disco (usando read por ser un evento)
+    ref.read(_paletteStorageProvider).save(palette);
   }
 }
 
-
 class _PaletteStorage {
   static const String _key = 'palette_preferences';
+  final SharedPreferences _prefs;
+
+  _PaletteStorage(this._prefs);
 
   Future<void> save(AppPalette palette) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_key, palette.name);
+    await _prefs.setString(_key, palette.name);
   }
 
-  Future<AppPalette> load() async {
-    final prefs = await SharedPreferences.getInstance();
-    final value = prefs.getString(_key);
-
+  AppPalette load() {
+    final value = _prefs.getString(_key);
     return AppPalette.values.firstWhere(
       (e) => e.name == value,
-      orElse: () => defaultTheme,
+      orElse: () => defaultTheme, // defaultTheme definido en app_theme.dart
     );
   }
 }

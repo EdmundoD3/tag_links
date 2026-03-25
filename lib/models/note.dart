@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 class Note {
   final String id;
   final String? folderId;
+  final String? fileId;
   final String title;
   final String content;
   final String? color;
@@ -20,6 +21,7 @@ class Note {
   Note({
     required this.id,
     required this.folderId,
+    this.fileId,
     required this.title,
     required this.content,
     this.color,
@@ -34,6 +36,7 @@ class Note {
     String? id,
     String? title,
     String? folderId,
+    String? fileId,
     String? content,
     String? color,
     LinkPreview? link,
@@ -45,6 +48,7 @@ class Note {
     return Note(
       id: id?.isEmpty ?? true ? const Uuid().v4() : id!,
       folderId: folderId,
+      fileId: fileId,
       title: title ?? 'Nueva nota',
       content: content ?? '',
       color: color,
@@ -60,6 +64,7 @@ class Note {
     return Note(
       id: map['id'],
       folderId: map['folderId'],
+      fileId: map['fileId'],
       title: map['title'],
       content: map['content'],
       color: map['color'],
@@ -76,12 +81,11 @@ class Note {
     return '$title\n\n$link\n$content';
   }
 
-
-
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'folderId': folderId,
+      'fileId': fileId,
       'title': title,
       'content': content,
       'color': color,
@@ -126,30 +130,6 @@ class Note {
     }
     return copyWith(updatedAt: DateTime.now(), folderId: folderId);
   }
-  static Note fromDecryptedJson(String id, String decryptedPayload) {
-    final Map<String, dynamic> json = jsonDecode(decryptedPayload);
-    final List<dynamic> tagsRaw = json['tags'] ?? [];
-
-    return Note(
-      id: id,
-      folderId: json['folderId'] as String?,
-      title: json['title'] as String,
-      content: json['content'] as String,
-      color: json['color'] as String?,
-      // El link se reconstruye si existe la URL en el JSON
-      link: json['url'] != null 
-          ? LinkPreview.create(url: json['url'] as String, noteId: id) 
-          : null,
-      tags: tagsRaw
-          .map((t) => Tag(id: t['id'] as String, name: t['name'] as String))
-          .toList(),
-      createdAt: DateTime.fromMillisecondsSinceEpoch(json['createdAt'] as int),
-      updatedAt: DateTime.fromMillisecondsSinceEpoch(
-        (json['updatedAt'] ?? json['createdAt']) as int,
-      ),
-      isFavorite: json['isFavorite'] as bool? ?? false,
-    );
-  }
 }
 class NoteConfig {
   static final titleMaxLength = 120;
@@ -165,6 +145,7 @@ String noteTable = '''
           CREATE TABLE notes(
             id TEXT PRIMARY KEY,
             folderId TEXT,
+            fileId TEXT,
             title TEXT NOT NULL,
             content TEXT,
             color TEXT,
@@ -172,6 +153,7 @@ String noteTable = '''
             updatedAt INTEGER NOT NULL,
             syncAt INTEGER,
             isFavorite INTEGER NOT NULL DEFAULT 0 CHECK (isFavorite IN (0,1)),
-            FOREIGN KEY (folderId) REFERENCES folders(id) ON DELETE CASCADE
+            FOREIGN KEY (folderId) REFERENCES folders(id) ON DELETE CASCADE,
+            FOREIGN KEY (fileId) REFERENCES files(id) ON DELETE SET NULL
           );
 ''';

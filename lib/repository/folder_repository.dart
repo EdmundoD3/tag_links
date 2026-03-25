@@ -1,7 +1,5 @@
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/core/sync/folder_raw_sync.dart';
-import 'package:tag_links/core/sync/sync_types.dart';
 import 'package:tag_links/data/data_sources/deleted_dao.dart';
 import 'package:tag_links/data/data_sources/folder_preferences_dao.dart';
 import 'package:tag_links/data/data_sources/folder_tags_dao.dart';
@@ -98,24 +96,6 @@ class FolderRepository {
   }
 
   // ----------------------- SYNC section ------------------------- //
-
-  Future<SyncData<FolderRawSync>> getForSync() async {
-    final limit = 200;
-    final deletedData = await _deletedDao.getBatch(limit: limit);
-
-    final deletedDataRaw = deletedData.map(FolderRawSync.fromDeleted).toList();
-
-    final data = await _dao.getForSync(limit: limit - deletedData.length);
-
-    final dataRaw = await Future.wait(data.map(FolderRawSync.fromFolder));
-
-    return SyncData(
-      dataForSync: dataRaw,
-      deletedDataForSync: deletedDataRaw,
-      hasMore: data.length + deletedData.length >= limit,
-    );
-  }
-
   Future<Future<void>> updateSyncAt(List<String> ids, int syncAt) async {
     return _dao.updateSyncAt(ids, syncAt);
   }

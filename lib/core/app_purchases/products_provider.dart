@@ -4,45 +4,27 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 
 // Usamos .autoDispose para limpiar si ya no se usa,
 // pero verás que la lógica interna será más robusta.
-final productsProvider = FutureProvider.autoDispose<List<ProductDetails>>((
-  ref,
-) async {
-  // 1. Límite de tiempo global para la operación
-  return await _ProductsDetails.fetchProducts().timeout(
-    const Duration(
-      seconds: 8,
-    ), // Si en 8 segundos no responde, dispara el TimeoutException
-    onTimeout: () {
-      debugPrint('InAppPurchase: Tiempo de espera agotado');
-      return []; // Devolvemos lista vacía para que la UI deje de cargar
-    },
-  );
-});
+// En el archivo de productos_provider.dart
 
-class _ProductsDetails {
-  static final Set<String> _premiumIds = const {
-    'premium_monthly',
-    'premium_yearly',
-  };
-  static Future<List<ProductDetails>> fetchProducts() async {
-    try {
-      final bool available = await InAppPurchase.instance.isAvailable();
-      if (!available) return [];
+final productsProvider = FutureProvider.autoDispose<List<ProductDetails>>((ref) async {
+  // 1. Usamos los IDs definidos en tu manager (opcional pero recomendado)
+  final Set<String> premiumIds = {'premium_monthly', 'premium_yearly'};
 
-      // 2. La consulta a la tienda suele ser lo que se queda pegado
-      final ProductDetailsResponse response = await InAppPurchase.instance
-          .queryProductDetails(_premiumIds);
-
-      if (response.error != null || response.productDetails.isEmpty) {
-        return [];
-      }
-
-      final List<ProductDetails> products = response.productDetails;
-      products.sort((a, b) => a.rawPrice.compareTo(b.rawPrice));
-      return products;
-    } catch (e) {
-      debugPrint('Error en productsProvider: $e');
-      return []; // En lugar de lanzar error, devolvemos vacío para no bloquear la UI
-    }
+  try {
+    return await InAppPurchase.instance
+        .queryProductDetails(premiumIds)
+        .timeout(const Duration(seconds: 8))
+        .then((response) {
+          if (response.error != null || response.productDetails.isEmpty) {
+            return <ProductDetails>[];
+          }
+          final products = response.productDetails;
+          // Ordenamos por precio para que el mensual salga primero
+          products.sort((a, b) => a.rawPrice.compareTo(b.rawPrice));
+          return products;
+        });
+  } catch (e) {
+    debugPrint('InAppPurchase: Error al obtener productos: $e');
+    return [];
   }
-}
+});

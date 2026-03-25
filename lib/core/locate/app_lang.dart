@@ -39,10 +39,10 @@ extension AppLangX on AppLang {
   }
 }
 
-String t(WidgetRef ref, String key, {String fallback = ''}) {
+String t(WidgetRef ref, String key, {String? fallback}) {
   final lang = ref.watch(langProvider);
   final translate = translations[key]?[lang];
   if(translate != null) return translate;
   debugPrint("--------------- t.key:$key -----------------");
-  return translations[key]?[AppLang.es] ?? fallback;
+  return translations[key]?[AppLang.es] ?? fallback ?? key;
 }

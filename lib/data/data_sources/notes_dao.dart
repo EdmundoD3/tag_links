@@ -81,8 +81,13 @@ class NotesDao {
     String? folderId, {
     required PaginatedByDate pagination,
   }) async {
-    final rows = await _fetch.byFolder(folderId, pagination);
+    try {
+      final rows = await _fetch.byFolder(folderId, pagination);
     return _hydrate(rows);
+    } catch (e) {
+      debugPrint("NotesDao.getByFolder:\n ${e.toString()}");
+      return [];
+    }
   }
 
   Future<List<Note>> getByTags(
@@ -217,7 +222,7 @@ class FetchersNotesDao {
         '''
     ${NoteJoinRow.selectQuery}
     WHERE n.id IN ($placeholders)
-    ORDER BY ${paginated.orderSql}
+    ORDER BY n.${paginated.orderSql}
   ''';
 
     final result = await _db.rawQuery(sql, ids);
@@ -229,13 +234,13 @@ class FetchersNotesDao {
     required int limit,
   }) async {
     final hasLastUpdate = lastUpdate != null;
-    final where = hasLastUpdate ? "WHERE updatedAt > ?" : "";
+    final where = hasLastUpdate ? "WHERE n.updatedAt > ?" : "";
     final args = hasLastUpdate ? [lastUpdate, limit] : [limit];
     final sql =
         '''
         ${NoteJoinRow.selectQuery}
         $where
-        ORDER BY updatedAt DESC
+        ORDER BY n.updatedAt DESC
         LIMIT ?
       ''';
     final result = await _db.rawQuery(sql, args);
@@ -264,10 +269,10 @@ class FetchersNotesDao {
       SELECT n2.id
       FROM notes n2
       $where
-      ORDER BY ${p.orderSql}
+      ORDER BY n2.${p.orderSql}
       LIMIT ? OFFSET ?
     )
-    ORDER BY ${p.orderSql}
+    ORDER BY n.${p.orderSql}
   ''', args);
 
     return rows.map(NoteJoinRow.fromMap).toList();
@@ -301,33 +306,33 @@ class FetchersNotesDao {
         AND nt2.tagId IN ($placeholders)
       GROUP BY n2.id
       HAVING COUNT(DISTINCT nt2.tagId) = ?
-      ORDER BY ${p.orderSql}
+      ORDER BY n2.${p.orderSql}
       LIMIT ? OFFSET ?
     )
-    ORDER BY ${p.orderSql}
+    ORDER BY n.${p.orderSql}
     ''', args);
 
     return rows.map(NoteJoinRow.fromMap).toList();
   }
 
-  Future<List<NoteJoinRow>> favorites(PaginatedByDate p) async {
-    final rows = await _db.rawQuery(
-      '''
-      ${NoteJoinRow.selectQuery}
-      WHERE n.id IN (
-        SELECT id
-        FROM notes
-        WHERE isFavorite = 1
-        ORDER BY ${p.orderSql}
-        LIMIT ? OFFSET ?
-      )
-      ORDER BY ${p.orderSql}
-      ''',
-      [p.limit, p.offset],
-    );
+Future<List<NoteJoinRow>> favorites(PaginatedByDate p) async {
+  final rows = await _db.rawQuery(
+    '''
+    ${NoteJoinRow.selectQuery}
+    WHERE n.id IN (
+      SELECT n2.id 
+      FROM notes n2
+      WHERE n2.isFavorite = 1
+      ORDER BY n2.${p.orderSql}
+      LIMIT ? OFFSET ?
+    )
+    ORDER BY n.${p.orderSql}
+    ''',
+    [p.limit, p.offset],
+  );
 
-    return rows.map(NoteJoinRow.fromMap).toList();
-  }
+  return rows.map(NoteJoinRow.fromMap).toList();
+}
 
   Future<PaginatedByDate> getPageForNoteId(
     Note note, {

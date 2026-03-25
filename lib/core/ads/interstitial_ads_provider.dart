@@ -6,7 +6,7 @@ import 'package:tag_links/core/ads/ads_disable_provider.dart';
 import 'package:tag_links/core/app_purchases/premium_provider.dart';
 
 final showInterstitialAdsProvider = Provider<bool>((ref) {
-  final isPremium = ref.watch(premiumNotifierProvider);
+  final isPremium = ref.watch(premiumStatusProvider);
   if (isPremium) return false;
 
   final adsActivas = ref.watch(isAdsActiveProvider);

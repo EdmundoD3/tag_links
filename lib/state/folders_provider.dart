@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/core/sync/sync_notifier.dart';
 import 'package:tag_links/models/folder_preference.dart';
 import 'package:tag_links/models/search_query.dart';
 import 'package:tag_links/repository/folder_repository.dart';

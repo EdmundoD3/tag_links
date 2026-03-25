@@ -1,86 +1,67 @@
 import 'package:flutter/material.dart';
-import 'package:tag_links/core/auth/auth_manager.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/core/google/auth_provider.dart';
 
-class AuthPage extends StatefulWidget {
+class AuthPage extends ConsumerWidget {
   const AuthPage({super.key});
 
   @override
-  State<AuthPage> createState() => _AuthPageState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Escuchamos el estado del provider
+    final authState = ref.watch(authProvider);
 
-class _AuthPageState extends State<AuthPage> {
-  bool _loading = false;
-
-  Future<void> _handleLogin() async {
-    setState(() => _loading = true);
-
-    try {
-      await AuthManager.loginFlow(askPin: () => _showPinDialog(context));
-
-      if (!mounted) return;
-
-      Navigator.pushReplacementNamed(context, "/home");
-    } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Error: $e")));
-    }
-
-    setState(() => _loading = false);
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        child: _loading
+        child: authState.isLoading
             ? const CircularProgressIndicator()
-            : ElevatedButton.icon(
-                onPressed: _handleLogin,
-                icon: const Icon(Icons.login),
-                label: const Text("Continuar con Google"),
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.cloud_sync, size: 80, color: Colors.blue),
+                  const SizedBox(height: 20),
+                  const Text(
+                    "Sincroniza tus enlaces",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 40, vertical: 10),
+                    child: Text(
+                      "Utilizaremos Google Drive para mantener tus notas seguras y sincronizadas entre dispositivos.",
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  ElevatedButton.icon(
+                    onPressed: () => _handleLogin(context, ref),
+                    icon: const Icon(Icons.login),
+                    label: const Text("Continuar con Google"),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    ),
+                  ),
+                ],
               ),
       ),
     );
   }
 
-  Future<String> _showPinDialog(BuildContext context) async {
-    final controller = TextEditingController();
-
-    final result = await showDialog<String>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        title: const Text("Ingresa tu PIN"),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          obscureText: true,
-          maxLength: 6,
-          decoration: const InputDecoration(hintText: "PIN de 6 dígitos"),
+  Future<void> _handleLogin(BuildContext context, WidgetRef ref) async {
+    try {
+      // Llamamos al método login del Notifier
+      await ref.read(authProvider.notifier).login();
+      
+      // Nota: Si usas un Wrapper en el main, no necesitas Navigator.push.
+      // La app detectará el cambio de estado y cambiará la pantalla sola.
+      
+    } catch (e) {
+      if (!context.mounted) return;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Error de autenticación: $e"),
+          backgroundColor: Colors.red,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancelar"),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (controller.text.length < 4) return;
-              Navigator.pop(context, controller.text);
-            },
-            child: const Text("Aceptar"),
-          ),
-        ],
-      ),
-    );
-
-    if (result == null || result.isEmpty) {
-      throw Exception("PIN requerido");
+      );
     }
-
-    return result;
   }
 }

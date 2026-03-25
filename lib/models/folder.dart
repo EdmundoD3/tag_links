@@ -138,7 +138,7 @@ class Folder {
 }
 
 String folderTable = '''
-          CREATE TABLE folders(
+          CREATE TABLE folders (
             id TEXT PRIMARY KEY,
             parentId TEXT,
             title TEXT NOT NULL,
@@ -149,6 +149,8 @@ String folderTable = '''
             updatedAt INTEGER,
             syncAt INTEGER,
             isFavorite INTEGER NOT NULL DEFAULT 0 CHECK (isFavorite IN (0,1)),
+            fileId TEXT,
+            FOREIGN KEY (fileId) REFERENCES files(id) ON DELETE SET NULL,
             FOREIGN KEY (parentId) REFERENCES folders(id) ON DELETE CASCADE
           );
 ''';

@@ -3,15 +3,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 class SyncStorage {
   //Última descarga exitosa
   static const _lastPulledKey = 'sync_last_pulled_at';
-  SyncStorage();
+  final SharedPreferences _prefs;
+  SyncStorage(SharedPreferences prefs): _prefs = prefs;
 
   // =========================
   // GETTERS
   // =========================
 
   Future<int?> getLastPulledAt() async {
-    final instance = await SharedPreferences.getInstance(); 
-    return instance.getInt(_lastPulledKey);
+    return _prefs.getInt(_lastPulledKey);
     }
 
   // =========================
@@ -19,7 +19,7 @@ class SyncStorage {
   // =========================
 
   Future<void> setLastPulledAt(int timestamp) async {
-    await (await SharedPreferences.getInstance()).setInt(_lastPulledKey, timestamp);
+    await _prefs.setInt(_lastPulledKey, timestamp);
   }
 
   // =========================
@@ -27,6 +27,6 @@ class SyncStorage {
   // =========================
 
   Future<void> clear() async {
-    await (await SharedPreferences.getInstance()).remove(_lastPulledKey);
+    await _prefs.remove(_lastPulledKey);
   }
 }

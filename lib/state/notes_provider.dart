@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/core/sync/sync_notifier.dart';
 import 'package:tag_links/models/link_preview.dart';
 import 'package:tag_links/models/search_query.dart';
 import 'package:tag_links/repository/link_preview_repository.dart';

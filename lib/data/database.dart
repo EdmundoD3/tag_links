@@ -9,6 +9,7 @@ import 'package:tag_links/models/link_preview.dart';
 import 'package:tag_links/models/note.dart';
 import 'package:tag_links/models/note_tag.dart';
 import 'package:tag_links/models/tag.dart';
+import 'package:tag_links/sync/models/local_sync_queue.dart';
 
 class AppDatabase {
   Future<String> get dbPath async {
@@ -89,6 +90,7 @@ class AppDatabase {
         await db.execute('PRAGMA foreign_keys = ON');
 
         //tablas
+        await db.execute(localSyncQueueTable);
         await db.execute(folderTable);
         await db.execute(tagTable);
         await db.execute(noteTable);
@@ -98,6 +100,8 @@ class AppDatabase {
         await db.execute(folderPreferencesTable);
         await db.execute(DeletedTables.deletedFoldersTable);
         await db.execute(DeletedTables.deletedNotesTable);
+        
+
 
         //triggers
         for (var trigger in triggers) {

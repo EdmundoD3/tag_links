@@ -78,16 +78,24 @@ class LinkPreview {
   }
 
   Map<String, dynamic> toMap() {
-  return {
-    'id': id,
-    'noteId': noteId,
-    'url': url,
-    'title': title,
-    'description': description,
-    'image': image,
-    'siteName': siteName,
-  };
-}
+    return {
+      'id': id,
+      'noteId': noteId,
+      'url': url,
+      'title': title,
+      'description': description,
+      'image': image,
+      'siteName': siteName,
+    };
+  }
+
+  Map<String, String> toMiniMap() {
+    return {'id': id, 'url': url};
+  }
+
+  static LinkPreview fromMiniMap(Map<String, dynamic> map, String noteId) {
+    return LinkPreview(id: map['id'], noteId: map['noteId'], url: map['url']);
+  }
 
   bool _isValidUrl(String url) {
     final uri = Uri.tryParse(url);

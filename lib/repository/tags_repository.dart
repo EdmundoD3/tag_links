@@ -12,7 +12,7 @@ class TagsRepository {
 
   Future<Tag?> upsert(Tag tag) async {
     final tagToInsert = tag.ensureForInsert();
-    return _tagsDao.upsert(tagToInsert);
+    return _tagsDao.insertIfNotExist(tagToInsert);
   }
 
   Future<void> update(Tag tag) {

@@ -1,76 +1,100 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:tag_links/core/app_purchases/premium_provider.dart';
 import 'package:tag_links/core/app_purchases/products_provider.dart';
 
 class PremiumSalesSheet extends ConsumerWidget {
   final Widget? showEmpty;
-  const PremiumSalesSheet({super.key, required this.showEmpty});
+  const PremiumSalesSheet({super.key, this.showEmpty});
 
-@override
-Widget build(BuildContext context, WidgetRef ref) {
-  final productsAsync = ref.watch(productsProvider);
-
-  return productsAsync.when(
-    loading: () => const SizedBox(
-      height: 200, 
-      child: Center(child: CircularProgressIndicator())
-    ),
-    error: (err, stack) {
-      // Si hay un error real, mostramos el contenido vacío opcional
-      return showEmpty ?? const SizedBox.shrink();
-    },
-    data: (products) {
-      if (products.isEmpty) {
-        return showEmpty ?? const SizedBox.shrink();
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // 1. ESCUCHAMOS el estado premium. Si pasa a TRUE mientras el modal está abierto,
+    // significa que la compra tuvo éxito. Cerramos el modal automáticamente.
+    ref.listen<bool>(premiumStatusProvider, (previous, next) {
+      if (next == true && context.mounted) {
+        Navigator.pop(context); // Cerramos el modal con éxito
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('¡Gracias por tu compra! Ya eres Premium.'),
+          ),
+        );
       }
+    });
 
-      // IMPORTANTE: Si usas ListView dentro de un BottomSheet, 
-      // asegúrate de que no crezca infinitamente.
-      return Column(
-        mainAxisSize: MainAxisSize.min, // Ajusta el modal al contenido
-        children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16),
-            child: Text('Hazte Premium', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+    final productsAsync = ref.watch(productsProvider);
+
+    return productsAsync.when(
+      loading: () => const SizedBox(
+        height: 250,
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (err, stack) => showEmpty ?? const SizedBox.shrink(),
+      data: (products) {
+        if (products.isEmpty) return showEmpty ?? const SizedBox.shrink();
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.stars, size: 50, color: Colors.amber),
+              const SizedBox(height: 12),
+              const Text(
+                'Tag Links Premium',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8.0),
+                child: Text(
+                  'Sincronización ilimitada y sin anuncios.',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ...products.map(
+                (product) => _PremiumProductTile(product: product),
+              ),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Quizás más tarde'),
+              ),
+            ],
           ),
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: products.length,
-            itemBuilder: (context, index) {
-              final product = products[index];
-              return _PremiumProductTile(product: product);
-            },
-          ),
-          const SizedBox(height: 20),
-        ],
-      );
-    },
-  );
-}
+        );
+      },
+    );
+  }
 }
 
-class _PremiumProductTile extends ConsumerWidget {
+class _PremiumProductTile extends StatelessWidget {
+  // Ya no necesita ser ConsumerWidget
   final ProductDetails product;
   const _PremiumProductTile({required this.product});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      elevation: 2,
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
-        title: Text(product.title),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        title: Text(
+          product.title,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         subtitle: Text(product.description),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              '${product.price} ${product.currencyCode}',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            // const Text('Pago único/Mes', style: TextStyle(fontSize: 10)),
-          ],
+        trailing: Text(
+          product
+              .price, // Ya incluye el símbolo de moneda local (e.g., "$9.99")
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.green,
+          ),
         ),
         onTap: () => _buyProduct(product, context),
       ),
@@ -79,18 +103,15 @@ class _PremiumProductTile extends ConsumerWidget {
 
   Future<void> _buyProduct(ProductDetails product, BuildContext context) async {
     final purchaseParam = PurchaseParam(productDetails: product);
-
     try {
-      // Esto abre la interfaz de Google Play / App Store
+      // Nota: Para suscripciones también se usa buyNonConsumable en este plugin
       await InAppPurchase.instance.buyNonConsumable(
         purchaseParam: purchaseParam,
       );
-
-      // Cerramos el modal de ventas inmediatamente.
-      // Si la compra tiene éxito, el Stream del Notifier actualizará la app sola.
-      if (context.mounted) Navigator.pop(context);
+      // NO hacemos Navigator.pop aquí.
+      // Dejamos que el ref.listen en el SalesSheet lo haga cuando la compra se confirme.
     } catch (e) {
-      debugPrint('Error al intentar comprar: $e');
+      debugPrint('Error en compra: $e');
     }
   }
 }

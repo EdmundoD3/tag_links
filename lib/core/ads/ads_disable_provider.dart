@@ -2,9 +2,10 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tag_links/core/app_purchases/premium_provider.dart';
+import 'package:tag_links/data/shared_prefs_provider.dart';
 
 final isAdsActiveProvider = Provider<bool>((ref) {
-  final isPremium = ref.watch(premiumNotifierProvider);
+  final isPremium = ref.watch(premiumStatusProvider);
   debugPrint('isPremium: $isPremium');
   if (isPremium == true) return false;
 
@@ -26,7 +27,7 @@ final adsDisabledUntilProvider =
     );
 
 class AdsDisabledNotifier extends AsyncNotifier<DateTime?> {
-  final _AdsStorage _storage = _AdsStorage();
+  _AdsStorage get _storage  => ref.watch(adsStorageProvider);
 
   @override
   Future<DateTime?> build() async {
@@ -57,23 +58,27 @@ class AdsDisabledNotifier extends AsyncNotifier<DateTime?> {
   }
 }
 
+final adsStorageProvider = Provider((ref) {
+  final prefs = ref.watch(sharedPrefsProvider);
+  return _AdsStorage(prefs);
+});
+
 class _AdsStorage {
   static const _key = 'ads_disabled_until';
+  final SharedPreferences _prefs;
+  _AdsStorage(this._prefs);
 
   Future<void> saveDisabledUntil(DateTime until) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_key, until.millisecondsSinceEpoch);
+    await _prefs.setInt(_key, until.millisecondsSinceEpoch);
   }
 
   Future<DateTime?> getDisabledUntil() async {
-    final prefs = await SharedPreferences.getInstance();
-    final ms = prefs.getInt(_key);
+    final ms = _prefs.getInt(_key);
     if (ms == null) return null;
     return DateTime.fromMillisecondsSinceEpoch(ms);
   }
 
   Future<void> clear() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_key);
+    await _prefs.remove(_key);
   }
 }

@@ -8,7 +8,7 @@ class TagsDao {
   final Database _db;
   TagsDao(this._db);
 
-  Future<Tag?> upsert(Tag tag) async {
+  Future<Tag?> insertIfNotExist(Tag tag) async {
     try {
       // 1. Aseguramos que tenga un ID válido antes de intentar nada
       final tagToInsert = tag.ensureForInsert();

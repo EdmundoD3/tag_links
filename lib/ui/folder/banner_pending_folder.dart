@@ -16,7 +16,7 @@ class BannerPendingFolder extends ConsumerWidget {
   });
   //nivel 0 es root o sea sin folder, 1 es folder y 2 es subFolder
   bool get _isInFolder => toParent != null;
-  bool get _isSubFolder => _isInFolder && toParent?.id != null;
+  bool get _isSubFolder => toParent?.parentId != null;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
