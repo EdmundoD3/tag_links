@@ -3,20 +3,26 @@ import 'package:sqflite/sqflite.dart';
 class DeletedTables {
   static final deletedFoldersTable = DeletedFoldersDao.table;
   static final deletedNotesTable = DeletedNotesDao.table;
+  static final deletedTagsTable = DeletedTagsDao.table; // <--- Agregado
 }
 
-class DeletedData {
-  final String id;
-  final int deletedAt;
+class DeletedTagsDao {
+  final _DeletedDao _dao;
+  
+  DeletedTagsDao({required Database db})
+    : _dao = _DeletedDao(tableName: 'deleted_tags', db: db);
 
-  DeletedData({required this.id, required this.deletedAt});
-  Map<String, Object> toMap() => {'id': id, 'deletedAt': deletedAt};
-  factory DeletedData.fromRaw(Map<String, Object?> raw) {
-    return DeletedData(
-      id: raw['id'] as String,
-      deletedAt: raw['deletedAt'] as int,
-    );
-  }
+  // Genera el SQL para la tabla de tags borrados
+  static String get table => _DeletedDao.getTable('deleted_tags');
+
+  Future<void> saveId(String id, {Transaction? executor}) => 
+      _dao.saveId(id, executor: executor);
+
+  Future<List<DeletedData>> getBatch({int limit = 500}) => 
+      _dao.getBatch(limit: limit);
+
+  Future<void> deleteIds(List<String> ids) => 
+      _dao.deleteIds(ids);
 }
 
 class DeletedFoldersDao {
@@ -43,6 +49,21 @@ class DeletedNotesDao {
 
   Future<List<DeletedData>> Function({int limit}) get getBatch => _dao.getBatch;
   Future<void> Function(List<String> ids) get deleteIds => _dao.deleteIds;
+}
+
+// -----------------
+class DeletedData {
+  final String id;
+  final int deletedAt;
+
+  DeletedData({required this.id, required this.deletedAt});
+  Map<String, Object> toMap() => {'id': id, 'deletedAt': deletedAt};
+  factory DeletedData.fromRaw(Map<String, Object?> raw) {
+    return DeletedData(
+      id: raw['id'] as String,
+      deletedAt: raw['deletedAt'] as int,
+    );
+  }
 }
 
 class _DeletedDao {

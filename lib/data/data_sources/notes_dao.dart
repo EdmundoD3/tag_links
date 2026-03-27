@@ -18,7 +18,7 @@ class NotesDao {
         db: db,
         linkDao: LinkPreviewDao(db),
         tagsNotesDao: TagsNotesDao(db),
-        deletedNotesDao: DeletedNotesDao(db: db)
+        deletedNotesDao: DeletedNotesDao(db: db),
       );
   /* ----------------------------- PUBLIC API ----------------------------- */
   Future<List<Note>> searchByQuery(
@@ -83,7 +83,7 @@ class NotesDao {
   }) async {
     try {
       final rows = await _fetch.byFolder(folderId, pagination);
-    return _hydrate(rows);
+      return _hydrate(rows);
     } catch (e) {
       debugPrint("NotesDao.getByFolder:\n ${e.toString()}");
       return [];
@@ -117,17 +117,30 @@ class NotesDao {
     return _fetch.getPageForNoteId(note, paginated: paginated);
   }
 
-  // ******* SYNC section *******
-  Future<List<Note>> getForSync({int limit = 200}) async {
-    final rows = await _fetch.getForSync(limit: limit);
+  // --------------- SYNC section ---------------
+  Future<List<Note>> getByFileId(String fileId) async {
+    final rows = await _fetch.getByFileId(fileId);
     return _hydrate(rows);
   }
 
-  Future<bool> updateNotesSyncAt(List<String> ids, int syncAt) async {
+  Future<List<Note>> getPendingSync({int limit = 200}) async {
+    final rows = await _fetch.getPendingSync(limit: limit);
+    return _hydrate(rows);
+  }
+
+  Future<bool> updateNotesSyncAt({
+    required List<String> ids,
+    required int syncAt,
+    required String fileId,
+  }) async {
     if (ids.isEmpty) {
       return true; //si no habia nada entonces fue un exito actualizar 0 datos
     }
-    final success = await _fetch.updateNotesSyncAt(ids, syncAt);
+    final success = await _fetch.updateNotesSyncAt(
+      ids: ids,
+      syncAt: syncAt,
+      fileId: fileId,
+    );
     return success >= ids.length;
   }
 
@@ -149,6 +162,7 @@ class NotesDao {
         return Note(
           id: row.noteId,
           folderId: row.folderId,
+          fileId: row.fileId,
           title: row.title,
           content: row.content ?? '',
           color: row.color,
@@ -156,6 +170,7 @@ class NotesDao {
           updatedAt: DateTime.fromMillisecondsSinceEpoch(row.updatedAt),
           isFavorite: row.isFavorite,
           tags: [], // Lista vacía que iremos llenando
+          syncAt: DateTime.fromMillisecondsSinceEpoch(row.syncAt ?? 0),
           link: row.linkId == null
               ? null
               : LinkPreview(
@@ -178,7 +193,14 @@ class NotesDao {
         // .add() intenta agregar el ID al Set. Si ya existía, devuelve false.
         // Si no existía, devuelve true y lo agrega. Todo en un solo paso súper rápido.
         if (processedTags.add(row.tagId!)) {
-          note.tags.add(Tag(id: row.tagId!, name: row.tagName!));
+          note.tags.add(
+            Tag(
+              id: row.tagId!,
+              name: row.tagName!,
+              fileId: row.fileId, //provisional
+              isFavorite: row.isFavorite,
+            ),
+          );
         }
       }
     }
@@ -315,9 +337,9 @@ class FetchersNotesDao {
     return rows.map(NoteJoinRow.fromMap).toList();
   }
 
-Future<List<NoteJoinRow>> favorites(PaginatedByDate p) async {
-  final rows = await _db.rawQuery(
-    '''
+  Future<List<NoteJoinRow>> favorites(PaginatedByDate p) async {
+    final rows = await _db.rawQuery(
+      '''
     ${NoteJoinRow.selectQuery}
     WHERE n.id IN (
       SELECT n2.id 
@@ -328,11 +350,11 @@ Future<List<NoteJoinRow>> favorites(PaginatedByDate p) async {
     )
     ORDER BY n.${p.orderSql}
     ''',
-    [p.limit, p.offset],
-  );
+      [p.limit, p.offset],
+    );
 
-  return rows.map(NoteJoinRow.fromMap).toList();
-}
+    return rows.map(NoteJoinRow.fromMap).toList();
+  }
 
   Future<PaginatedByDate> getPageForNoteId(
     Note note, {
@@ -483,10 +505,11 @@ Future<List<NoteJoinRow>> favorites(PaginatedByDate p) async {
       // 1. Nota Principal (Manteniendo tu lógica inteligente de fecha)
       await txn.rawInsert(
         '''
-      INSERT INTO notes (id, folderId, title, content, color, createdAt, updatedAt, syncAt, isFavorite)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO notes (id, folderId, fileId, title, content, color, createdAt, updatedAt, syncAt, isFavorite)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         folderId = excluded.folderId,
+        fileId = excluded.fileId,
         title = excluded.title,
         content = excluded.content,
         color = excluded.color,
@@ -497,6 +520,7 @@ Future<List<NoteJoinRow>> favorites(PaginatedByDate p) async {
         [
           note.id,
           note.folderId,
+          note.fileId,
           note.title,
           note.content,
           note.color,
@@ -625,20 +649,23 @@ Future<List<NoteJoinRow>> favorites(PaginatedByDate p) async {
   }
 
   Future<void> serverDeleteByIds(List<String> ids) async {
-  if (ids.isEmpty) return;
+    if (ids.isEmpty) return;
 
-  final placeholders = List.filled(ids.length, '?').join(',');
-
-  await _db.transaction((txn) async {
-    // Si tienes CASCADE, esto borrará automáticamente 
-    // etiquetas y links asociados en un solo paso de DB.
-    await txn.delete(
-      'notes', 
-      where: 'id IN ($placeholders)', 
-      whereArgs: ids
-    );
-  });
-}
+    final placeholders = List.filled(ids.length, '?').join(',');
+    try {
+      await _db.transaction((txn) async {
+        // Si tienes CASCADE, esto borrará automáticamente
+        // etiquetas y links asociados en un solo paso de DB.
+        await txn.delete(
+          'notes',
+          where: 'id IN ($placeholders)',
+          whereArgs: ids,
+        );
+      });
+    } catch (e) {
+      debugPrint('NotesDao.serverDeleteByIds ERROR: $e');
+    }
+  }
 
   //helpers
   String _buildOrderField(PaginatedByDate paginated) {
@@ -648,8 +675,20 @@ Future<List<NoteJoinRow>> favorites(PaginatedByDate p) async {
     };
   }
 
-  // ******* SYNC section *******
-  Future<List<NoteJoinRow>> getForSync({int limit = 200}) async {
+  // ------------- SYNC section -------------
+  Future<List<NoteJoinRow>> getByFileId(String fileId) async {
+    final sql =
+        '''
+    ${NoteJoinRow.selectQuery}
+    WHERE n.fileId = ?
+    ORDER BY n.updatedAt DESC
+  ''';
+
+    final result = await _db.rawQuery(sql, [fileId]);
+
+    return result.map(NoteJoinRow.fromMap).toList();
+  }
+  Future<List<NoteJoinRow>> getPendingSync({int limit = 200}) async {
     final sql =
         '''
     ${NoteJoinRow.selectQuery}
@@ -663,7 +702,11 @@ Future<List<NoteJoinRow>> favorites(PaginatedByDate p) async {
     return result.map(NoteJoinRow.fromMap).toList();
   }
 
-  Future<int> updateNotesSyncAt(List<String> ids, int syncAt) async {
+  Future<int> updateNotesSyncAt({
+    required List<String> ids,
+    required int syncAt,
+    required String fileId,
+  }) async {
     if (ids.isEmpty) return 0;
 
     final db = _db;
@@ -673,7 +716,8 @@ Future<List<NoteJoinRow>> favorites(PaginatedByDate p) async {
     final sql =
         '''
     UPDATE notes
-    SET syncAt = ?
+    SET syncAt = ?,
+    fileId = ?
     WHERE id IN ($placeholders)
   ''';
 

@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 class Tag {
   final String id;
   final String name;
+  final String fileId;
   final bool isFavorite;
   final int usageCount;
   final DateTime? updatedAt;
@@ -11,6 +12,7 @@ class Tag {
   Tag({
     required this.id,
     required this.name,
+    required this.fileId,
     this.isFavorite = false,
     this.usageCount = 0,
     this.updatedAt,
@@ -21,9 +23,12 @@ class Tag {
     return Tag(
       id: map['id'],
       name: map['name'],
-      isFavorite: map['isFavorite'] == 1,
+      fileId: map['fileId'],
+      isFavorite: (map['isFavorite'] ?? 0) == 1,
       usageCount: map['usageCount'] ?? 0,
-      updatedAt: DateTime.fromMillisecondsSinceEpoch(map['updatedAt']),
+      updatedAt: map['updatedAt'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(map['updatedAt'])
+          : DateTime.now(),
       syncAt: map['syncAt'] == null
           ? null
           : DateTime.fromMillisecondsSinceEpoch(map['syncAt']),
@@ -34,6 +39,7 @@ class Tag {
     return {
       'id': id,
       'name': name,
+      'fileId': fileId,
       'isFavorite': isFavorite ? 1 : 0,
       'usageCount': usageCount,
       'updatedAt': updatedAt?.millisecondsSinceEpoch,
@@ -52,6 +58,7 @@ class Tag {
     return Tag(
       id: id ?? this.id,
       name: name ?? this.name,
+      fileId: fileId,
       isFavorite: isFavorite ?? this.isFavorite,
       usageCount: usageCount ?? this.usageCount,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -61,7 +68,7 @@ class Tag {
 
   Tag ensureForInsert() {
     if (id.isEmpty || id == "") {
-      return copyWith(id: Uuid().v4(), updatedAt: DateTime.now());
+      return copyWith(id: const Uuid().v4(), updatedAt: DateTime.now());
     }
     return copyWith(updatedAt: DateTime.now());
   }
@@ -71,11 +78,11 @@ String tagTable = '''
           CREATE TABLE tags (
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL UNIQUE,
+            fileId TEXT,
             isFavorite INTEGER NOT NULL DEFAULT 0 CHECK (isFavorite IN (0,1)),
             usageCount INTEGER NOT NULL DEFAULT 0,
             updatedAt INTEGER NOT NULL,
             syncAt INTEGER,
-            fileId TEXT,
-            FOREIGN KEY (fileId) REFERENCES files(id) ON DELETE SET NULL
+            FOREIGN KEY (fileId) REFERENCES files(id) ON DELETE CASCADE
           );
 ''';

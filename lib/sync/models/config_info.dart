@@ -6,9 +6,10 @@ class ConfigInfo {
   final List<DeviceInfo> devices;
   final ArchiveInfo archiveInfo;
   final int version;
-  final int premiumUntil; // Timestamp en ms. 0 si nunca ha comprado.
-  final String? purchaseToken; // Token de la última compra válida
-  final String? productId; // 'premium_monthly' o 'premium_yearly'
+  final int premiumUntil;
+  final String? purchaseToken;
+  final String? productId;
+
   ConfigInfo({
     required this.lastGlobalUpdate,
     required this.devices,
@@ -19,16 +20,14 @@ class ConfigInfo {
     this.productId,
   });
 
-  /// Verifica si el usuario tiene una suscripción activa
   bool get isPremium => premiumUntil > DateTime.now().millisecondsSinceEpoch;
 
-  /// Determina si un ID de dispositivo específico ya está registrado
   bool hasDevice(String id) => devices.any((d) => d.id == id);
 
-  /// Agrega o actualiza un dispositivo en la lista de forma inmutable
   ConfigInfo upsertDevice(DeviceInfo thisDevice) {
-    final List<DeviceInfo> updatedDevices = List.from(devices);
-    final int index = updatedDevices.indexWhere((d) => d.id == thisDevice.id);
+    // Usamos el operador de cascada y toList() para asegurar inmutabilidad limpia
+    final updatedDevices = List<DeviceInfo>.from(devices);
+    final index = updatedDevices.indexWhere((d) => d.id == thisDevice.id);
 
     if (index != -1) {
       updatedDevices[index] = thisDevice;
@@ -38,13 +37,10 @@ class ConfigInfo {
 
     return copyWith(
       devices: updatedDevices,
-      // Actualizamos el timestamp global cada vez que un dispositivo se reporta
       lastGlobalUpdate: DateTime.now().millisecondsSinceEpoch,
     );
   }
 
-  /// Detecta si hay otros dispositivos que se sincronizaron recientemente.
-  /// Útil para decidir si la app debe pollear cambios más seguido.
   bool getHasFastSyncro(
     String myId, {
     Duration delay = const Duration(minutes: 10),
@@ -60,19 +56,21 @@ class ConfigInfo {
 
   static ConfigInfo fromMap(Map<String, dynamic> map) {
     return ConfigInfo(
-      lastGlobalUpdate: map['last_global_update'] ?? 0,
-      version: map['version'] ?? 1,
-      premiumUntil: map['premium_until'] ?? 0,
-      productId: map['product_id'],
-      purchaseToken: map['purchase_token'],
+      // Usamos 'as int?' o 'toInt()' para evitar errores si JSON lo lee como double
+      lastGlobalUpdate: (map['last_global_update'] as num? ?? 0).toInt(),
+      version: (map['version'] as num? ?? 1).toInt(),
+      premiumUntil: (map['premium_until'] as num? ?? 0).toInt(),
+      productId: map['product_id'] as String?,
+      purchaseToken: map['purchase_token'] as String?,
       devices: (map['devices'] as List? ?? [])
-          .map((d) => DeviceInfo.fromMap(d as Map<String, dynamic>))
+          .map((d) => DeviceInfo.fromMap(Map<String, dynamic>.from(d as Map)))
           .whereType<DeviceInfo>()
           .toList(),
-      // Manejo seguro de ArchiveInfo
-      archiveInfo: map["archive_info"] != null
-          ? ArchiveInfo.fromMap(map["archive_info"])
-          : ArchiveInfo(tags: [], folders: [], notes: [], deletes: []),
+      archiveInfo: ArchiveInfo.fromMap(
+        map["archive_info"] != null 
+            ? Map<String, dynamic>.from(map["archive_info"] as Map) 
+            : null,
+      ),
     );
   }
 
@@ -94,15 +92,17 @@ class ConfigInfo {
     String? productId,
     List<DeviceInfo>? devices,
     ArchiveInfo? archiveInfo,
+    int? version, // Añadido para que no sea estático
     int? premiumUntil,
   }) {
     return ConfigInfo(
       lastGlobalUpdate: lastGlobalUpdate ?? this.lastGlobalUpdate,
       devices: devices ?? this.devices,
+      // Se agregó la lógica para permitir setear null en los campos opcionales
       purchaseToken: purchaseToken ?? this.purchaseToken,
       productId: productId ?? this.productId,
       archiveInfo: archiveInfo ?? this.archiveInfo,
-      version: version,
+      version: version ?? this.version,
       premiumUntil: premiumUntil ?? this.premiumUntil,
     );
   }

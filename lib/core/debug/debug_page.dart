@@ -39,6 +39,7 @@ class DebugPage extends ConsumerWidget {
           note: Note(
             id: "",
             folderId: "",
+            fileId: "",
             title: "Nota de prueba",
             content: "Contenido de la nota de prueba",
             link: null,
@@ -56,6 +57,7 @@ class DebugPage extends ConsumerWidget {
         FolderTile(
           folder: Folder(
             id: "",
+            fileId: "",
             title: "Carpeta de prueba",
             tags: [],
             createdAt: DateTime.now(),

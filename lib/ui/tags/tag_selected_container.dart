@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/locate/app_lang.dart';
 import 'package:tag_links/models/tag.dart';
+import 'package:tag_links/repository/tags_repository.dart';
 import 'package:tag_links/state/tags_provider.dart';
 import 'package:tag_links/ui/tags/show_create_tag_modal.dart';
 import 'package:tag_links/ui/tags/show_edit_tag_modal.dart';
@@ -29,8 +30,12 @@ class TagsSelectedContainer extends ConsumerWidget {
           (tag) => _TagChip(
             tag,
             onDeleted: onDeleted,
+            //el tag que llega puede estar cortado por conveniencia, asi que para obtener los datos confiables
+            //mejor se obtienen de la db
             onEdit: (tag) async {
-              final result = await showEditTagModal(context, ref, tag);
+              final realTag = await ref.read(tagsRepositoryProvider).getById(tag.id);
+              if(!context.mounted) return;
+              final result = await showEditTagModal(context, ref, realTag??tag);
 
               if (result == null) {
                 ref.read(tagsProvider.notifier).deleteTag(tag.id);

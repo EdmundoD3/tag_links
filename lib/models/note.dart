@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:tag_links/models/link_preview.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:uuid/uuid.dart';
@@ -7,7 +5,7 @@ import 'package:uuid/uuid.dart';
 class Note {
   final String id;
   final String? folderId;
-  final String? fileId;
+  final String fileId;
   final String title;
   final String content;
   final String? color;
@@ -21,7 +19,7 @@ class Note {
   Note({
     required this.id,
     required this.folderId,
-    this.fileId,
+    required this.fileId,
     required this.title,
     required this.content,
     this.color,
@@ -36,7 +34,7 @@ class Note {
     String? id,
     String? title,
     String? folderId,
-    String? fileId,
+    required String fileId,
     String? content,
     String? color,
     LinkPreview? link,
@@ -112,6 +110,7 @@ class Note {
     return Note(
       id: id ?? this.id,
       folderId: folderId,
+      fileId: fileId,
       title: title ?? this.title,
       content: content ?? this.content,
       color: color ?? this.color,
@@ -142,10 +141,10 @@ class NoteConfig {
   static final maxTags = 10;
 }
 String noteTable = '''
-          CREATE TABLE notes(
+          CREATE TABLE notes (
             id TEXT PRIMARY KEY,
             folderId TEXT,
-            fileId TEXT,
+            fileId TEXT NOT NULL,
             title TEXT NOT NULL,
             content TEXT,
             color TEXT,
@@ -154,6 +153,6 @@ String noteTable = '''
             syncAt INTEGER,
             isFavorite INTEGER NOT NULL DEFAULT 0 CHECK (isFavorite IN (0,1)),
             FOREIGN KEY (folderId) REFERENCES folders(id) ON DELETE CASCADE,
-            FOREIGN KEY (fileId) REFERENCES files(id) ON DELETE SET NULL
+            FOREIGN KEY (fileId) REFERENCES files(id) ON DELETE CASCADE
           );
 ''';

@@ -116,7 +116,7 @@ class NoteTile extends ConsumerWidget {
   }
 
   void _editNote(BuildContext context) {
-    goPage(context: context, page: NoteFormPage(note: note, folderId: note.folderId));
+    goPage(context: context, page: NoteFormPage(note: note, folderId: note.folderId, fileId: note.fileId));
   }
 
   // helpers

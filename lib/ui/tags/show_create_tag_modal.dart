@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/locate/app_lang.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/state/tags_provider.dart';
+import 'package:tag_links/sync/db/local_sync_queue_repository.dart';
+import 'package:tag_links/sync/models/local_sync_queue.dart';
 import 'package:uuid/uuid.dart';
 
 Future<Tag?> showCreateTagModal({
@@ -95,9 +97,11 @@ Future<void> _submit({
 
   try {
     final notifier = ref.read(tagsProvider.notifier);
-
+    final fileId = await ref
+            .read(localSyncQueueRepositoryProvider)
+            .getOrCreateAvailableFileId(TypeQueue.tags);
     // 3. Si no existe, crear el nuevo
-    final Tag newTag = Tag(id: const Uuid().v4(), name: name);
+    final Tag newTag = Tag(id: const Uuid().v4(), name: name,fileId: fileId);
 
     // Guardamos DESPUÉS (en segundo plano)
     final savedTag = await notifier.addTag(newTag);

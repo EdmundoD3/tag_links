@@ -59,7 +59,8 @@ class FolderTile extends ConsumerWidget {
         ActionMenuItem(
           icon: Icons.move_down_rounded,
           label: t(ref, 'moveDown', fallback: 'mover'),
-          onTap: () => onMove(folder)),
+          onTap: () => onMove(folder),
+        ),
         ...actionsItems,
       ],
     );
@@ -67,7 +68,14 @@ class FolderTile extends ConsumerWidget {
 
   Future<void> _editFolder(BuildContext context) {
     //conservamos el parentId
-    return goPage(context: context, page: FolderFormPage(folder: folder, parentFolderId: folder.parentId));
+    return goPage(
+      context: context,
+      page: FolderFormPage(
+        folder: folder,
+        parentFolderId: folder.parentId,
+        fileId: folder.fileId,
+      ),
+    );
   }
 }
 
@@ -79,7 +87,7 @@ class _FolderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Card(
       elevation: 3,
       surfaceTintColor: Colors.transparent,
@@ -96,10 +104,7 @@ class _FolderCard extends StatelessWidget {
             // PARTE SUPERIOR: Icono, Título y Favorito
             Row(
               children: [
-                Icon(
-                  Icons.folder,
-                  color: theme.badgeTheme.textColor,
-                ),
+                Icon(Icons.folder, color: theme.badgeTheme.textColor),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -125,7 +130,8 @@ class _FolderCard extends StatelessWidget {
 
   Widget _footer({required ThemeData theme}) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.end, // Alinea la fecha abajo si los tags crecen
+      crossAxisAlignment:
+          CrossAxisAlignment.end, // Alinea la fecha abajo si los tags crecen
       children: [
         Expanded(
           child: _miniTags(theme: theme, tags: folder.tags),
@@ -136,10 +142,7 @@ class _FolderCard extends StatelessWidget {
     );
   }
 
-  Widget _dateWidget({
-    required ThemeData theme,
-    required DateTime date,
-  }) {
+  Widget _dateWidget({required ThemeData theme, required DateTime date}) {
     return Text(
       _formatDate(date),
       style: theme.textTheme.labelSmall?.copyWith(color: theme.hintColor),
@@ -168,4 +171,3 @@ class _FolderCard extends StatelessWidget {
     );
   }
 }
-

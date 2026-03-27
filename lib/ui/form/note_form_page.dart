@@ -22,12 +22,14 @@ import 'package:uuid/uuid.dart';
 class NoteFormPage extends ConsumerStatefulWidget {
   final Note? note;
   final String? folderId;
+  final String fileId;
   final bool isPending;
 
   const NoteFormPage({
     super.key,
     this.note,
     required this.folderId,
+    required this.fileId,
     this.isPending = false,
   });
 
@@ -104,6 +106,7 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
     final note = Note(
       id: _id,
       folderId: widget.folderId,
+      fileId: widget.fileId,
       title: _titleCtrl.text.trim(),
       content: _contentCtrl.text.trim(),
       link: link,
@@ -111,6 +114,8 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
       createdAt: widget.note?.createdAt ?? now,
       updatedAt: now,
       isFavorite: _isFavorite,
+      color: widget.note?.color,//cambiar cuando se pueda agregar colores
+      syncAt: widget.note?.syncAt,
     );
     return note;
   }

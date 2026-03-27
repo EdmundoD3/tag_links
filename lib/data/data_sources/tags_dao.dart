@@ -44,6 +44,32 @@ class TagsDao {
     );
   }
 
+  Future<void> upsert(Tag tag) async {
+    try {
+      final tagToUpdate = tag.ensureForInsert();
+      await _db.rawInsert(
+        '''
+      INSERT INTO tags (id, name, fileId, isFavorite, usageCount)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        name = excluded.name,
+        fileId = excluded.fileId,
+        isFavorite = excluded.isFavorite,
+        usageCount = excluded.usageCount
+    ''',
+        [
+          tagToUpdate.id,
+          tagToUpdate.name,
+          tagToUpdate.fileId,
+          tagToUpdate.isFavorite ? 1 : 0,
+          tagToUpdate.usageCount,
+        ],
+      );
+    } catch (e) {
+      debugPrint('TagsDao.upsert error: ${e.toString()}');
+    }
+  }
+
   Future<void> delete(String id) async {
     await _db.delete(_tableName, where: 'id = ?', whereArgs: [id]);
   }
@@ -105,5 +131,95 @@ class TagsDao {
       debugPrint("Error: TagsDao.getByExactlyName: $e");
       return null;
     }
+  }
+
+  // -------------- SYNC section --------------
+  Future<List<Tag>> getByFileId(String fileId) async {
+    final result = await _db.query(
+      _tableName,
+      where: 'fileId = ?',
+      whereArgs: [fileId],
+    );
+    return result.map(Tag.fromMap).toList();
+  }
+  Future<void> upsertAll(List<Tag> tags) async {
+    try {
+      _db.transaction((txn) async {
+        final batch = txn.batch();
+        for (final tag in tags) {
+          _upsertAllBatch(tag, batch);
+        }
+        await batch.commit(noResult: true);
+      });
+    } catch (e) {
+      debugPrint('TagsDao.upsert error: ${e.toString()}');
+    }
+  }
+
+  Future<void> _upsertAllBatch(Tag tag, Batch batch) async {
+    final tagToUpdate = tag.ensureForInsert();
+    // Dentro de TagsDao
+    batch.rawInsert(
+      '''
+  INSERT INTO tags (id, name, isFavorite, usageCount, updatedAt)
+  VALUES (?, ?, ?, ?, ?)
+  ON CONFLICT(id) DO UPDATE SET
+    name = excluded.name,
+    isFavorite = excluded.isFavorite,
+    usageCount = excluded.usageCount,
+    updatedAt = excluded.updatedAt
+  WHERE excluded.updatedAt > updatedAt -- Lógica de "el más reciente gana"
+  ''',
+      [
+        tagToUpdate.id,
+        tagToUpdate.name,
+        tagToUpdate.isFavorite ? 1 : 0,
+        tagToUpdate.usageCount,
+        tagToUpdate.updatedAt?.millisecondsSinceEpoch ??
+            DateTime.now().millisecondsSinceEpoch,
+      ],
+    );
+  }
+
+  Future<void> serverDeleteByIds(List<String> ids) async {
+    if (ids.isEmpty) return;
+
+    final placeholders = List.filled(ids.length, '?').join(',');
+
+    try {
+      await _db.delete('tags', where: 'id IN ($placeholders)', whereArgs: ids);
+    } catch (e) {
+      debugPrint('TagsDao.serverDeleteByIds ERROR: $e');
+    }
+  }
+
+  Future<List<Tag>> getPendingSync({int limit = 200}) async {
+    final sql = '''
+    SELECT *
+    FROM tags
+    WHERE syncAt IS NULL OR syncAt < updatedAt
+    ORDER BY updatedAt DESC
+    LIMIT ?
+  ''';
+
+    final result = await _db.rawQuery(sql, [limit]);
+
+    return result.map(Tag.fromMap).toList();
+  }
+
+  Future<void> updateSyncAt({
+    required List<String> ids,
+    required int syncAt,
+    required String fileId,
+  }) async {
+    _db.rawInsert(
+      '''
+    UPDATE tags
+    SET syncAt = ?, 
+        fileId = ?
+    WHERE id IN (?)
+  ''',
+      [syncAt, fileId, ids.join(',')],
+    );
   }
 }

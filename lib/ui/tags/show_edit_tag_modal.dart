@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/locate/app_lang.dart';
 import 'package:tag_links/models/tag.dart';
+
 Future<Tag?> showEditTagModal(
   BuildContext context,
   WidgetRef ref,
@@ -14,7 +15,6 @@ Future<Tag?> showEditTagModal(
     context: context,
     isScrollControlled: true,
     builder: (context) {
-      final theme = Theme.of(context);
       return StatefulBuilder(
         builder: (context, setState) {
           return Padding(

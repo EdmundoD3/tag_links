@@ -29,10 +29,6 @@ class FolderRepository {
     return _dao.upsertAll(enshuredFolders);
   }
 
-  Future<void> deleteByIds(List<String> ids) {
-    return _dao.serverDeleteByIds(ids);
-  }
-
   Future<void> create(Folder folder) async {
     final folderToSave = folder.ensureForInsert();
     return _dao.upsert(folderToSave);
@@ -96,13 +92,30 @@ class FolderRepository {
   }
 
   // ----------------------- SYNC section ------------------------- //
-  Future<Future<void>> updateSyncAt(List<String> ids, int syncAt) async {
-    return _dao.updateSyncAt(ids, syncAt);
+  Future<List<Folder>> getByFileId(String fileId) async {
+    return _dao.getByFileId(fileId);
+  }
+  Future<Future<void>> updateSyncAt({required List<String> ids, required int syncAt,required String fileId}) async {
+    return _dao.updateSyncAt(ids: ids, syncAt: syncAt, fileId: fileId);
   }
 
   Future<void> clearDeletedNotes(List<String> ids) {
     return _deletedDao.deleteIds(ids);
   }
+
+    Future<void> deleteByIds(List<String> ids) {
+    return _dao.serverDeleteByIds(ids);
+  }
+  // Cambiar nombre por claridad
+  Future<void> clearDeletedFolders(List<String> ids) {
+    return _deletedDao.deleteIds(ids);
+  }
+  
+  // Añadir esto para el PUSH
+  Future<List<Folder>> getPendingSync() => _dao.getPendingSync();
+  
+  Future<List<DeletedData>> getDeletedBatch({int limit = 500}) => 
+      _deletedDao.getBatch(limit: limit);
 }
 
 final folderRepositoryProvider = Provider<FolderRepository>((ref) {

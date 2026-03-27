@@ -4,7 +4,7 @@ class ArchiveInfo {
   final List<ArchiveItem> tags;
   final List<ArchiveItem> folders;
   final List<ArchiveItem> notes;
-  final List<ArchiveItem> deletes; // Nuevo: Para rastrear archivos de borrado
+  final List<ArchiveItem> deletes;
 
   ArchiveInfo({
     required this.tags,
@@ -18,19 +18,19 @@ class ArchiveInfo {
       return ArchiveInfo(tags: [], folders: [], notes: [], deletes: []);
     }
     
+    // Función auxiliar interna para limpiar los mapeos de lista
+    List<ArchiveItem> parseList(dynamic list) {
+      if (list == null || list is! List) return [];
+      return list
+          .map((e) => ArchiveItem.fromMap(Map<String, dynamic>.from(e as Map)))
+          .toList();
+    }
+
     return ArchiveInfo(
-      tags: (map['tags'] as List? ?? [])
-          .map((e) => ArchiveItem.fromMap(e as Map<String, dynamic>))
-          .toList(),
-      folders: (map['folders'] as List? ?? [])
-          .map((e) => ArchiveItem.fromMap(e as Map<String, dynamic>))
-          .toList(),
-      notes: (map['notes'] as List? ?? [])
-          .map((e) => ArchiveItem.fromMap(e as Map<String, dynamic>))
-          .toList(),
-      deletes: (map['deletes'] as List? ?? [])
-          .map((e) => ArchiveItem.fromMap(e as Map<String, dynamic>))
-          .toList(),
+      tags: parseList(map['tags']),
+      folders: parseList(map['folders']),
+      notes: parseList(map['notes']),
+      deletes: parseList(map['deletes']),
     );
   }
 
@@ -41,7 +41,6 @@ class ArchiveInfo {
     "deletes": deletes.map((e) => e.toMap()).toList(),
   };
 
-  /// Permite actualizar partes del índice de forma inmutable
   ArchiveInfo copyWith({
     List<ArchiveItem>? tags,
     List<ArchiveItem>? folders,

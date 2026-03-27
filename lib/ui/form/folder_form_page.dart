@@ -19,8 +19,9 @@ import 'package:tag_links/core/locate/app_lang.dart';
 class FolderFormPage extends ConsumerStatefulWidget {
   final Folder? folder; //null significa que es nuevo
   final String? parentFolderId; // null significa que es root
+  final String fileId;
 
-  const FolderFormPage({super.key, this.folder, this.parentFolderId});
+  const FolderFormPage({super.key,required this.fileId ,this.folder, this.parentFolderId});
 
   bool get isEdit => folder != null;
 
@@ -48,7 +49,7 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
 
     _folder =
         widget.folder ??
-        Folder.empty(hasId: true, parentId: widget.parentFolderId);
+        Folder.empty(hasId: true, parentId: widget.parentFolderId, fileId: widget.fileId);
     _tags = widget.folder?.tags ?? [];
 
     _titleCtrl = TextEditingController(text: widget.folder?.title ?? '');
@@ -194,6 +195,8 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
     final folder = Folder(
       id: _folder.id,
       parentId: widget.parentFolderId,
+      fileId: widget.fileId,
+      color: _folder.color,
       title: _titleCtrl.text.trim(),
       tags: _tags,
       image: _folder.image,
@@ -201,6 +204,7 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
       createdAt: widget.folder != null? _folder.createdAt : now,
       updatedAt: now,
       isFavorite: _isFavorite,
+      syncAt: _folder.syncAt,
     );
 
     _folder = folder;

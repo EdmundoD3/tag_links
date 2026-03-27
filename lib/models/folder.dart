@@ -1,11 +1,10 @@
-import 'dart:convert';
-
 import 'package:tag_links/models/tag.dart';
 import 'package:uuid/uuid.dart';
 
 class Folder {
   final String id;
   final String? parentId;
+  final String fileId;
   final String title;
   final List<Tag> tags;
   final String? description;
@@ -19,6 +18,7 @@ class Folder {
   Folder({
     required this.id,
     this.parentId,
+    required this.fileId,
     required this.title,
     required this.tags,
     this.description,
@@ -30,10 +30,11 @@ class Folder {
     this.isFavorite = false,
   });
 
-  factory Folder.empty({required bool hasId, String? parentId}){
+  factory Folder.empty({required bool hasId, required String fileId, String? parentId}) {
     final folder = Folder(
-      id: hasId?const Uuid().v4():'',
+      id: hasId ? const Uuid().v4() : '',
       parentId: parentId,
+      fileId: fileId,
       title: '',
       tags: [],
       description: null,
@@ -47,18 +48,23 @@ class Folder {
     return folder.ensureForInsert();
   }
 
-    static Folder fromMap(Map<String, dynamic> map) {
+  static Folder fromMap(Map<String, dynamic> map) {
     return Folder(
       id: map['id'],
       parentId: map['parentId'],
-      title: map['title'],
-      tags: map['tags'],
+      fileId: map['fileId'],
+      title: map['title'] ?? '',
+      // Si 'tags' no viene en el map (como en el query local),
+      // inicializamos lista vacía para que no explote.
+      tags: (map['tags'] as List?)?.map((t) => Tag.fromMap(t)).toList() ?? [],
       description: map['description'],
       image: map['image'],
       color: map['color'],
-      createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt']),
-      updatedAt: DateTime.fromMillisecondsSinceEpoch(map['updatedAt']),
-      syncAt:map['syncAt'] == null ? null : DateTime.fromMillisecondsSinceEpoch(map['syncAt']),
+      createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt'] ?? 0),
+      updatedAt: DateTime.fromMillisecondsSinceEpoch(map['updatedAt'] ?? 0),
+      syncAt: map['syncAt'] == null
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(map['syncAt']),
       isFavorite: map['isFavorite'] == 1,
     );
   }
@@ -67,6 +73,7 @@ class Folder {
     return {
       'id': id,
       'parentId': parentId,
+      'fileId': fileId,
       'title': title,
       'description': description,
       'image': image,
@@ -94,6 +101,7 @@ class Folder {
     return Folder(
       id: id ?? this.id,
       parentId: parentId, //puede ser null asi que sin this o no podran ser folder de la raiz
+      fileId: fileId,
       title: title ?? this.title,
       tags: tags ?? this.tags,
       description: description ?? this.description,
@@ -105,6 +113,7 @@ class Folder {
       isFavorite: isFavorite ?? this.isFavorite,
     );
   }
+
   Folder ensureForInsert() {
     return copyWith(
       id: id.isEmpty ? const Uuid().v4() : id,
@@ -113,34 +122,13 @@ class Folder {
       parentId: id != parentId ? parentId : null,
     );
   }
-  static Folder fromDecryptedJson(String id, String decryptedPayload) {
-    final Map<String, dynamic> json = jsonDecode(decryptedPayload);
-    final List<dynamic> tagsRaw = json['tags'] ?? [];
-
-    return Folder(
-      id: id,
-      parentId: json['parentId'] as String?, // Por si implementas subcarpetas
-      title: json['title'] as String,
-      description: json['description'] as String?,
-      image: json['image'] as String?,
-      color: json['color'] as String?,
-      tags: tagsRaw
-          .map((t) => Tag(id: t['id'] as String, name: t['name'] as String))
-          .toList(),
-      createdAt: DateTime.fromMillisecondsSinceEpoch(json['createdAt'] as int),
-      updatedAt: DateTime.fromMillisecondsSinceEpoch(
-        (json['updatedAt'] ?? json['createdAt']) as int,
-      ),
-
-      isFavorite: json['isFavorite'] as bool? ?? false,
-    );
-  }
 }
 
 String folderTable = '''
           CREATE TABLE folders (
             id TEXT PRIMARY KEY,
             parentId TEXT,
+            fileId TEXT,
             title TEXT NOT NULL,
             description TEXT,
             image TEXT,
@@ -149,8 +137,7 @@ String folderTable = '''
             updatedAt INTEGER,
             syncAt INTEGER,
             isFavorite INTEGER NOT NULL DEFAULT 0 CHECK (isFavorite IN (0,1)),
-            fileId TEXT,
-            FOREIGN KEY (fileId) REFERENCES files(id) ON DELETE SET NULL,
+            FOREIGN KEY (fileId) REFERENCES files(id) ON DELETE CASCADE,
             FOREIGN KEY (parentId) REFERENCES folders(id) ON DELETE CASCADE
           );
 ''';

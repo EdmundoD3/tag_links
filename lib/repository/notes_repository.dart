@@ -67,9 +67,16 @@ class NotesRepository {
     return _deletedDao.deleteIds(ids);
   }
   // --------------------- SYNC section ----------------------//
-  Future<Future<bool>> updateSyncAt(List<String> ids, int syncAt) async {
-    return _dao.updateNotesSyncAt(ids, syncAt);
+  Future<List<Note>> getByFileId(String fileId) => _dao.getByFileId(fileId);
+  Future<Future<bool>> updateSyncAt({required List<String> ids,required int syncAt,required String fileId}) async {
+    return _dao.updateNotesSyncAt(ids: ids, syncAt: syncAt, fileId: fileId);
   }
+  // Obtener notas que han cambiado localmente y no se han subido
+  Future<List<Note>> getPendingSync() => _dao.getPendingSync();
+
+  // Obtener los registros borrados para subirlos a la nube
+  Future<List<DeletedData>> getDeletedBatch({int limit = 500}) => 
+      _deletedDao.getBatch(limit: limit);
 }
 
 final notesRepositoryProvider = Provider<NotesRepository>((ref) {

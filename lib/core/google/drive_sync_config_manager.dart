@@ -127,7 +127,6 @@ class DriveSyncConfigManager {
 final syncConfigProvider = Provider<DriveSyncConfigManager?>((ref) {
   final auth = ref.watch(authProvider);
   if (auth.driveApi == null) return null;
-  final prefs = ref.watch(sharedPrefsProvider);
-  final localIdManager = LocalIdManager(prefs);
-  return DriveSyncConfigManager(auth.driveApi!, localIdManager: localIdManager);
+  
+  return DriveSyncConfigManager(auth.driveApi!, localIdManager: ref.watch(localIdManagerProvider));
 });
