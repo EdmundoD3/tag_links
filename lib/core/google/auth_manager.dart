@@ -4,7 +4,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:tag_links/core/google/drive_sync_config_manager.dart';
 import 'package:tag_links/core/google/google_http_client.dart';
-import 'package:tag_links/sync/models/config_info.dart';
 
 class AuthManager {
   final DriveSyncConfigManager? _configManager;
@@ -25,7 +24,9 @@ class AuthManager {
 
   /// Inicia el flujo de login manual interactivo
   Future<void> loginFlow() async {
-    final GoogleSignInAccount googleUser = await _interactiveGoogleLogin();
+    final GoogleSignInAccount? googleUser = await _interactiveGoogleLogin();
+    if (googleUser == null) return;
+
     await _initializeDriveApi(googleUser);
 
     print("API de Drive inicializada correctamente.");
@@ -94,8 +95,13 @@ class AuthManager {
     );
   }
 
-  Future<GoogleSignInAccount> _interactiveGoogleLogin() async {
-    return await _googleSignIn.authenticate(scopeHint: _driveScopes);
+  Future<GoogleSignInAccount?> _interactiveGoogleLogin() async {
+    try {
+    return await _googleSignIn.authenticate(scopeHint: _driveScopes); // Esto inicia el flujo visual
+  } catch (error) {
+    debugPrint("❌ Error en Google Login: $error");
+    return null;
+  }
   }
 
   /// Limpieza al cerrar sesión

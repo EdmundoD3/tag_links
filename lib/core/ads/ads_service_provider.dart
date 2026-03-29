@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:tag_links/core/ads/ad_mob_config.dart';
+import 'package:tag_links/config/ad_mob_config.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class AdService {

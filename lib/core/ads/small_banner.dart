@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/core/ads/ad_mob_config.dart';
+import 'package:tag_links/config/ad_mob_config.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:tag_links/core/ads/ads_disable_provider.dart';
 import 'package:tag_links/core/ads/ads_service_provider.dart';

@@ -1,8 +1,7 @@
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:tag_links/config/purchases_config.dart';
 
 class InAppPurchaseManager {
-  final Set<String> kPremiumIds = {'premium_monthly', 'premium_yearly'};
-
   /// Procesa las compras y devuelve la info de suscripción si existe una válida
   Future<PremiumInfo?> processPurchaseUpdates(
     List<PurchaseDetails> purchases,
