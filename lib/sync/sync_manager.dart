@@ -78,7 +78,7 @@ class SyncManager {
   Future<void> _executeFullSync() async {
     try {
       // 0. REQUISITOS
-      final remoteData = await _configManager.getRemoteConfig();
+      final remoteData = await _configManager.getOrInitializeRemoteConfig();
       if (remoteData == null) return;
       final lastPulled = await _storage.getLastPulledAt() ?? 0;
 
@@ -110,7 +110,7 @@ class SyncManager {
             archiveInfo: updatedArchive,
             lastGlobalUpdate: DateTime.now().millisecondsSinceEpoch,
           )
-          .upsertDevice(DeviceInfo.createCurrent(_idManager.getOrCreateId()));
+          .upsertDevice(DeviceInfo.createCurrent(_idManager.getOrCreateDeviceId()));
 
       await _configManager.updateRemoteConfig(remoteData.fileId, finalConfig);
       await _storage.setLastPulledAt(DateTime.now().millisecondsSinceEpoch);

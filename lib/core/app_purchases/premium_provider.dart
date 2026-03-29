@@ -44,7 +44,7 @@ class PremiumNotifier extends Notifier<bool> {
   ) async {
     try {
       // Obtenemos la config remota (esto ya lo tienes implementado)
-      final remoteData = await configManager.getRemoteConfig();
+      final remoteData = await configManager.getOrInitializeRemoteConfig();
       if (remoteData == null) return;
 
       final remoteConfig = remoteData.config;
@@ -111,7 +111,7 @@ class PremiumNotifier extends Notifier<bool> {
     PremiumInfo info,
   ) async {
     try {
-      final remoteData = await configManager.getRemoteConfig();
+      final remoteData = await configManager.getOrInitializeRemoteConfig();
 
       if (remoteData != null) {
         final current = remoteData.config;

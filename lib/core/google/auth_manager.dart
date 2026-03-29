@@ -78,9 +78,9 @@ class AuthManager {
   Future<void> _checkInitialSync() async {
     if (_configManager == null) return;
 
-    final ConfigInfo? config = await _configManager.checkAndInitializeConfig();
+    final RemoteConfigData? remoteData = await _configManager.getOrInitializeRemoteConfig();
 
-    if (config == null) {
+    if (remoteData == null) {
       // Aquí es donde recuperamos el nivel: Informar al sistema que la nube está caída
       debugPrint(
         "🚨 Error: Auth exitoso pero Configuración de Drive inaccesible.",
@@ -90,7 +90,7 @@ class AuthManager {
     }
 
     debugPrint(
-      "Sincronización de configuración lista: ${config.devices.length} dispositivos registrados.",
+      "Sincronización de configuración lista: ${remoteData.config.devices.length} dispositivos registrados.",
     );
   }
 
