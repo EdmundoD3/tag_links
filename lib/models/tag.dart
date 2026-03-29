@@ -78,7 +78,7 @@ String tagTable = '''
           CREATE TABLE tags (
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL UNIQUE,
-            fileId TEXT,
+            fileId TEXT NOT NULL,
             isFavorite INTEGER NOT NULL DEFAULT 0 CHECK (isFavorite IN (0,1)),
             usageCount INTEGER NOT NULL DEFAULT 0,
             updatedAt INTEGER NOT NULL,

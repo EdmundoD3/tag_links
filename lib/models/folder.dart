@@ -128,7 +128,7 @@ String folderTable = '''
           CREATE TABLE folders (
             id TEXT PRIMARY KEY,
             parentId TEXT,
-            fileId TEXT,
+            fileId TEXT NOT NULL,
             title TEXT NOT NULL,
             description TEXT,
             image TEXT,
