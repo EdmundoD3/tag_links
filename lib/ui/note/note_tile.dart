@@ -10,6 +10,7 @@ import 'package:tag_links/ui/link/link_preview_widget.dart';
 import 'package:tag_links/ui/menu/menu_container.dart';
 import 'package:tag_links/ui/form/note_form_page.dart';
 import 'package:tag_links/ui/text/expandable_decorated_text.dart';
+import 'package:tag_links/ui/text/read_more_label.dart';
 import 'package:tag_links/ui/utils/page_buil.dart';
 import 'package:tag_links/utils/color_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -35,6 +36,8 @@ class NoteTile extends ConsumerStatefulWidget {
 class _NoteTileState extends ConsumerState<NoteTile> {
   // AQUÍ ES DONDE DEBE VIVIR LA LLAVE
   final GlobalKey _tileKey = GlobalKey();
+  bool _isNoteExpanded = false;
+  bool _showReadMore = false;
 
   @override
   Widget build(BuildContext context) {
@@ -42,6 +45,16 @@ class _NoteTileState extends ConsumerState<NoteTile> {
       // IMPORTANTE: Pasamos la llave aquí para que el RenderBox sea el de la tarjeta
       tileKey: _tileKey,
       note: widget.note,
+      //expandText
+      onTap: () => setState(() => _isNoteExpanded = !_isNoteExpanded),
+    isExpanded: _isNoteExpanded,
+    onLineCountCheck: (exceeds) {
+              if (_showReadMore != exceeds) {
+                setState(() => _showReadMore = exceeds);
+              }
+            },
+            showReadMore: _showReadMore,
+    // menu
       onShowMenu: (position) =>
           _actionsMenu(context: context, ref: ref, position: position),
     );
@@ -174,17 +187,27 @@ class _NoteTileCard extends StatelessWidget {
   final Note note;
   final GlobalKey tileKey;
   final void Function(Offset?) onShowMenu;
+  final bool isExpanded;
+  final void Function() onTap;
+  final Function(bool)? onLineCountCheck;
+  final bool showReadMore;
+
 
   const _NoteTileCard({
     required this.note,
     required this.onShowMenu,
     required this.tileKey,
+    required this.isExpanded,
+    required this.onTap,
+    required this.onLineCountCheck,
+    required this.showReadMore,
   });
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return BouncingButton(
       key: tileKey, // Asociamos la GlobalKey al contenedor que rebota
+      onTap: onTap,
       onLongPressStart: (details) => onShowMenu(details.globalPosition),
       trailing: Trailing(
         top: 12,
@@ -205,8 +228,16 @@ class _NoteTileCard extends StatelessWidget {
             _lineColorDecorator(note.color),
             ..._linkPreviewWidget(theme, note),
             const SizedBox(height: 10),
-            ExpandableDecoratedText(text: note.content),
-            const SizedBox(height: 20),
+            ExpandableDecoratedText(
+       text: note.content,
+       isExpanded: isExpanded, // Le pasas el estado desde el padre
+       onLineCountCheck: onLineCountCheck,
+     ),if (showReadMore)
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: ReadMoreLabel(isExpanded: isExpanded),
+            ),
+            const SizedBox(height: 8),
             _footer(theme: theme),
           ],
         ),
