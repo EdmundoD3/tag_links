@@ -16,3 +16,21 @@ class AdMobConfig {
       ? 'ca-app-pub-TU_ID_REAL/XXXXXXXX'
       : 'ca-app-pub-3940256099942544/5224354917'; // test rewarded
 }
+
+// en https://admob.google.com/home/
+
+// 2. Registrar tu app
+// En el menú → Apps
+// Click en “Agregar app”
+// Puedes agregarla aunque no esté publicada aún
+
+// 3. Crear unidades de anuncio
+
+// Dentro de tu app:
+
+// Ve a Ad units (Unidades de anuncio)
+// Click en “Agregar unidad de anuncio”
+// Elige tipo:
+// Banner
+// Interstitial
+// Rewarded

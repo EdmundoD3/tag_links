@@ -324,17 +324,20 @@ class FoldersDao {
   Future<List<Folder>> getRootFolders({
     required PaginatedByDate paginated,
   }) async {
-    final db = _db;
+    try {
+      final result = await _db.query(
+        'folders',
+        where: 'parentId IS NULL',
+        orderBy: paginated.orderSql,
+        limit: paginated.limit,
+        offset: paginated.offset,
+      );
 
-    final result = await db.query(
-      'folders',
-      where: 'parentId IS NULL',
-      orderBy: paginated.orderSql,
-      limit: paginated.limit,
-      offset: paginated.offset,
-    );
-
-    return Future.wait(result.map((f) => _mapFolderWithTags(db, f)));
+      return Future.wait(result.map((f) => _mapFolderWithTags(_db, f)));
+    } catch (e) {
+      debugPrint('FoldersDao.getRootFolders ERROR: $e');
+      return [];
+    }
   }
 
   /// BY PARENT
@@ -455,7 +458,7 @@ class FoldersDao {
     // Agregamos updatedAt y syncAt al SELECT para que Tag.fromMap no falle
     final result = await db.rawQuery(
       '''
-      SELECT t.id, t.name, t.isFavorite, t.usageCount, t.updatedAt, t.syncAt
+      SELECT t.id, t.name, t.fileId, t.isFavorite, t.usageCount, t.updatedAt, t.syncAt
       FROM tags t
       INNER JOIN folder_tags ft ON ft.tagId = t.id
       WHERE ft.folderId = ?

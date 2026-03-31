@@ -3,19 +3,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/locate/app_lang.dart';
 import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/models/tag.dart';
+import 'package:tag_links/ui/container/tile_container.dart';
 import 'package:tag_links/ui/form/folder_form_page.dart';
 import 'package:tag_links/ui/menu/menu_container.dart';
 import 'package:tag_links/ui/utils/page_buil.dart';
+import 'package:tag_links/ui/container/bouncing_widget.dart'; // Asegúrate de que la ruta sea correcta
 
-class FolderTile extends ConsumerWidget {
+class FolderTile extends ConsumerStatefulWidget {
   final List<ActionMenuItem> actionsItems;
   final Folder folder;
   final void Function() goFolder;
   final void Function() onDeleteFolder;
   final void Function(Folder folder) onMove;
-  final GlobalKey _tileKey = GlobalKey();
 
-  FolderTile({
+  const FolderTile({
     super.key,
     required this.folder,
     required this.actionsItems,
@@ -25,25 +26,50 @@ class FolderTile extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return InkWell(
+  ConsumerState<FolderTile> createState() => _FolderTileState();
+}
+
+class _FolderTileState extends ConsumerState<FolderTile> {
+  final GlobalKey _tileKey = GlobalKey();
+
+  @override
+  Widget build(BuildContext context) {
+    return BouncingButton(
       key: _tileKey,
-      onTap: () => goFolder(),
-      onLongPress: () => _actionsMenu(context, ref),
-      child: _FolderCard(folder: folder),
+      onTap: widget.goFolder,
+      onLongPressStart: (details) =>
+          _actionsMenu(context, ref, details.globalPosition),
+      // AGREGAMOS EL BOTÓN AQUÍ:
+      trailing: Trailing(
+        top: 12,
+        right: 10,
+        child: IconButton(
+          onPressed: () => _actionsMenu(context, ref, null),
+          icon: const Icon(
+            Icons.more_vert,
+            size: 22,
+          ), // Un poco más grande para carpetas
+          splashRadius: 20,
+          color: Theme.of(context).hintColor,
+        ),
+      ),
+      child: _FolderCard(folder: widget.folder),
     );
   }
 
-  void _actionsMenu(BuildContext context, WidgetRef ref) {
-    final box = _tileKey.currentContext!.findRenderObject() as RenderBox;
+  void _actionsMenu(BuildContext context, WidgetRef ref, Offset? position) {
+    final box = _tileKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null) return;
 
-    final position = box.localToGlobal(Offset.zero);
+    final widgetPosition = box.localToGlobal(Offset.zero);
 
     ActionMenu.showActionMenu(
       context: context,
       position: Offset(
-        position.dx + box.size.width - 260, // alinear a la derecha
-        position.dy - 8,
+        widgetPosition.dx + box.size.width - 260,
+        position != null
+            ? position.dy
+            : widgetPosition.dy + 10, // Ajuste leve si es desde el botón
       ),
       items: [
         ActionMenuItem(
@@ -54,84 +80,80 @@ class FolderTile extends ConsumerWidget {
         ActionMenuItem(
           icon: Icons.delete,
           label: t(ref, 'delete', fallback: 'Eliminar'),
-          onTap: () => onDeleteFolder(),
+          onTap: () => widget.onDeleteFolder(),
         ),
         ActionMenuItem(
           icon: Icons.move_down_rounded,
-          label: t(ref, 'moveDown', fallback: 'mover'),
-          onTap: () => onMove(folder),
+          label: t(ref, 'moveDown', fallback: 'Mover'),
+          onTap: () => widget.onMove(widget.folder),
         ),
-        ...actionsItems,
+        ...widget.actionsItems,
       ],
     );
   }
 
   Future<void> _editFolder(BuildContext context) {
-    //conservamos el parentId
     return goPage(
       context: context,
       page: FolderFormPage(
-        folder: folder,
-        parentFolderId: folder.parentId,
-        fileId: folder.fileId,
+        folder: widget.folder,
+        parentFolderId: widget.folder.parentId,
+        fileId: widget.folder.fileId,
       ),
     );
   }
 }
 
+// El _FolderCard se mantiene casi igual, solo quitamos el Card para que el
+// BouncingButton maneje el color de fondo sobre una superficie limpia si lo prefieres,
+// pero dejaremos el Card por tu diseño de sombras.
 class _FolderCard extends StatelessWidget {
   final Folder folder;
-
   const _FolderCard({required this.folder});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
-      elevation: 3,
-      surfaceTintColor: Colors.transparent,
-      shadowColor: Colors.white.withValues(alpha: 0.5),
-      margin: const EdgeInsets.only(top: 10, left: 12, right: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      color: theme.cardTheme.color,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0), // Espaciado interno uniforme
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // PARTE SUPERIOR: Icono, Título y Favorito
-            Row(
-              children: [
-                Icon(Icons.folder, color: theme.badgeTheme.textColor),
-                const SizedBox(width: 12),
-                Expanded(
+    return TileContainer(
+      borderRadius: BorderRadius.circular(8),
+      cardColor: theme.cardTheme.color,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.folder, color: theme.badgeTheme.textColor),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Padding(
+                  // Agregamos padding a la derecha para que el texto no choque con el botón
+                  padding: const EdgeInsets.only(right: 30),
                   child: Text(
                     folder.title,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: theme.textTheme.titleMedium?.color,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                if (folder.isFavorite)
-                  const Icon(Icons.favorite, color: Colors.red, size: 20),
-              ],
-            ),
-            const SizedBox(height: 8),
-            _footer(theme: theme),
-          ],
-        ),
+              ),
+              if (folder.isFavorite)
+                const Icon(Icons.favorite, color: Colors.red, size: 20),
+              if (folder.isFavorite) const SizedBox(width: 20),
+            ],
+          ),
+          const SizedBox(height: 8),
+          _footer(theme: theme),
+        ],
       ),
     );
   }
 
   Widget _footer({required ThemeData theme}) {
     return Row(
-      crossAxisAlignment:
-          CrossAxisAlignment.end, // Alinea la fecha abajo si los tags crecen
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Expanded(
           child: _miniTags(theme: theme, tags: folder.tags),
@@ -151,21 +173,14 @@ class _FolderCard extends StatelessWidget {
   }
 
   String _formatDate(DateTime date) {
-    String horas = date.hour.toString().padLeft(2, '0');
-    String minutos = date.minute.toString().padLeft(2, '0');
-    String day = date.day.toString().padLeft(2, '0');
-    String month = date.month.toString().padLeft(2, '0');
-    String year = date.year.toString();
-    return '$day/$month/$year | $horas:$minutos';
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} | ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 
   Widget _miniTags({required ThemeData theme, List<Tag> tags = const []}) {
     String resultado = tags.map((tag) => '#${tag.name}').join(' ');
-
     return Text(
       resultado,
       style: theme.textTheme.labelMedium,
-      textAlign: TextAlign.left,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
     );

@@ -4,22 +4,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/locate/app_lang.dart';
 import 'package:tag_links/models/note.dart';
 import 'package:tag_links/models/tag.dart';
+import 'package:tag_links/ui/container/bouncing_widget.dart';
+import 'package:tag_links/ui/container/tile_container.dart';
 import 'package:tag_links/ui/link/link_preview_widget.dart';
 import 'package:tag_links/ui/menu/menu_container.dart';
 import 'package:tag_links/ui/form/note_form_page.dart';
-import 'package:tag_links/ui/text/decorated_text.dart';
+import 'package:tag_links/ui/text/expandable_decorated_text.dart';
 import 'package:tag_links/ui/utils/page_buil.dart';
 import 'package:tag_links/utils/color_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class NoteTile extends ConsumerWidget {
+class NoteTile extends ConsumerStatefulWidget {
   final Note note;
   final List<ActionMenuItem> actionsItems;
   final void Function(Note note) onDeleteNote;
   final void Function(Note note) onMove;
-  final GlobalKey _tileKey = GlobalKey();
 
-  NoteTile({
+  const NoteTile({
     super.key,
     required this.note,
     required this.onMove,
@@ -27,19 +28,22 @@ class NoteTile extends ConsumerWidget {
     required this.onDeleteNote,
   });
 
+  @override
+  ConsumerState<NoteTile> createState() => _NoteTileState();
+}
+
+class _NoteTileState extends ConsumerState<NoteTile> {
+  // AQUÍ ES DONDE DEBE VIVIR LA LLAVE
+  final GlobalKey _tileKey = GlobalKey();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return InkWell(
-      key: _tileKey,
-      onTapDown: (tapDownDetails) => _actionsMenu(
-        context: context,
-        ref: ref,
-        position: tapDownDetails.globalPosition,
-      ),
-      child: _NoteTileCard(
-        note: note,
-      ),
+  Widget build(BuildContext context) {
+    return _NoteTileCard(
+      // IMPORTANTE: Pasamos la llave aquí para que el RenderBox sea el de la tarjeta
+      tileKey: _tileKey,
+      note: widget.note,
+      onShowMenu: (position) =>
+          _actionsMenu(context: context, ref: ref, position: position),
     );
   }
 
@@ -48,19 +52,19 @@ class NoteTile extends ConsumerWidget {
     required WidgetRef ref,
     Offset? position,
   }) {
-    final box = _tileKey.currentContext!.findRenderObject() as RenderBox;
-    final widgetPosition = box.localToGlobal(Offset.zero);
+    final renderBox = _tileKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    final widgetPosition = renderBox.localToGlobal(Offset.zero);
 
     ActionMenu.showActionMenu(
       context: context,
       position: Offset(
-        // Mantenemos tu lógica X: alinear al borde derecho del widget
-        widgetPosition.dx + box.size.width - 260,
-        // Usamos el Y del toque exacto
+        widgetPosition.dx + renderBox.size.width - 260,
         position != null ? position.dy : widgetPosition.dy - 8,
       ),
       items: [
-        if (note.link != null)
+        if (widget.note.link != null)
           ActionMenuItem(
             icon: Icons.open_in_new,
             label: t(ref, 'openLink', fallback: 'Abrir enlace'),
@@ -94,21 +98,22 @@ class NoteTile extends ConsumerWidget {
         ActionMenuItem(
           icon: Icons.move_down_rounded,
           label: t(ref, 'moveDown', fallback: 'Mover'),
-          onTap: () => onMove(note)),
+          onTap: () => widget.onMove(widget.note),
+        ),
         ActionMenuItem(
           icon: Icons.delete,
           label: t(ref, 'delete', fallback: 'Eliminar'),
-          onTap: () => onDeleteNote(note),
+          onTap: () => widget.onDeleteNote(widget.note),
         ),
 
-        ...actionsItems,
+        ...widget.actionsItems,
       ],
     );
   }
 
   // functions
   void _copyText(BuildContext context, String okMessage) {
-    final text = note.copyText();
+    final text = widget.note.copyText();
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(
       context,
@@ -116,7 +121,14 @@ class NoteTile extends ConsumerWidget {
   }
 
   void _editNote(BuildContext context) {
-    goPage(context: context, page: NoteFormPage(note: note, folderId: note.folderId, fileId: note.fileId));
+    goPage(
+      context: context,
+      page: NoteFormPage(
+        note: widget.note,
+        folderId: widget.note.folderId,
+        fileId: widget.note.fileId,
+      ),
+    );
   }
 
   // helpers
@@ -125,7 +137,7 @@ class NoteTile extends ConsumerWidget {
     required String notOpenLinkMsg,
     required String errorOpenLinkMsg,
   }) async {
-    final link = note.link;
+    final link = widget.note.link;
     if (link == null || link.url.isEmpty) return;
 
     // 1. Limpiar la URL (quitar espacios en blanco accidentales)
@@ -160,51 +172,45 @@ class NoteTile extends ConsumerWidget {
 
 class _NoteTileCard extends StatelessWidget {
   final Note note;
+  final GlobalKey tileKey;
+  final void Function(Offset?) onShowMenu;
 
-  const _NoteTileCard({required this.note});
+  const _NoteTileCard({
+    required this.note,
+    required this.onShowMenu,
+    required this.tileKey,
+  });
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return _container(
-      theme: theme,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Contenido
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Título + estrella
-                _titleWidget(theme, note),
-                _lineColorDecorator(note.color),
-                ..._linkPreviewWidget(theme, note),
-                const SizedBox(height: 10),
-                DecoratedText(text: note.content),
-                // Fecha
-                const SizedBox(height: 20),
-                // _lineColorDecorator(note.color),
-                _footer(theme: theme),
-              ],
-            ),
-          ),
-        ],
+    return BouncingButton(
+      key: tileKey, // Asociamos la GlobalKey al contenedor que rebota
+      onLongPressStart: (details) => onShowMenu(details.globalPosition),
+      trailing: Trailing(
+        top: 12,
+        right: 10,
+        child: IconButton(
+          onPressed: () => onShowMenu(null),
+          icon: const Icon(Icons.more_vert, size: 20),
+          splashRadius: 20,
+        ),
       ),
-    );
-  }
-
-  Widget _container({required ThemeData theme, required Widget child}) {
-    return Container(
-      margin: const EdgeInsets.only(top: 12, left: 12, right: 12, bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
+      child: TileContainer(
+        cardColor: theme.cardColor,
         borderRadius: BorderRadius.circular(5),
-        boxShadow: const [
-          BoxShadow(blurRadius: 4, color: Colors.black12, offset: Offset(0, 1)),
-        ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _titleWidget(theme, note),
+            _lineColorDecorator(note.color),
+            ..._linkPreviewWidget(theme, note),
+            const SizedBox(height: 10),
+            ExpandableDecoratedText(text: note.content),
+            const SizedBox(height: 20),
+            _footer(theme: theme),
+          ],
+        ),
       ),
-      child: child,
     );
   }
 
@@ -218,6 +224,8 @@ class _NoteTileCard extends StatelessWidget {
 
   Widget _titleWidget(ThemeData theme, Note note) {
     return Row(
+      // Alinea el ícono verticalmente al centro del texto
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
           child: Text(
@@ -229,7 +237,11 @@ class _NoteTileCard extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        if (note.isFavorite) Icon(Icons.favorite, color: Colors.red, size: 20),
+        if (note.isFavorite) ...[
+          const SizedBox(width: 8), // Espacio de separación entre texto e ícono
+          const Icon(Icons.favorite, color: Colors.red, size: 20),
+          const SizedBox(width: 20), // Espacio de separación entre ícono y Menu
+        ],
       ],
     );
   }
@@ -260,10 +272,7 @@ class _NoteTileCard extends StatelessWidget {
     );
   }
 
-  Widget _dateWidget({
-    required ThemeData theme,
-    required DateTime date,
-  }) {
+  Widget _dateWidget({required ThemeData theme, required DateTime date}) {
     return Text(
       _formatDate(date),
       style: theme.textTheme.labelSmall?.copyWith(color: theme.hintColor),
@@ -292,4 +301,3 @@ class _NoteTileCard extends StatelessWidget {
     );
   }
 }
-
