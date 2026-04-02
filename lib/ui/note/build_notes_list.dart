@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/core/locate/app_lang.dart';
+import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/models/note.dart';
 import 'package:tag_links/state/pending_note_provider.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
@@ -34,7 +34,7 @@ class BuildNotesList extends ConsumerWidget {
       data: (notes) {
         if (notes.isEmpty) {
           return EmptyIndicator(
-            title: t(ref, 'emptyNotes', fallback: 'No hay notas'),
+            title: ref.tr(TKeys.ui.emptyNotes, fallback: 'No hay notas'),
           );
         }
 
@@ -68,7 +68,7 @@ class BuildNotesList extends ConsumerWidget {
                 if (goFolder != null)
                   ActionMenuItem(
                     icon: Icons.drive_folder_upload,
-                    label: t(ref, 'goToFolder', fallback: 'Ir a la carpeta'),
+                    label: ref.tr(TKeys.ui.goToFolder, fallback: 'Ir a la carpeta'),
                     onTap: () => goFolder!(note),
                   ),
               ],

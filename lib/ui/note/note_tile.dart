@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/core/locate/app_lang.dart';
+import 'package:tag_links/core/locate/t_keys.dart';
+import 'package:tag_links/core/locate/time/format_time.dart';
 import 'package:tag_links/models/note.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/ui/container/bouncing_widget.dart';
@@ -14,6 +15,7 @@ import 'package:tag_links/ui/text/read_more_label.dart';
 import 'package:tag_links/ui/utils/page_buil.dart';
 import 'package:tag_links/utils/color_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'dart:math' as math;
 
 class NoteTile extends ConsumerStatefulWidget {
   final Note note;
@@ -45,16 +47,17 @@ class _NoteTileState extends ConsumerState<NoteTile> {
       // IMPORTANTE: Pasamos la llave aquí para que el RenderBox sea el de la tarjeta
       tileKey: _tileKey,
       note: widget.note,
+      updatedAt: ref.fmt(widget.note.updatedAt),
       //expandText
       onTap: () => setState(() => _isNoteExpanded = !_isNoteExpanded),
-    isExpanded: _isNoteExpanded,
-    onLineCountCheck: (exceeds) {
-              if (_showReadMore != exceeds) {
-                setState(() => _showReadMore = exceeds);
-              }
-            },
-            showReadMore: _showReadMore,
-    // menu
+      isExpanded: _isNoteExpanded,
+      onLineCountCheck: (exceeds) {
+        if (_showReadMore != exceeds) {
+          setState(() => _showReadMore = exceeds);
+        }
+      },
+      showReadMore: _showReadMore,
+      // menu
       onShowMenu: (position) =>
           _actionsMenu(context: context, ref: ref, position: position),
     );
@@ -69,53 +72,57 @@ class _NoteTileState extends ConsumerState<NoteTile> {
     if (renderBox == null) return;
 
     final widgetPosition = renderBox.localToGlobal(Offset.zero);
+    final double screenWidth = MediaQuery.of(context).size.width;
+    const double menuWidth = 260.0;
+    double desiredX = widgetPosition.dx + renderBox.size.width - menuWidth;
+    double safeX = math.max(
+      10.0,
+      math.min(desiredX, screenWidth - menuWidth - 10.0),
+    );
 
     ActionMenu.showActionMenu(
       context: context,
       position: Offset(
-        widgetPosition.dx + renderBox.size.width - 260,
+        safeX,
         position != null ? position.dy : widgetPosition.dy - 8,
       ),
       items: [
         if (widget.note.link != null)
           ActionMenuItem(
             icon: Icons.open_in_new,
-            label: t(ref, 'openLink', fallback: 'Abrir enlace'),
+            label: ref.tr(TKeys.actions.openLink, fallback: 'Abrir enlace'),
             onTap: () => _openLink(
               context,
-              notOpenLinkMsg: t(
-                ref,
-                'notOpenLink',
+              notOpenLinkMsg: ref.tr(
+                TKeys.errors.notOpenLink,
                 fallback: 'No se encontró una app para abrir este enlace',
               ),
-              errorOpenLinkMsg: t(
-                ref,
-                'errorOpenLink',
+              errorOpenLinkMsg: ref.tr(TKeys.errors.openLink,
                 fallback: 'URL no válida o mal formada',
               ),
             ),
           ),
         ActionMenuItem(
           icon: Icons.edit,
-          label: t(ref, 'edit', fallback: 'Editar'),
+          label: ref.tr(TKeys.actions.edit, fallback: 'Editar'),
           onTap: () => _editNote(context),
         ),
         ActionMenuItem(
           icon: Icons.copy,
-          label: t(ref, 'copyText', fallback: 'Copiar'),
+          label: ref.tr(TKeys.actions.copy, fallback: 'Copiar'),
           onTap: () => _copyText(
             context,
-            t(ref, 'copiedText', fallback: 'Texto copiado'),
+            ref.tr(TKeys.actions.copiedSuccess, fallback: 'Texto copiado'),
           ),
         ),
         ActionMenuItem(
           icon: Icons.move_down_rounded,
-          label: t(ref, 'moveDown', fallback: 'Mover'),
+          label: ref.tr(TKeys.actions.move, fallback: 'Mover'),
           onTap: () => widget.onMove(widget.note),
         ),
         ActionMenuItem(
           icon: Icons.delete,
-          label: t(ref, 'delete', fallback: 'Eliminar'),
+          label: ref.tr(TKeys.actions.delete, fallback: 'Eliminar'),
           onTap: () => widget.onDeleteNote(widget.note),
         ),
 
@@ -191,7 +198,7 @@ class _NoteTileCard extends StatelessWidget {
   final void Function() onTap;
   final Function(bool)? onLineCountCheck;
   final bool showReadMore;
-
+  final String updatedAt;
 
   const _NoteTileCard({
     required this.note,
@@ -201,6 +208,7 @@ class _NoteTileCard extends StatelessWidget {
     required this.onTap,
     required this.onLineCountCheck,
     required this.showReadMore,
+    required this.updatedAt,
   });
   @override
   Widget build(BuildContext context) {
@@ -229,14 +237,15 @@ class _NoteTileCard extends StatelessWidget {
             ..._linkPreviewWidget(theme, note),
             const SizedBox(height: 10),
             ExpandableDecoratedText(
-       text: note.content,
-       isExpanded: isExpanded, // Le pasas el estado desde el padre
-       onLineCountCheck: onLineCountCheck,
-     ),if (showReadMore)
-            Padding(
-              padding: const EdgeInsets.only(top: 8.0),
-              child: ReadMoreLabel(isExpanded: isExpanded),
+              text: note.content,
+              isExpanded: isExpanded, // Le pasas el estado desde el padre
+              onLineCountCheck: onLineCountCheck,
             ),
+            if (showReadMore)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: ReadMoreLabel(isExpanded: isExpanded),
+              ),
             const SizedBox(height: 8),
             _footer(theme: theme),
           ],
@@ -298,27 +307,20 @@ class _NoteTileCard extends StatelessWidget {
           child: _miniTags(theme: theme, tags: note.tags),
         ),
         const SizedBox(width: 8),
-        _dateWidget(theme: theme, date: note.updatedAt),
+        _dateWidget(theme: theme, date: updatedAt),
       ],
     );
   }
 
-  Widget _dateWidget({required ThemeData theme, required DateTime date}) {
+  Widget _dateWidget({required ThemeData theme, required String date}) {
     return Text(
-      _formatDate(date),
+      date,
       style: theme.textTheme.labelSmall?.copyWith(color: theme.hintColor),
       textAlign: TextAlign.right,
     );
   }
 
-  String _formatDate(DateTime date) {
-    String horas = date.hour.toString().padLeft(2, '0');
-    String minutos = date.minute.toString().padLeft(2, '0');
-    String day = date.day.toString().padLeft(2, '0');
-    String month = date.month.toString().padLeft(2, '0');
-    String year = date.year.toString();
-    return '$day/$month/$year | $horas:$minutos';
-  }
+
 
   Widget _miniTags({required ThemeData theme, List<Tag> tags = const []}) {
     String resultado = tags.map((tag) => '#${tag.name}').join(', ');

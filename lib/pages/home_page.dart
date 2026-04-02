@@ -1,12 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/ads/small_banner.dart';
 import 'package:tag_links/core/debug/go_debug_page_buton.dart';
-import 'package:tag_links/core/locate/app_lang.dart';
+import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/models/folder_preference.dart';
 import 'package:tag_links/state/folder_preference_provider.dart';
+import 'package:tag_links/sync/sync_manager.dart';
 import 'package:tag_links/ui/app_bar/app_bar_folder.dart';
 import 'package:tag_links/ui/button/bottom_switch_folder_note.dart';
 import 'package:tag_links/ui/button/create_new_folder_button.dart';
@@ -33,10 +36,10 @@ class HomePage extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<HomePage> createState() => _FolderPageState();
+  ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _FolderPageState extends ConsumerState<HomePage> {
+class _HomePageState extends ConsumerState<HomePage> {
   AsyncNotifierProvider<FolderPreferenceNotifier, FolderDefaultView>
   get _foldersPreferenceProvider => folderPreferenceProvider(widget.folder?.id);
 
@@ -45,7 +48,6 @@ class _FolderPageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint("-------------- Entro al home ----------------");
     final preferenceAsync = ref.watch(_foldersPreferenceProvider);
     final theme = Theme.of(context);
     return preferenceAsync.when(
@@ -111,10 +113,24 @@ class _FolderPageState extends ConsumerState<HomePage> {
     );
   }
 
+  @override
+void initState() {
+  super.initState();
+  
+  // Usamos un postFrameCallback para que la app primero dibuje la UI
+  // y luego empiece la red en segundo plano.
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    final sync = ref.read(syncManagerProvider);
+    if (sync != null) {
+      unawaited(sync.synchronize());
+    }
+  });
+}
+
   PreferredSizeWidget _appBar(bool showFolders, FolderDefaultView preference) {
     if (_isRoot) {
       return AppBarPages(
-        title: t(ref, "appName", fallback: 'Tag Links'),
+        title: ref.tr(TKeys.pages.appName, fallback: 'Tag Links'),
         actions: [if (kDebugMode) GoDebugPageButon(), GoSettingsButton()],
       );
     }

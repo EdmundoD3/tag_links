@@ -143,6 +143,10 @@ class NotesDao {
     );
     return success >= ids.length;
   }
+  Future<bool> hasAnyData() async {
+    return await _fetch.hasAnyData();
+  }
+
 
   /* ----------------------------- HYDRATION ----------------------------- */
   List<Note> _hydrate(List<NoteJoinRow> rows) {
@@ -224,6 +228,12 @@ class FetchersNotesDao {
        _linkDao = linkDao,
        _tagsNotesDao = tagsNotesDao,
        _deletedNotesDao = deletedNotesDao;
+
+  Future<bool> hasAnyData() async {
+    final result = await _db.query('notes', limit: 1);
+    return result.isNotEmpty;
+  }
+
 
   Future<List<NoteJoinRow>> searchByQuery(
     SearchQuery searchQuery, {

@@ -1,4 +1,4 @@
-package com.example.tag_links
+package com.papitas.seshat.notes
 
 import io.flutter.embedding.android.FlutterActivity
 

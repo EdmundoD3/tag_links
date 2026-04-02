@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/core/locate/app_lang.dart';
+import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/repository/tags_repository.dart';
 import 'package:tag_links/state/tags_provider.dart';
@@ -55,7 +55,7 @@ class TagsSelectedContainer extends ConsumerWidget {
     final theme = Theme.of(context);
     return ActionChip(
       elevation: 0,
-      label: Text(t(ref, 'createTag', fallback: 'Crear nuevo tag'), 
+      label: Text(ref.tr(TKeys.tags.create, fallback: 'Crear nuevo tag'), 
         style: TextStyle(color: theme.textTheme.titleLarge?.color),),
       backgroundColor: theme.cardColor,
       side: BorderSide(color: theme.focusColor, width: 1),

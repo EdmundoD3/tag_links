@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/core/locate/app_lang.dart';
+import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/pages/home_page.dart';
 import 'package:tag_links/state/folders_provider.dart';
@@ -29,7 +29,7 @@ Widget build(BuildContext context, WidgetRef ref) {
   return foldersAsync.when(
     data: (folders) {
       if (folders.isEmpty) {
-        return EmptyIndicator(title: t(ref, 'noFolders', fallback: 'No folders'));
+        return EmptyIndicator(title: ref.tr(TKeys.ui.noFolders, fallback: 'No folders'));
       }
 
       return ListView.builder(

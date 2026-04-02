@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/google/auth_provider.dart';
 import 'package:tag_links/core/google/drive_sync_config_manager.dart';
 import 'package:tag_links/core/google/local_id_manager.dart';
-import 'package:tag_links/data/shared_prefs_provider.dart';
 import 'package:tag_links/repository/folder_repository.dart';
 import 'package:tag_links/repository/notes_repository.dart';
 import 'package:tag_links/repository/tags_repository.dart';
@@ -16,14 +15,14 @@ import 'package:tag_links/sync/sync_pusher.dart';
 
 class SyncManager {
   final DriveSyncConfigManager _configManager;
-  final SyncStorage _storage;
+  final LastSyncNotifier  _storage;
   final LocalIdManager _idManager;
   final SyncPusher _syncPusher;
   final SyncPuller _syncPuller;
 
   SyncManager({
     required DriveSyncConfigManager configManager,
-    required SyncStorage storage,
+    required LastSyncNotifier  storage,
     required LocalIdManager idManager,
     required SyncPuller syncPuller,
     required SyncPusher syncPusher,
@@ -113,7 +112,7 @@ class SyncManager {
           .upsertDevice(DeviceInfo.createCurrent(_idManager.getOrCreateDeviceId()));
 
       await _configManager.updateRemoteConfig(remoteData.fileId, finalConfig);
-      await _storage.setLastPulledAt(DateTime.now().millisecondsSinceEpoch);
+      await _storage.updateTimestamp(DateTime.now().millisecondsSinceEpoch);
     } catch (e) {
       debugPrint("SyncManager Orchestrator Error: $e");
     }
@@ -128,9 +127,9 @@ final syncManagerProvider = Provider<SyncManager?>((ref) {
   // Obtenemos el API para el servicio de transporte
   final auth = ref.watch(authProvider);
   final dataService = DriveDataService(auth.driveApi!);
+  final lastSync = ref.watch(lastSyncTimestampProvider.notifier);
 
   // Obtenemos el resto de dependencias
-  final prefs = ref.watch(sharedPrefsProvider);
   final syncQueueRepo = ref.watch(localSyncQueueRepositoryProvider);
   final notesRepo = ref.watch(notesRepositoryProvider);
   final folderRepo = ref.watch(folderRepositoryProvider);
@@ -152,7 +151,7 @@ final syncManagerProvider = Provider<SyncManager?>((ref) {
   );
   return SyncManager(
     configManager: configManager,
-    storage: SyncStorage(prefs),
+    storage: lastSync,
     idManager: ref.watch(
       localIdManagerProvider,
     ), // El mismo que usa tu ConfigManager

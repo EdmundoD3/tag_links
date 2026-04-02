@@ -77,6 +77,7 @@ class NotesRepository {
   // Obtener los registros borrados para subirlos a la nube
   Future<List<DeletedData>> getDeletedBatch({int limit = 500}) => 
       _deletedDao.getBatch(limit: limit);
+  Future<bool> hasAnyData() => _dao.hasAnyData();
 }
 
 final notesRepositoryProvider = Provider<NotesRepository>((ref) {

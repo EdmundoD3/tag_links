@@ -93,7 +93,6 @@ class DecoratedText extends StatelessWidget {
         style: TextStyle(
           color: theme.textTheme.bodyMedium?.color,
           fontSize: onlyEmojis ? 32 : 14,
-          
         ),
         children: _buildSpans(matches),
       ),

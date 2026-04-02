@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/core/locate/app_lang.dart';
+import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/models/tag.dart';
 
 class SearchListBar extends StatefulWidget {
@@ -117,7 +117,7 @@ class _SearchInput extends ConsumerWidget {
             ),
             filled: true,
             icon: iconLeftButton,
-            hintText: t(ref, 'searchHintText', fallback: 'Buscar...'),
+            hintText: ref.tr(TKeys.ui.searchHint, fallback: 'Buscar...'),
             hintStyle: TextStyle(color: theme.textTheme.labelSmall?.color),
             prefixIcon: Icon(Icons.search, color: theme.hintColor),
             suffixIcon: value.text.isNotEmpty ? _sufixIcon(theme, value) : null,

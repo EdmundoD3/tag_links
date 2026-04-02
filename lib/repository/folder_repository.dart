@@ -41,7 +41,10 @@ class FolderRepository {
     return _dao.upsert(folderToUpdate);
   }
 
-  Future<void> delete(String folderId) => _dao.delete(folderId);
+  Future<void> delete(String folderId) async {
+    await _deletedDao.saveId(folderId);
+    await _dao.delete(folderId);
+  }
 
   Future<Folder?> getById(String id) => _dao.getById(id);
 
@@ -85,7 +88,7 @@ class FolderRepository {
     Folder folder,
     String? newParentId, {
     bool toRoot = true,
-  }) => _dao.moveAndFlatten(folder, newParentId,toRoot: true);
+  }) => _dao.moveAndFlatten(folder, newParentId, toRoot: true);
 
   Future<bool> hasChildren(String folderId) async {
     return _dao.hasChildren(folderId);
@@ -95,7 +98,12 @@ class FolderRepository {
   Future<List<Folder>> getByFileId(String fileId) async {
     return _dao.getByFileId(fileId);
   }
-  Future<Future<void>> updateSyncAt({required List<String> ids, required int syncAt,required String fileId}) async {
+
+  Future<Future<void>> updateSyncAt({
+    required List<String> ids,
+    required int syncAt,
+    required String fileId,
+  }) async {
     return _dao.updateSyncAt(ids: ids, syncAt: syncAt, fileId: fileId);
   }
 
@@ -103,18 +111,19 @@ class FolderRepository {
     return _deletedDao.deleteIds(ids);
   }
 
-    Future<void> deleteByIds(List<String> ids) {
+  Future<void> deleteByIds(List<String> ids) {
     return _dao.serverDeleteByIds(ids);
   }
+
   // Cambiar nombre por claridad
   Future<void> clearDeletedFolders(List<String> ids) {
     return _deletedDao.deleteIds(ids);
   }
-  
+
   // Añadir esto para el PUSH
   Future<List<Folder>> getPendingSync() => _dao.getPendingSync();
-  
-  Future<List<DeletedData>> getDeletedBatch({int limit = 500}) => 
+
+  Future<List<DeletedData>> getDeletedBatch({int limit = 500}) =>
       _deletedDao.getBatch(limit: limit);
 }
 

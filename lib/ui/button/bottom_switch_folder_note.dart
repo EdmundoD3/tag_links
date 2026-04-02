@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/models/folder_preference.dart';
-import 'package:tag_links/core/locate/app_lang.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final Map<FolderDefaultView, int> _defaulViewIndex = {
@@ -63,12 +63,12 @@ class BottomButtonBar extends ConsumerWidget {
             BottomNavigationBarItem(
               icon: const Icon(Icons.folder_open),
               activeIcon: const Icon(Icons.folder),
-              label: t(ref, "switchFolder", fallback: 'Carpetas'),
+              label: ref.tr(TKeys.ui.folders, fallback: 'Carpetas'),
             ),
             BottomNavigationBarItem(
               icon: const Icon(Icons.sticky_note_2_outlined),
               activeIcon: const Icon(Icons.sticky_note_2),
-              label: t(ref, "switchNote", fallback: 'Notas'),
+              label: ref.tr(TKeys.ui.notes, fallback: 'Notas'),
             ),
           ],
         ),

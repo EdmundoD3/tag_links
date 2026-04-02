@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/core/locate/app_lang.dart';
+import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/state/pending_note_provider.dart';
 import 'package:tag_links/sync/db/local_sync_queue_repository.dart';
 import 'package:tag_links/sync/models/local_sync_queue.dart';
@@ -24,9 +24,11 @@ class BannerPendingNote extends ConsumerWidget {
     if (pendingNote == null) return const SizedBox.shrink();
     final note = pendingNote.note;
 
+    final title =
+        '${ref.tr(TKeys.alerts.pendingNote, fallback: 'Tienes una nota pendiente de almacenar')}: ${note.title}';
+
     return BannerPending(
-      title:
-          '''${t(ref, 'bannerPendingNote', fallback: 'Tienes una nota pendiente de almacenar')}: ${note.title}''',
+      title: title,
       actions: [
         // ───────── Almacenar directo
         BannerOptionsTile(
@@ -43,7 +45,7 @@ class BannerPendingNote extends ConsumerWidget {
                   .save(note: note, toFolderId: toFolderId);
             }
           },
-          title: t(ref, 'store', fallback: 'Almacenar'),
+          title: ref.tr(TKeys.actions.store, fallback: 'Almacenar'),
         ),
 
         // ───────── Editar y luego almacenar
@@ -69,7 +71,10 @@ class BannerPendingNote extends ConsumerWidget {
                 );
               }
             },
-            title: t(ref, 'editAndStore', fallback: 'Editar y almacenar'),
+            title: ref.tr(
+              TKeys.actions.editAndStore,
+              fallback: 'Editar y almacenar',
+            ),
           ),
 
         // ───────── Descartar
@@ -77,10 +82,9 @@ class BannerPendingNote extends ConsumerWidget {
           onTap: () async {
             final confirm = await showConfirmDialog(
               context,
-              title: t(ref, 'bannerNotMove', fallback: 'No mover la nota'),
-              message: t(
-                ref,
-                'discardAction',
+              title: ref.tr(TKeys.alerts.notMove, fallback: 'No mover la nota'),
+              message: ref.tr(
+                TKeys.alerts.discardAction,
                 fallback: '¿Estás seguro de descartar la acción?',
               ),
               ref: ref,
@@ -90,7 +94,7 @@ class BannerPendingNote extends ConsumerWidget {
               ref.read(pendingNoteProvider.notifier).clear();
             }
           },
-          title: t(ref, 'discard', fallback: 'Descartar'),
+          title: ref.tr(TKeys.actions.discard, fallback: 'Descartar'),
         ),
       ],
     );

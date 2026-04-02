@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/locate/app_lang.dart';
 import 'package:tag_links/core/locate/lang_provider.dart';
+import 'package:tag_links/core/locate/t_keys.dart';
 
 class LangSelector extends ConsumerWidget {
   const LangSelector({super.key});
@@ -16,7 +17,7 @@ class LangSelector extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.all(16),
           child: Text(
-            t(ref, 'settingsLanguage', fallback: 'Idioma'),
+            ref.tr(TKeys.pages.language, fallback: 'Idioma'),
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: theme.textTheme.titleLarge?.color,

@@ -19,10 +19,13 @@ class ExpandableDecoratedText extends StatelessWidget {
   void _checkTextExceeds(BuildContext context) {
     if (onLineCountCheck == null) return;
 
-    final span = TextSpan(
-      text: text,
-      style: Theme.of(context).textTheme.bodyMedium, // Usa el estilo real de tu app
-    );
+    final span = TextSpan( //basado en decorated text para tener el tamaño real
+        style: TextStyle(
+          color: Theme.of(context).textTheme.bodyMedium?.color,
+          fontSize: 14,
+        ),
+        text: text,
+      );
 
     final tp = TextPainter(
       text: span,
@@ -44,6 +47,12 @@ class ExpandableDecoratedText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+    final decoratedText = DecoratedText(
+        text: text,
+        maxLines: isExpanded ? null : maxLines,
+        overflow: isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
+      );
     // Ejecutamos la medición cada vez que se construye para asegurar precisión
     _checkTextExceeds(context);
 
@@ -51,11 +60,7 @@ class ExpandableDecoratedText extends StatelessWidget {
       duration: const Duration(milliseconds: 300),
       alignment: Alignment.topCenter,
       curve: Curves.easeInOut,
-      child: DecoratedText(
-        text: text,
-        maxLines: isExpanded ? null : maxLines,
-        overflow: isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
-      ),
+      child: decoratedText,
     );
   }
 }

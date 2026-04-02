@@ -144,7 +144,7 @@ class DriveSyncConfigManager {
 
 // Provider de Riverpod
 final syncConfigProvider = Provider<DriveSyncConfigManager?>((ref) {
-  final auth = ref.watch(authProvider);
+  final auth = ref.watch(authProvider); // Esto ahora es seguro
   if (auth.driveApi == null) return null;
 
   return DriveSyncConfigManager(

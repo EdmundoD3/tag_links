@@ -6,8 +6,8 @@ import 'package:tag_links/core/google/drive_sync_config_manager.dart';
 import 'package:tag_links/core/google/google_http_client.dart';
 
 class AuthManager {
-  final DriveSyncConfigManager? _configManager;
-  AuthManager(this._configManager);
+  final Ref _ref; // Ahora recibimos el Ref
+  AuthManager(this._ref);
 
   GoogleSignInAccount? _currentUser;
   drive.DriveApi? _driveApi;
@@ -77,9 +77,10 @@ class AuthManager {
   }
 
   Future<void> _checkInitialSync() async {
-    if (_configManager == null) return;
+    final configManager = _ref.read(syncConfigProvider);
+    if (configManager == null) return;
 
-    final RemoteConfigData? remoteData = await _configManager.getOrInitializeRemoteConfig();
+    final RemoteConfigData? remoteData = await configManager.getOrInitializeRemoteConfig();
 
     if (remoteData == null) {
       // Aquí es donde recuperamos el nivel: Informar al sistema que la nube está caída
@@ -114,6 +115,5 @@ class AuthManager {
 }
 
 final authManagerProvider = Provider<AuthManager>((ref) {
-  final configManager = ref.watch(syncConfigProvider);
-  return AuthManager(configManager);
+  return AuthManager(ref);
 });

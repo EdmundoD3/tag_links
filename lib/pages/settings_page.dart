@@ -3,11 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/ads/ads_service_provider.dart';
 import 'package:tag_links/core/ads/show_ad_management_menu.dart';
 import 'package:tag_links/core/app_purchases/premium_sales_sheet.dart';
+import 'package:tag_links/core/auth/account_sync_tile.dart';
 import 'package:tag_links/core/coffe/invitame_un_caffe.dart';
 import 'package:tag_links/core/locate/lang_selector.dart';
-import 'package:tag_links/core/locate/app_lang.dart';
 import 'package:tag_links/core/ads/ads_disable_provider.dart';
+import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/core/theme/theme_selector_widget.dart';
+import 'package:tag_links/sync/sync_info.dart';
 
 class SupportProjectPage extends ConsumerWidget {
   const SupportProjectPage({super.key});
@@ -21,12 +23,14 @@ class SupportProjectPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          t(ref, 'settingsTitle', fallback: 'Configuración'),
+          ref.tr(TKeys.pages.settingsTitle, fallback: 'Configuración'),
           style: TextStyle(color: theme.appBarTheme.foregroundColor),
         ),
       ),
       floatingActionButton: null,
-      body: SafeArea(child: Column(children: _buildBody(context, ref, adsActive))),
+      body: SafeArea(
+        child: Column(children: _buildBody(context, ref, adsActive)),
+      ),
     );
   }
 
@@ -49,9 +53,8 @@ class SupportProjectPage extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: Text(
-            t(
-              ref,
-              'supportProject',
+            ref.tr(
+              TKeys.ads.supportTitle,
               fallback: '¿Cómo quieres apoyar el proyecto?',
             ),
             style: TextStyle(
@@ -59,7 +62,7 @@ class SupportProjectPage extends ConsumerWidget {
               fontWeight: FontWeight.bold,
               color: theme.textTheme.titleLarge?.color,
             ),
-            textAlign: TextAlign.center
+            textAlign: TextAlign.center,
           ),
         ),
         PremiumSalesSheet(showEmpty: null),
@@ -77,13 +80,12 @@ class SupportProjectPage extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.video_library, color: Colors.orange),
             title: Text(
-              t(ref, 'viewLargeAd', fallback: 'Ver un anuncio grande'),
+              ref.tr(TKeys.ads.viewLargeAd, fallback: 'Ver un anuncio grande'),
               style: TextStyle(color: theme.textTheme.bodyMedium?.color),
             ),
             subtitle: Text(
-              t(
-                ref,
-                'disableAdsForOneDay',
+              ref.tr(
+                TKeys.ads.disabledForOneDay,
                 fallback: 'Se desactivará por un día la publicidad',
               ),
               style: TextStyle(color: theme.hintColor),
@@ -112,11 +114,17 @@ class SupportProjectPage extends ConsumerWidget {
           indent: 10,
           endIndent: 10,
         ),
+        // ------------- Account and Sync info ----------------
+        AccountSyncTile(),
+        BuildSyncInfo(),
 
         const SizedBox(height: 20),
         Center(
           child: Text(
-            t(ref, 'thanksForUsingApp', fallback: '¡Gracias por usar la App!'),
+            ref.tr(
+              TKeys.ads.thanksForUsing,
+              fallback: '¡Gracias por usar la App!',
+            ),
             style: TextStyle(
               color: theme.textTheme.titleMedium?.color,
               fontStyle: FontStyle.italic,
