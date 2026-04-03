@@ -1,30 +1,32 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tag_links/data/shared_prefs_provider.dart';
 
-final skipedAuthProvider = Provider<SkipedAuthProvider>((ref) {
-  final prefs = ref.watch(sharedPrefsProvider);
-  return SkipedAuthProvider(prefs);
-});
 
-class SkipedAuthProvider {
+class SkipedAuthNotifier extends Notifier<bool?> {
   static const String _key = 'skiped_auth';
-  final SharedPreferences _prefs;
 
-  SkipedAuthProvider(this._prefs);
-
-  /// IDENTIDAD DEL DISPOSITIVO
-  /// Siempre debe existir. Si no está, se crea. 
-  /// Es la "matrícula" de este teléfono.
-  bool? getHasSkippedAuth() {
-    return _prefs.getBool(_key);
+  @override
+  bool? build() {
+    // Leemos el valor inicial de SharedPreferences
+    final prefs = ref.watch(sharedPrefsProvider);
+    return prefs.getBool(_key);
   }
 
-  Future<void> saveHasSkippedAuth(bool hasSkippedAuth ) async {
-    await _prefs.setBool(_key, hasSkippedAuth);
+  Future<void> saveHasSkippedAuth(bool value) async {
+    final prefs = ref.read(sharedPrefsProvider);
+    await prefs.setBool(_key, value);
+    // 🚩 IMPORTANTE: Actualizamos el estado para que los watchers se enteren
+    state = value;
   }
 
   Future<void> clear() async {
-    await _prefs.remove(_key);
+    final prefs = ref.read(sharedPrefsProvider);
+    await prefs.remove(_key);
+    state = null;
   }
 }
+
+// El provider ahora expone directamente el bool?
+final skipedAuthProvider = NotifierProvider<SkipedAuthNotifier, bool?>(
+  SkipedAuthNotifier.new,
+);

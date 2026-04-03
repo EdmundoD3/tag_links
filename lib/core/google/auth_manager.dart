@@ -34,29 +34,29 @@ class AuthManager {
   }
 
   /// Intento de login silencioso al arrancar la app
-  Future<bool> trySilentLogin() async {
-    try {
-      final GoogleSignInAccount? user = await _googleSignIn
-          .attemptLightweightAuthentication();
+Future<SilentLoginResult> trySilentLogin() async {
+  try {
+    final GoogleSignInAccount? user = await _googleSignIn
+        .attemptLightweightAuthentication();
 
-      if (user != null) {
-        final authorization = await user.authorizationClient
-            .authorizationForScopes(_driveScopes);
+    if (user == null) return SilentLoginResult.noUser;
 
-        if (authorization != null) {
-          await _initializeDriveApi(user);
-          print("✅ Sesión silenciosa recuperada: ${user.email}");
+    final authorization = await user.authorizationClient
+        .authorizationForScopes(_driveScopes);
 
-          // Opcional: Ejecutar sincronización inicial de fondo
-          await _checkInitialSync();
-          return true;
-        }
-      }
-    } catch (e) {
-      print("❌ Error en trySilentLogin: $e");
+    if (authorization == null) return SilentLoginResult.expired;
+
+    await _initializeDriveApi(user);
+    await _checkInitialSync();
+    return SilentLoginResult.success;
+    
+  } catch (e) {
+    if (e.toString().contains('network_error')) {
+      return SilentLoginResult.networkError;
     }
-    return false;
+    return SilentLoginResult.expired; // Por seguridad, si falla el auth, asumimos expirado
   }
+}
 
   /// Encapsula la creación del cliente HTTP y la API de Drive
   Future<void> _initializeDriveApi(GoogleSignInAccount user) async {
@@ -117,3 +117,11 @@ class AuthManager {
 final authManagerProvider = Provider<AuthManager>((ref) {
   return AuthManager(ref);
 });
+
+enum SilentLoginResult {
+  success,       // Todo bien
+  noUser,        // Nunca ha iniciado sesión (primera vez)
+  expired,       // Había sesión pero el token ya no sirve
+  networkError,  // No hay internet para verificar
+  timeout        // Google tardó demasiado
+}

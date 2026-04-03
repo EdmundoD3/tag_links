@@ -128,7 +128,7 @@ class FolderRepository {
 }
 
 final folderRepositoryProvider = Provider<FolderRepository>((ref) {
-  final db = ref.watch(databaseProvider);
+  final db = ref.read(databaseProvider);
   final foldersDao = FoldersDao(
     db: db,
     folderTagsDao: FolderTagsDao(db),

@@ -81,7 +81,7 @@ class NotesRepository {
 }
 
 final notesRepositoryProvider = Provider<NotesRepository>((ref) {
-  final db = ref.watch(databaseProvider);
+  final db = ref.read(databaseProvider);
   final notesDao = NotesDao(db);
   final deletedDao = DeletedNotesDao(db: db);
   return NotesRepository(notesDao, deletedDao);

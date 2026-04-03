@@ -69,7 +69,7 @@ class TagsRepository {
 }
 
 final tagsRepositoryProvider = Provider<TagsRepository>((ref) {
-  final db = ref.watch(databaseProvider);
+  final db = ref.read(databaseProvider);
   return TagsRepository(
     db: db,
     deletedTagsDao: DeletedTagsDao(db: db),

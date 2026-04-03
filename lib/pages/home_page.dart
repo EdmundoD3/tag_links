@@ -16,6 +16,7 @@ import 'package:tag_links/ui/button/create_new_folder_button.dart';
 import 'package:tag_links/ui/button/go_settings_button.dart';
 import 'package:tag_links/ui/folder/banner_pending_folder.dart';
 import 'package:tag_links/ui/folder/build_folders_section.dart';
+import 'package:tag_links/ui/is_loading_indicators/scaffold_loading.dart';
 import 'package:tag_links/ui/note/banner_pending_note.dart';
 import 'package:tag_links/ui/note/build_notes_section.dart';
 import 'package:tag_links/ui/note/create_new_note_btn.dart';
@@ -51,10 +52,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final preferenceAsync = ref.watch(_foldersPreferenceProvider);
     final theme = Theme.of(context);
     return preferenceAsync.when(
-      loading: () => const Scaffold(
-        backgroundColor: Colors.purple,
-        body: Center(child: CircularProgressIndicator()),
-      ),
+      loading: () => const ScaffoldLoading(),
       error: (err, _) => Scaffold(body: Center(child: Text('Error: $err'))),
       data: (preference) {
         final showFolders = _isLimitFolder
@@ -78,10 +76,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                 BannerPendingFolder(
                   key: const ValueKey('banner_folder'),
                   toParent: widget.folder,
-                  onToggleView:
-                      () => _selectView(
-                    FolderDefaultView.folders,
-                  ), // Cambia a
+                  onToggleView: () =>
+                      _selectView(FolderDefaultView.folders), // Cambia a
                 ),
                 if (_isRoot) const RootSearchSection(),
                 Expanded(
@@ -114,18 +110,18 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   @override
-void initState() {
-  super.initState();
-  
-  // Usamos un postFrameCallback para que la app primero dibuje la UI
-  // y luego empiece la red en segundo plano.
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    final sync = ref.read(syncManagerProvider);
-    if (sync != null) {
-      unawaited(sync.synchronize());
-    }
-  });
-}
+  void initState() {
+    super.initState();
+
+    // Usamos un postFrameCallback para que la app primero dibuje la UI
+    // y luego empiece la red en segundo plano.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final sync = ref.read(syncManagerProvider);
+      if (sync != null) {
+        unawaited(sync.synchronize());
+      }
+    });
+  }
 
   PreferredSizeWidget _appBar(bool showFolders, FolderDefaultView preference) {
     if (_isRoot) {

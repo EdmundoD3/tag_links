@@ -6,20 +6,6 @@ import 'package:tag_links/core/auth/skiped_auth_provider.dart';
 import 'package:tag_links/core/google/auth_manager.dart';
 import 'package:tag_links/repository/notes_repository.dart';
 
-class AuthState {
-  final GoogleSignInAccount? user;
-  final DriveApi? driveApi;
-  final bool isLoading;
-
-  AuthState({this.user, this.driveApi, this.isLoading = false});
-
-  // Ahora es más robusto verificar la autenticación
-  bool get isAuthenticated => user != null && driveApi != null;
-  static AuthState voidState() {
-    return AuthState(isLoading: true);
-  }
-}
-
 class AuthNotifier extends Notifier<AuthState> {
   // Instanciamos el manager que acabamos de pulir
   AuthManager get _authManager => ref.read(authManagerProvider);
@@ -35,8 +21,7 @@ class AuthNotifier extends Notifier<AuthState> {
 
   Future<void> _initSilentLogin() async {
     try {
-      final skipStorage = ref.read(skipedAuthProvider);
-      final hasSkipped = skipStorage.getHasSkippedAuth();
+      final hasSkipped = ref.read(skipedAuthProvider);
 
       if (hasSkipped == true) {
         state = AuthState(user: null, driveApi: null, isLoading: false);
@@ -55,19 +40,19 @@ class AuthNotifier extends Notifier<AuthState> {
       }
 
       // Pon un timeout si sospechas de la red
-      await _authManager.trySilentLogin().timeout(
+      final result = await _authManager.trySilentLogin().timeout(
         const Duration(seconds: 5),
-        onTimeout: () => false,
+        onTimeout: () => SilentLoginResult.timeout,
       );
-    } catch (e) {
-      debugPrint("Error en init: $e");
-    } finally {
-      // ESTO GARANTIZA QUE EL LOADING SE QUITE SIEMPRE
+
       state = AuthState(
         user: _authManager.currentUser,
         driveApi: _authManager.driveApi,
         isLoading: false,
+        lastResult: result, // Guardamos el por qué falló
       );
+    } catch (e) {
+      state = AuthState(isLoading: false, lastResult: SilentLoginResult.noUser);
     }
   }
 
@@ -75,7 +60,7 @@ class AuthNotifier extends Notifier<AuthState> {
     // trySilentLogin ya hace el check de scopes e inicializa la API internamente
     final success = await _authManager.trySilentLogin();
 
-    if (success) {
+    if (success == SilentLoginResult.success) {
       state = AuthState(
         user: _authManager.currentUser,
         driveApi: _authManager.driveApi,
@@ -93,7 +78,7 @@ class AuthNotifier extends Notifier<AuthState> {
 
       // --- NUEVO: Si el login fue exitoso, ya no es un "skiped" user ---
       if (_authManager.currentUser != null) {
-        await ref.read(skipedAuthProvider).saveHasSkippedAuth(false);
+        await ref.read(skipedAuthProvider.notifier).saveHasSkippedAuth(false);
       }
       // -------------------------------------------------------------
 
@@ -115,22 +100,19 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   Future<void> skipLogin() async {
-    // 1. Ponemos la app en estado de carga breve para dar feedback visual
-    state = AuthState(isLoading: true);
+    // ❌ ELIMINA ESTA LÍNEA: state = AuthState(isLoading: true);
 
     try {
-      // 2. Obtenemos el storage y guardamos que el usuario decidió omitir
-      final skipStorage = ref.read(skipedAuthProvider);
+      final skipStorage = ref.read(skipedAuthProvider.notifier);
       await skipStorage.saveHasSkippedAuth(true);
 
-      // 3. Actualizamos el estado final: No hay usuario, no hay Drive,
-      // pero isLoading es false.
+      // ✅ Actualizamos el estado directamente a "No autenticado pero listo"
       state = AuthState(user: null, driveApi: null, isLoading: false);
 
-      debugPrint("✅ Usuario decidió omitir el login de Google.");
+      debugPrint("✅ Usuario decidió omitir. Transición directa a HomePage.");
     } catch (e) {
-      debugPrint("❌ Error al guardar preferencia de omitir: $e");
-      // En caso de error, quitamos el loading para no bloquear al usuario
+      debugPrint("❌ Error al guardar omitir: $e");
+      // Solo si falla algo catastrófico nos aseguramos de quitar cualquier loading
       state = AuthState(isLoading: false);
     }
   }
@@ -140,3 +122,20 @@ class AuthNotifier extends Notifier<AuthState> {
 final authProvider = NotifierProvider<AuthNotifier, AuthState>(
   AuthNotifier.new,
 );
+
+class AuthState {
+  final GoogleSignInAccount? user;
+  final DriveApi? driveApi;
+  final bool isLoading;
+  final SilentLoginResult? lastResult; // <--- Nuevo campo
+
+  AuthState({
+    this.user,
+    this.driveApi,
+    this.isLoading = false,
+    this.lastResult,
+  });
+
+  bool get isAuthenticated => user != null && driveApi != null;
+  bool get isSessionExpired => lastResult == SilentLoginResult.expired;
+}

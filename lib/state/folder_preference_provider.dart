@@ -36,7 +36,7 @@ class FolderPreferenceNotifier extends AsyncNotifier<FolderDefaultView> {
     // Actualizamos la UI inmediatamente (Optimistic)
     state = AsyncData(value);
 
-    if(_isRoot) return;
+    if(_isRoot) return; //si es root no se almacena
 
     _debouncer.run(() async {
       // Usamos state.value para asegurarnos de guardar lo que la UI está mostrando actualmente

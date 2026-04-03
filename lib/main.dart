@@ -12,6 +12,7 @@ import 'package:tag_links/core/ads/ads_service_provider.dart';
 import 'package:tag_links/core/app_purchases/premium_provider.dart';
 import 'package:tag_links/core/auth/skiped_auth_provider.dart';
 import 'package:tag_links/core/auth/welcome_page.dart';
+import 'package:tag_links/core/google/auth_manager.dart';
 import 'package:tag_links/core/google/auth_provider.dart';
 import 'package:tag_links/core/theme/theme_provider.dart';
 import 'package:tag_links/data/database.dart';
@@ -19,7 +20,6 @@ import 'package:tag_links/pages/home_page.dart';
 import 'package:tag_links/data/shared_prefs_provider.dart';
 import 'package:tag_links/state/url_provider.dart';
 import 'package:tag_links/core/theme/app_theme.dart';
-import 'package:tag_links/ui/is_loading_indicators/scaffold_login_loading_is_loading.dart';
 import 'package:tag_links/utils/handle_media_in_coming_url.dart';
 
 void main() async {
@@ -27,7 +27,8 @@ void main() async {
   await initializeDateFormatting();
   await GoogleSignIn.instance.initialize(
     // El ID de cliente web es necesario para Drive en Android
-    serverClientId: "70853418136-2able9jn660lj626faatvcao7bbktn62.apps.googleusercontent.com",
+    serverClientId:
+        "70853418136-2able9jn660lj626faatvcao7bbktn62.apps.googleusercontent.com",
   );
   // Cargamos ambos motores en paralelo para ganar velocidad
   final results = await Future.wait([
@@ -109,28 +110,45 @@ class _MyAppState extends ConsumerState<MyApp> {
     super.dispose();
   }
 
-@override
+  @override
   Widget build(BuildContext context) {
-    final auth = ref.watch(authProvider);
-    final skipData = ref.watch(skipedAuthProvider);
     final palette = ref.watch(paletteProvider);
-
-    // 1. Definimos qué cuerpo (pantalla) mostrar
-    Widget currentScreen;
-
-    if (auth.isLoading) {
-      currentScreen = const ScaffoldLoginLoading();
-    } else if (auth.isAuthenticated || skipData.getHasSkippedAuth() == true) {
-      currentScreen = const HomePage(folder: null);
-    } else {
-      currentScreen = const WelcomePage();
-    }
 
     // 2. Envolvemos SIEMPRE en el MaterialApp
     return MaterialApp(
       debugShowCheckedModeBanner: false, // Opcional: quita la banda roja
       theme: getPalette(palette: palette),
-      home: currentScreen,
+      home: const MainPageRouter(),
     );
+  }
+}
+
+class MainPageRouter extends ConsumerWidget {
+  const MainPageRouter({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final auth = ref.watch(authProvider);
+    final hasSkipped = ref.watch(skipedAuthProvider);
+
+    // 1. Entrada directa
+    if (auth.isAuthenticated || hasSkipped == true) {
+      return const HomePage(folder: null);
+    }
+
+    // 2. Feedback de sesión expirada
+    if (auth.lastResult == SilentLoginResult.expired) {
+      return const WelcomePage(
+        isExpired: true,
+      ); // Pasas un flag para mostrar el aviso naranja
+    }
+
+    // 3. Fallo por red (podrías dejarlo entrar pero avisar que está offline)
+    if (auth.lastResult == SilentLoginResult.networkError) {
+      return const HomePage(folder: null); // Dejas que entre con datos locales
+    }
+
+    // 4. Default (Cargando o primera vez)
+    return const WelcomePage();
   }
 }

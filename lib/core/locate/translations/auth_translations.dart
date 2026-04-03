@@ -10,6 +10,9 @@ class TranslatesAuth {
   final String continueWithGoogle = 'continueWithGoogle';
   final String authenticationError = 'authenticationError';
   final String skipForNow = 'skipNow';
+  final String sessionExpired = 'sessionExpired';
+  final String reconnectGoogle = 'reconnectGoogle';
+
 
 
   static const Map<String, Map<AppLang, String>> translations = {
@@ -40,6 +43,14 @@ class TranslatesAuth {
     'skipNow': {
       AppLang.es: 'Omitir por ahora',
       AppLang.en: 'Skip for now',
+    },
+    'sessionExpired': {
+      AppLang.es: 'Sesión expirada',
+      AppLang.en: 'Session expired',
+    },
+    'reconnectGoogle': {
+      AppLang.es: 'Tu conexión con Google Drive se ha perdido. Vuelve a iniciar sesión para sincronizar tus cambios.',
+      AppLang.en: 'Your Google Drive connection has been lost. Log in again to synchronize your changes.',
     },
   };
 }

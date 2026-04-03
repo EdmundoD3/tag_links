@@ -14,6 +14,6 @@ class LinkPreviewRepository {
 }
 
 final linkPreviewRepositoryProvider = Provider<LinkPreviewRepository>((ref) {
-  final db = ref.watch(databaseProvider);
+  final db = ref.read(databaseProvider);
   return LinkPreviewRepository(LinkPreviewDao(db));
 });
