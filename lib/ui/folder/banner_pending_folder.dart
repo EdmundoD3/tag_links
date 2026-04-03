@@ -103,7 +103,7 @@ class BannerPendingFolder extends ConsumerWidget {
       },
       error: (err, stack) {
         debugPrint("❌ Error en provider: $err");
-        return Text("Error: $err");
+        return Text("Error: banner");
       },
     );
   }

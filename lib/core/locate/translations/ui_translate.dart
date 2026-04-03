@@ -17,6 +17,10 @@ class TranslatesUI {
   final String createFolder = 'createFolder';
   final String readMore = 'readMore';
   final String readLess = 'readLess';
+  final String noTagsFound = 'noTagsFound';
+  final String viewAll = 'viewAll';
+  final String viewOnlyFavorites = 'viewOnlyFavorites';
+  
 
   static const Map<String, Map<AppLang, String>> translations = {
     'searchHintText': {AppLang.es: 'Buscar...', AppLang.en: 'Search...'},
@@ -37,5 +41,8 @@ class TranslatesUI {
     },
     'readMore': {AppLang.es: 'ver más...', AppLang.en: 'show more...'},
     'readLess': {AppLang.es: 'ver menos...', AppLang.en: 'show less...'},
+    'noTagsFound': {AppLang.es: 'No se encontraron etiquetas', AppLang.en: 'No tags found'},
+    'viewAll': {AppLang.es: 'Ver todo', AppLang.en: 'View all'},
+    'viewOnlyFavorites': {AppLang.es: 'Ver solo favoritos', AppLang.en: 'View only favorites'},
   };
 }

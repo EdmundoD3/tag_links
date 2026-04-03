@@ -18,7 +18,6 @@ import 'package:tag_links/ui/form/move_to_folder_button.dart';
 import 'package:tag_links/ui/tags/tags_selector_menu.dart';
 import 'package:tag_links/ui/form/title_form_controller.dart';
 import 'package:tag_links/utils/debouncer.dart';
-import 'package:tag_links/core/locate/app_lang.dart';
 
 class FolderFormPage extends ConsumerStatefulWidget {
   final Folder? folder; //null significa que es nuevo

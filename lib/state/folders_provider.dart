@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/models/folder_preference.dart';
 import 'package:tag_links/models/search_query.dart';

@@ -8,6 +8,7 @@ import 'package:tag_links/core/locate/translations/auth_translations.dart';
 import 'package:tag_links/core/locate/translations/errors_translations.dart';
 import 'package:tag_links/core/locate/translations/form_translations.dart';
 import 'package:tag_links/core/locate/translations/page_translations.dart';
+import 'package:tag_links/core/locate/translations/premium_translations.dart';
 import 'package:tag_links/core/locate/translations/sync_translations.dart';
 import 'package:tag_links/core/locate/translations/tags_translations.dart';
 import 'package:tag_links/core/locate/translations/ui_translate.dart';
@@ -41,6 +42,8 @@ abstract class TKeys {
   static const pages = TranslatesPages();
   static const ads = TranslatesAds();
   static const auth = TranslatesAuth();
+  static const premium = TanslatesPremium();
+
 
   static final Map<String, Map<AppLang, String>> map = {
     ...TranslatesActions.translations,
@@ -53,5 +56,6 @@ abstract class TKeys {
     ...TranslatesPages.translations,
     ...TranslatesAds.translations,
     ...TranslatesAuth.translations,
+    ...TanslatesPremium.translations,
   };
 }

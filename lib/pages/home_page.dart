@@ -53,7 +53,10 @@ class _HomePageState extends ConsumerState<HomePage> {
     final theme = Theme.of(context);
     return preferenceAsync.when(
       loading: () => const ScaffoldLoading(),
-      error: (err, _) => Scaffold(body: Center(child: Text('Error: $err'))),
+      error: (err, _) {
+        debugPrint('_HomePage.build Error: $err');
+        return Scaffold(body: Center(child: Text('Error: preferences')));
+      },
       data: (preference) {
         final showFolders = _isLimitFolder
             ? false

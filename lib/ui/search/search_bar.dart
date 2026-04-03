@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/models/tag.dart';
+import 'package:tag_links/ui/text/empty_tags_text.dart';
 
 class SearchListBar extends StatefulWidget {
   final String queryText;
@@ -178,7 +179,10 @@ class _TagsSuggestionList extends StatelessWidget {
     return tagsAsync.when(
       data: _whenData,
       loading: _loading,
-      error: (e, _) => Text('Error: $e'),
+      error: (e, _) {
+        debugPrint('_TagsSuggestionList.build Error: $e');
+        return const Text('Error: Tags');
+      },
     );
   }
 
@@ -186,7 +190,7 @@ class _TagsSuggestionList extends StatelessWidget {
     if (tags.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(8),
-        child: Text('No se encontraron tags'),
+        child: EmptyTagsText(),
       );
     }
     return ConstrainedBox(

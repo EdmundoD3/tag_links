@@ -14,10 +14,12 @@ class BuildSyncInfo extends ConsumerWidget {
     final syncedStatus = lastSync == null
         ? ref.tr(TKeys.sync.notSynced)
         : "${ref.tr(TKeys.sync.lastSync)} ${ref.fmt(lastSync)}";
+    final String syncStatusText =
+        "${ref.tr(TKeys.sync.stateSync, fallback: "Estado de sincronizado: ")} $syncedStatus";
     return Column(
       children: [
         Text(
-          "${ref.tr(TKeys.sync.stateSync, fallback: "Estado de sincronizado: ")} $syncedStatus",
+          syncStatusText,
           style: TextStyle(fontSize: 12, color: Colors.grey),
         ),
       ],

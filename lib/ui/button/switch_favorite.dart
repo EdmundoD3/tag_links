@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/core/locate/t_keys.dart';
 
-class SwitchFavorite extends StatelessWidget {
+class SwitchFavorite extends ConsumerWidget {
   final bool? isFavorite;
   final void Function() onChanged;
 
@@ -11,14 +13,17 @@ class SwitchFavorite extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     // Evaluamos: si es true, es favorito. Si es false o null, es "ver todo".
     final bool activeFilter = isFavorite == true;
+    final tooltip = activeFilter
+        ? ref.tr(TKeys.ui.viewOnlyFavorites , fallback: 'Ver solo favoritos')
+        : ref.tr(TKeys.ui.viewAll, fallback:'Ver todo');
 
     return IconButton(
       onPressed: onChanged,
       // Usamos un tooltip para que el usuario entienda el cambio
-      tooltip: activeFilter ? 'Viendo solo favoritos' : 'Viendo todo',
+      tooltip: tooltip,
       icon: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300), // Un toque de suavidad
         child: _activeIcon(activeFilter),

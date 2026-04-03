@@ -68,7 +68,10 @@ class BuildFoldersList extends ConsumerWidget {
         );
       },
       loading: () => const ShimmerFoldersList(),
-      error: (error, _) => Center(child: Text('Error: $error')),
+      error: (error, _) {
+        debugPrint('Error: $error');
+        return Center(child: Text('Error...'));
+      },
     );
   }
 

@@ -18,12 +18,14 @@ class TranslatesAds {
   /// ES: "Puedes quitar los anuncios viendo un video..."
   final String disableSubtitle = 'modalDisableAdsSubtitle';
   final String remove24h = 'removeAds24h';
+
   /// ES: "Tal vez luego"
   final String maybeLater = 'maybeLater';
 
   // --- Apoyo al proyecto ---
   /// ES: '¿Te gusta la app? \n Compártela o apóyanos',
   final String supportTitle = 'supportProject';
+
   /// ES: 'Ver un anuncio grande'
   final String viewLargeAd = 'viewLargeAd';
   final String disabledForOneDay = 'disableAdsForOneDay';
@@ -40,8 +42,8 @@ class TranslatesAds {
       AppLang.en: 'Error showing ad, try again later.',
     },
     'modalDisableAdsTitle': {
-      AppLang.es: '¿Te estorba la publicidad?',
-      AppLang.en: 'Are ads getting in your way?',
+      AppLang.es: '¿Quieres quitar la publicidad?',
+      AppLang.en: 'Want to remove ads?',
     },
     'modalDisableAdsSubtitle': {
       AppLang.es:

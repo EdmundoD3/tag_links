@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/core/locate/app_lang.dart';
 import 'package:tag_links/core/ads/ads_disable_provider.dart';
 import 'package:tag_links/core/ads/interstitial_ads_provider.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
@@ -32,7 +31,7 @@ void showAdManagementMenu(
                 Text(
                   ref.tr(
                     TKeys.ads.disableTitle,
-                    fallback: '¿Te estorba la publicidad?',
+                    fallback: '¿Quieres quitar la publicidad?',
                   ),
                   style: theme.textTheme.titleLarge?.copyWith(fontSize: 18),
                 ),
@@ -95,7 +94,7 @@ void showAdManagementMenu(
                           },
                     icon: const Icon(Icons.play_circle_fill),
                     label: Text(
-                        ref.tr(
+                      ref.tr(
                         TKeys.ads.remove24h,
                         fallback: 'Quitar anuncios por 24h',
                       ),
@@ -112,27 +111,6 @@ void showAdManagementMenu(
                 ),
 
                 const SizedBox(height: 12),
-
-                /// 💎 PREMIUM
-                // PremiumSalesSheet(showEmpty: null),
-                // SizedBox(
-                //   width: double.infinity,
-                //   child: ElevatedButton.icon(
-                //     onPressed: () async {
-                //       Navigator.pop(context);
-                //       await processPurchase();
-                //     },
-                //     style: ElevatedButton.styleFrom(
-                //       padding: const EdgeInsets.symmetric(vertical: 15),
-                //       backgroundColor: Colors.purple[900], // Fondo oscuro
-                //       foregroundColor: Colors.white, // Texto blanco
-                //       elevation: 5, // Sombra moderada
-                //       shadowColor: Colors.indigo[200],
-                //     ),
-                //     icon: const Icon(Icons.diamond),
-                //     label: const Text("Plan sin anuncios - \$2.50 / año"),
-                //   ),
-                // ),
 
                 /// ❌ CLOSE
                 TextButton(
