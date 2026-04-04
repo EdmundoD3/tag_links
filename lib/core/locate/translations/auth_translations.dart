@@ -15,8 +15,8 @@ class TranslatesAuth {
 
   static const Map<String, Map<AppLang, String>> translations = {
     'loginWithGoogle': {
-      AppLang.es: 'No se encontró una app para abrir este enlace',
-      AppLang.en: 'No app found to open this link',
+      AppLang.es: 'Iniciar Sesión con Google',
+      AppLang.en: 'Log in with Google',
     },
     'logOut': {AppLang.es: 'Cerrar Sesión', AppLang.en: 'Log Out'},
     'syncLinks': {

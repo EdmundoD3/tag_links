@@ -18,8 +18,8 @@ class SupportProjectPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Escuchamos el estado (null al inicio, luego el valor de SharedPreferences)
     final adsActive = ref.watch(isAdsActiveProvider);
-
     final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -29,7 +29,12 @@ class SupportProjectPage extends ConsumerWidget {
       ),
       floatingActionButton: null,
       body: SafeArea(
-        child: Column(children: _buildBody(context, ref, adsActive)),
+        // Agregamos SingleChildScrollView para evitar el error de Overflow
+        child: SingleChildScrollView(
+          child: Column(
+            children: _buildBody(context, ref, adsActive),
+          ),
+        ),
       ),
     );
   }
@@ -39,16 +44,13 @@ class SupportProjectPage extends ConsumerWidget {
     WidgetRef ref,
     bool? adsActive,
   ) {
-    // 1. Mientras el estado es null, mostramos la opción de "Quitar Publicidad"
-    //    o un loader si prefieres esperar a que SharedPreferences responda.
-    //    En este caso, asumimos que si es null, es porque nunca ha decidido.
-
     final theme = Theme.of(context);
+    
     return [
       ThemeSelector(),
       LangSelector(),
 
-      // 2. Si ya decidió (es true o false), liberamos las opciones de apoyo
+      // Si ya decidió (es true o false), liberamos las opciones de apoyo
       if (adsActive != null) ...[
         Padding(
           padding: const EdgeInsets.all(16.0),
@@ -94,11 +96,9 @@ class SupportProjectPage extends ConsumerWidget {
               context,
               ref,
               showRewardedAd: () async {
-                // Usamos el servicio que ya tienes
                 return await ref.read(adServiceProvider).showRewardedAd();
               },
               processPurchase: () async {
-                // 3. Mostramos el modal de compra que creamos antes
                 showModalBottomSheet(
                   context: context,
                   isScrollControlled: true,
@@ -114,6 +114,7 @@ class SupportProjectPage extends ConsumerWidget {
           indent: 10,
           endIndent: 10,
         ),
+        
         // ------------- Account and Sync info ----------------
         AccountSyncTile(),
         BuildSyncInfo(),
@@ -131,6 +132,7 @@ class SupportProjectPage extends ConsumerWidget {
             ),
           ),
         ),
+        const SizedBox(height: 20),
       ],
     ];
   }

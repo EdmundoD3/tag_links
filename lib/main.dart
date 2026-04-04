@@ -7,6 +7,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:share_handler/share_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tag_links/config/google_sign_in_config.dart';
 import 'package:tag_links/core/ads/ads_disable_provider.dart';
 import 'package:tag_links/core/ads/ads_service_provider.dart';
 import 'package:tag_links/core/app_purchases/premium_provider.dart';
@@ -28,7 +29,7 @@ void main() async {
   await GoogleSignIn.instance.initialize(
     // El ID de cliente web es necesario para Drive en Android
     serverClientId:
-        "70853418136-2able9jn660lj626faatvcao7bbktn62.apps.googleusercontent.com",
+        GoogleSignInAppConfig.clientId,
   );
   // Cargamos ambos motores en paralelo para ganar velocidad
   final results = await Future.wait([

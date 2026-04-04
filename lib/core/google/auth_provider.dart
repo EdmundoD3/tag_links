@@ -56,47 +56,50 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
-  Future<void> init() async {
-    // trySilentLogin ya hace el check de scopes e inicializa la API internamente
-    final success = await _authManager.trySilentLogin();
-
-    if (success == SilentLoginResult.success) {
-      state = AuthState(
-        user: _authManager.currentUser,
-        driveApi: _authManager.driveApi,
-        isLoading: false,
-      );
-    } else {
-      state = AuthState(isLoading: false);
-    }
-  }
-
   Future<void> login() async {
     state = AuthState(isLoading: true);
     try {
       await _authManager.loginFlow();
 
-      // --- NUEVO: Si el login fue exitoso, ya no es un "skiped" user ---
       if (_authManager.currentUser != null) {
+        // Marcamos que ya no es un usuario que omitió
         await ref.read(skipedAuthProvider.notifier).saveHasSkippedAuth(false);
-      }
-      // -------------------------------------------------------------
 
-      state = AuthState(
-        user: _authManager.currentUser,
-        driveApi: _authManager.driveApi,
-        isLoading: false,
-      );
+        // Estado de éxito total
+        state = AuthState(
+          user: _authManager.currentUser,
+          driveApi: _authManager.driveApi,
+          isLoading: false,
+          lastResult:
+              SilentLoginResult.success, // <--- IMPORTANTE: Actualizar esto
+        );
+      } else {
+        // El usuario cerró la ventana de Google sin elegir cuenta
+        state = AuthState(
+          isLoading: false,
+          lastResult: SilentLoginResult.noUser,
+        );
+      }
     } catch (e) {
       debugPrint("❌ Error en el login: $e");
-      state = AuthState(isLoading: false);
+      // Si falla el login manual, lo tratamos como error o expirado según el caso
+      state = AuthState(
+        isLoading: false,
+        lastResult: SilentLoginResult.expired,
+      );
     }
   }
 
-  Future<void> logout() async {
+Future<void> logout() async {
     state = AuthState(isLoading: true);
     await _authManager.logout();
-    state = AuthState(isLoading: false, user: null, driveApi: null);
+    // Limpiamos todo el estado
+    state = AuthState(
+      isLoading: false, 
+      user: null, 
+      driveApi: null, 
+      lastResult: SilentLoginResult.noUser // <--- Resetear aquí
+    );
   }
 
   Future<void> skipLogin() async {
