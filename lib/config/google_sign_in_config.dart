@@ -1,5 +1,5 @@
 class GoogleSignInAppConfig {
-    static final clientId = "793153150656-igkermg1hi4bae7dh89cvgr5nukjbtf5.apps.googleusercontent.com";
+    static final clientId = "793153150656-he9pfud1hhvptnc7kg4boos371gdo66n.apps.googleusercontent.com";
 }
 
 // 1. El Certificado SHA-1 (La "Llave" Real)

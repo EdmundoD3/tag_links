@@ -20,40 +20,39 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   Future<void> _initSilentLogin() async {
-    try {
-      final hasSkipped = ref.read(skipedAuthProvider);
+    // 1. Empezamos en loading (ya viene por defecto en el build o ponlo aquí)
 
-      if (hasSkipped == true) {
-        state = AuthState(user: null, driveApi: null, isLoading: false);
+    final hasSkipped = ref.read(skipedAuthProvider);
+
+    // Si ya decidió omitir, vamos directo a Home
+    if (hasSkipped == true) {
+      state = AuthState(isLoading: false);
+      return;
+    }
+
+    // Si es nuevo pero tiene datos (usuario que nunca quiso nube)
+    if (hasSkipped == null) {
+      final bool hasAnyData = await ref
+          .read(notesRepositoryProvider)
+          .hasAnyData();
+      if (hasAnyData) {
+        state = AuthState(isLoading: false);
         return;
       }
-      // verificamos que si no existe hasSkipped, sea de verdad la primera vez que un usuario usa la aplicacion
-      if (hasSkipped == null) {
-        final bool hasAnyData = await ref
-            .read(notesRepositoryProvider)
-            .hasAnyData();
-        if (hasAnyData == false) {
-          // IMPORTANTE: Actualizamos el estado antes de salir para quitar el loading
-          state = AuthState(user: null, driveApi: null, isLoading: false);
-          return;
-        }
-      }
-
-      // Pon un timeout si sospechas de la red
-      final result = await _authManager.trySilentLogin().timeout(
-        const Duration(seconds: 5),
-        onTimeout: () => SilentLoginResult.timeout,
-      );
-
-      state = AuthState(
-        user: _authManager.currentUser,
-        driveApi: _authManager.driveApi,
-        isLoading: false,
-        lastResult: result, // Guardamos el por qué falló
-      );
-    } catch (e) {
-      state = AuthState(isLoading: false, lastResult: SilentLoginResult.noUser);
     }
+
+    // Solo si no se cumple lo anterior, intentamos el login silencioso
+    final result = await _authManager.trySilentLogin().timeout(
+      const Duration(seconds: 5),
+      onTimeout: () => SilentLoginResult.timeout,
+    );
+
+    state = AuthState(
+      user: _authManager.currentUser,
+      driveApi: _authManager.driveApi,
+      isLoading: false,
+      lastResult: result,
+    );
   }
 
   Future<void> login() async {
@@ -90,16 +89,27 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
-Future<void> logout() async {
+  Future<void> logout() async {
     state = AuthState(isLoading: true);
+
+    // 1. Limpiamos Google (Tokens, Client, etc.)
     await _authManager.logout();
-    // Limpiamos todo el estado
+
+    // 2. IMPORTANTE: Limpiamos el flag de 'skipped'
+    // Si no haces esto, y el usuario alguna vez logueó,
+    // al cerrar sesión podría quedarse bloqueado en WelcomePage
+    // o saltar a Home erróneamente.
+    await ref.read(skipedAuthProvider.notifier).clear();
+
+    // 3. Reset total del estado
     state = AuthState(
-      isLoading: false, 
-      user: null, 
-      driveApi: null, 
-      lastResult: SilentLoginResult.noUser // <--- Resetear aquí
+      isLoading: false,
+      user: null,
+      driveApi: null,
+      lastResult: SilentLoginResult.noUser,
     );
+
+    debugPrint("Cerramos sesión y limpiamos rastro de 'skipped'.");
   }
 
   Future<void> skipLogin() async {

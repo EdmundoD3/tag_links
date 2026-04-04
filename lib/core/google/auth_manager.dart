@@ -33,30 +33,38 @@ class AuthManager {
     await _checkInitialSync();
   }
 
-  /// Intento de login silencioso al arrancar la app
-Future<SilentLoginResult> trySilentLogin() async {
-  try {
-    final GoogleSignInAccount? user = await _googleSignIn
-        .attemptLightweightAuthentication();
+  Future<SilentLoginResult> trySilentLogin() async {
+    try {
+      // 1. Intento recuperar al usuario (Identity)
+      final GoogleSignInAccount? user = await _googleSignIn
+          .attemptLightweightAuthentication();
 
-    if (user == null) return SilentLoginResult.noUser;
+      if (user == null) return SilentLoginResult.noUser;
 
-    final authorization = await user.authorizationClient
-        .authorizationForScopes(_driveScopes);
+      // 2. Verificamos si tenemos tokens válidos para Drive SIN MOSTRAR UI
+      // Usamos authorizationHeaders con promptIfNecessary: false para que sea "silencioso"
+      final authHeaders = await user.authorizationClient.authorizationHeaders(
+        _driveScopes,
+        promptIfNecessary: false,
+      );
 
-    if (authorization == null) return SilentLoginResult.expired;
+      // Si es null, significa que el token no existe, expiró
+      // o el usuario no ha dado permiso para Drive.
+      if (authHeaders == null) return SilentLoginResult.expired;
 
-    await _initializeDriveApi(user);
-    await _checkInitialSync();
-    return SilentLoginResult.success;
-    
-  } catch (e) {
-    if (e.toString().contains('network_error')) {
-      return SilentLoginResult.networkError;
+      // 3. Si llegamos aquí, tenemos usuario y tenemos llave de Drive
+      await _initializeDriveApi(user);
+      await _checkInitialSync();
+
+      return SilentLoginResult.success;
+    } catch (e) {
+      debugPrint("⚠️ Error en silent login: $e");
+      if (e.toString().contains('network_error')) {
+        return SilentLoginResult.networkError;
+      }
+      return SilentLoginResult.expired;
     }
-    return SilentLoginResult.expired; // Por seguridad, si falla el auth, asumimos expirado
   }
-}
 
   /// Encapsula la creación del cliente HTTP y la API de Drive
   Future<void> _initializeDriveApi(GoogleSignInAccount user) async {
@@ -80,7 +88,8 @@ Future<SilentLoginResult> trySilentLogin() async {
     final configManager = _ref.read(syncConfigProvider);
     if (configManager == null) return;
 
-    final RemoteConfigData? remoteData = await configManager.getOrInitializeRemoteConfig();
+    final RemoteConfigData? remoteData = await configManager
+        .getOrInitializeRemoteConfig();
 
     if (remoteData == null) {
       // Aquí es donde recuperamos el nivel: Informar al sistema que la nube está caída
@@ -98,17 +107,44 @@ Future<SilentLoginResult> trySilentLogin() async {
 
   Future<GoogleSignInAccount?> _interactiveGoogleLogin() async {
     try {
-    return await _googleSignIn.authenticate(scopeHint: _driveScopes); // Esto inicia el flujo visual
-  } catch (error) {
-    debugPrint("❌ Error en Google Login: $error");
-    return null;
-  }
+      // 1. LOGIN DE IDENTIDAD
+      // Usamos authenticate() para que el usuario elija su cuenta.
+      // Pasamos _driveScopes como 'scopeHint' para que, si el sistema lo permite,
+      // pida todo de una vez.
+      final GoogleSignInAccount user = await _googleSignIn.authenticate(
+        scopeHint: _driveScopes,
+      );
+
+      debugPrint("✅ Usuario autenticado: ${user.email}");
+
+      // 2. SOLICITUD DE AUTORIZACIÓN (HEADERS)
+      // Aquí es donde obtenemos los tokens para Drive.
+      // 'promptIfNecessary: true' es el secreto: si el usuario no ha marcado
+      // la casilla de Drive, esto obligará a que aparezca la ventana.
+      final Map<String, String>? authHeaders = await user.authorizationClient
+          .authorizationHeaders(_driveScopes, promptIfNecessary: true);
+
+      if (authHeaders == null) {
+        debugPrint(
+          "❌ Error: No se otorgaron permisos de Drive (Headers nulos).",
+        );
+        return null;
+      }
+
+      debugPrint("✅ Autorización de Drive lista.");
+      return user;
+    } catch (error) {
+      debugPrint("❌ Error en el flujo de Google Login: $error");
+      return null;
+    }
   }
 
   /// Limpieza al cerrar sesión
   Future<void> logout() async {
     await _googleSignIn.signOut();
     _httpClient?.close();
+    _httpClient =
+        null; // Agrégalo para evitar intentar usar un cliente cerrado después
     _currentUser = null;
     _driveApi = null;
   }
@@ -119,9 +155,9 @@ final authManagerProvider = Provider<AuthManager>((ref) {
 });
 
 enum SilentLoginResult {
-  success,       // Todo bien
-  noUser,        // Nunca ha iniciado sesión (primera vez)
-  expired,       // Había sesión pero el token ya no sirve
-  networkError,  // No hay internet para verificar
-  timeout        // Google tardó demasiado
+  success, // Todo bien
+  noUser, // Nunca ha iniciado sesión (primera vez)
+  expired, // Había sesión pero el token ya no sirve
+  networkError, // No hay internet para verificar
+  timeout, // Google tardó demasiado
 }
