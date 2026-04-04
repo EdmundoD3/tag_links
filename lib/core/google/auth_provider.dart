@@ -4,7 +4,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart';
 import 'package:tag_links/core/auth/skiped_auth_provider.dart';
 import 'package:tag_links/core/google/auth_manager.dart';
-import 'package:tag_links/repository/notes_repository.dart';
 
 class AuthNotifier extends Notifier<AuthState> {
   // Instanciamos el manager que acabamos de pulir
@@ -12,41 +11,33 @@ class AuthNotifier extends Notifier<AuthState> {
 
   @override
   AuthState build() {
-    // Usamos microtask para que el silent login ocurra justo DESPUÉS
-    // de que el provider se haya registrado correctamente.
-    Future.microtask(() => _initSilentLogin());
-
+    // Iniciamos en false para que el Router nos mande directo a HomePage
+    // El proceso de login ocurre en el fondo.
+    _initSilentLogin();
     return AuthState(isLoading: false);
   }
 
   Future<void> _initSilentLogin() async {
-    // 1. Empezamos en loading (ya viene por defecto en el build o ponlo aquí)
-
     final hasSkipped = ref.read(skipedAuthProvider);
-
-    // Si ya decidió omitir, vamos directo a Home
     if (hasSkipped == true) {
-      state = AuthState(isLoading: false);
+      state = AuthState(
+        user: null,
+        driveApi: null,
+        isLoading: false,
+        lastResult: null,
+      );
       return;
     }
 
-    // Si es nuevo pero tiene datos (usuario que nunca quiso nube)
-    if (hasSkipped == null) {
-      final bool hasAnyData = await ref
-          .read(notesRepositoryProvider)
-          .hasAnyData();
-      if (hasAnyData) {
-        state = AuthState(isLoading: false);
-        return;
-      }
-    }
-
-    // Solo si no se cumple lo anterior, intentamos el login silencioso
     final result = await _authManager.trySilentLogin().timeout(
       const Duration(seconds: 5),
       onTimeout: () => SilentLoginResult.timeout,
     );
+    if(result == SilentLoginResult.success) {
+      ref.read(skipedAuthProvider.notifier).saveHasSkippedAuth(false);
+    }
 
+    // Actualizamos el estado cuando termine, sin importar cuánto tarde
     state = AuthState(
       user: _authManager.currentUser,
       driveApi: _authManager.driveApi,

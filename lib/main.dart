@@ -132,27 +132,19 @@ class MainPageRouter extends ConsumerWidget {
     final auth = ref.watch(authProvider);
     final hasSkipped = ref.watch(skipedAuthProvider);
 
-    // 1. Si está cargando el login silencioso, mostramos splash/loading
-    if (auth.isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    // 1. SOLO SI ES LA PRIMERA VEZ (Nunca ha decidido nada)
+    if (hasSkipped == null && !auth.isAuthenticated && !auth.isLoading) {
+      return const WelcomePage();
     }
 
-    // 2. ENTRADA DIRECTA: Si ya está logueado O si decidió omitir explícitamente
-    if (auth.isAuthenticated || hasSkipped == true) {
-      return const HomePage(folder: null);
-    }
-
-    // 3. SESIÓN EXPIRADA: Aviso naranja en WelcomePage
+    // 2. SOLO SI LA SESIÓN EXPIRÓ (Caso exclusivo que pediste)
     if (auth.lastResult == SilentLoginResult.expired) {
       return const WelcomePage(isExpired: true);
     }
 
-    // 4. ERROR DE RED: Entra pero quizás sin nube
-    if (auth.lastResult == SilentLoginResult.networkError) {
-      return const HomePage(folder: null);
-    }
-
-    // 5. POR DEFECTO: Si hasSkipped es null o false y no hay usuario -> Bienvenida
-    return const WelcomePage();
+    // 3. PARA TODO LO DEMÁS: HomePage
+    // Incluye: isAuthenticated, isLoading (mientras carga entra a Home), 
+    // networkError, o simplemente si ya pasó el welcome antes.
+    return const HomePage(folder: null);
   }
 }
