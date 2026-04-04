@@ -46,8 +46,10 @@ class DriveSyncConfigManager {
 
       if (found.files != null && found.files!.isNotEmpty) {
         final fileId = found.files!.first.id!;
-        await localIdManager.saveDriveFileId(fileId); // Guardamos para la próxima vez
-        
+        await localIdManager.saveDriveFileId(
+          fileId,
+        ); // Guardamos para la próxima vez
+
         final remoteMap = await _downloadConfig(fileId);
         return await _processExistingConfig(fileId, remoteMap, myId);
       }
@@ -55,11 +57,10 @@ class DriveSyncConfigManager {
       // 3. Inicialización: Si realmente no existe, lo creamos
       print("🔍 Config no encontrada en Drive. Creando una nueva...");
       final newData = await _createInitialRemoteConfig(myId);
-      
+
       // Guardamos el ID del nuevo archivo creado
       await localIdManager.saveDriveFileId(newData.fileId);
       return newData;
-
     } catch (e) {
       debugPrint("❌ Error de comunicación con Drive: $e");
       return null;
@@ -68,9 +69,9 @@ class DriveSyncConfigManager {
 
   /// Procesa una configuración existente: valida el dispositivo y actualiza si es necesario.
   Future<RemoteConfigData> _processExistingConfig(
-    String fileId, 
-    Map<String, dynamic> map, 
-    String myId
+    String fileId,
+    Map<String, dynamic> map,
+    String myId,
   ) async {
     ConfigInfo config = ConfigInfo.fromMap(map);
     final currentDevice = DeviceInfo.createCurrent(myId);
@@ -81,7 +82,7 @@ class DriveSyncConfigManager {
       config = config.upsertDevice(currentDevice);
       await updateRemoteConfig(fileId, config);
     }
-    
+
     return RemoteConfigData(fileId, config);
   }
 
@@ -104,8 +105,11 @@ class DriveSyncConfigManager {
     final content = utf8.encode(jsonEncode(config.toMap()));
     final media = drive.Media(Stream.value(content), content.length);
 
-    final createdFile = await _driveApi.files.create(driveFile, uploadMedia: media);
-    
+    final createdFile = await _driveApi.files.create(
+      driveFile,
+      uploadMedia: media,
+    );
+
     print("✅ Configuración inicial creada exitosamente.");
     return RemoteConfigData(createdFile.id!, config);
   }
@@ -119,17 +123,30 @@ class DriveSyncConfigManager {
   }
 
   /// Descarga el JSON de Drive
+  /// Descarga el JSON de Drive
   Future<Map<String, dynamic>> _downloadConfig(String fileId) async {
-    final drive.Media response = await _driveApi.files.get(
-      fileId,
-      downloadOptions: drive.DownloadOptions.fullMedia,
-    ) as drive.Media;
-
-    List<int> bytes = [];
-    await for (var data in response.stream) {
-      bytes.addAll(data);
+    try {
+      final response = await _driveApi.files.get(
+        fileId,
+        downloadOptions: drive.DownloadOptions.fullMedia,
+      );
+      // Verificamos el tipo antes de usarlo
+      if (response is drive.Media) {
+        final List<int> bytes = await response.stream
+            .expand((chunk) => chunk)
+            .toList();
+        final String decoded = utf8.decode(bytes);
+        return jsonDecode(decoded) as Map<String, dynamic>;
+      } else {
+        // Si no es Media, devolvemos un mapa vacío para que el
+        // flujo de "inicialización" de tu Manager tome el control.
+        debugPrint("⚠️ El archivo $fileId no devolvió contenido Media.");
+        return {};
+      }
+    } catch (e) {
+      debugPrint("❌ Error en _downloadConfig: $e");
+      rethrow; // Dejamos que el Manager decida si reintentar o crear uno nuevo
     }
-    return jsonDecode(utf8.decode(bytes));
   }
 
   /// Sube cambios a un archivo existente

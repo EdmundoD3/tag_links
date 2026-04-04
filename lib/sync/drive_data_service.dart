@@ -1,6 +1,6 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
-
 class DriveDataService {
   final drive.DriveApi _driveApi;
 
@@ -10,29 +10,42 @@ class DriveDataService {
   // DESCARGA (PULL)
   // ==========================================
 
-  /// Descarga un archivo de Drive y lo convierte a una lista de objetos
   Future<List<T>> downloadArray<T>({
     required String fileId,
     required T Function(Map<String, dynamic>) fromMap,
   }) async {
     try {
-      final drive.Media media = await _driveApi.files.get(
+      // 1. IMPORTANTE: Cambiado a fullMedia para obtener el contenido real
+      final response = await _driveApi.files.get(
         fileId,
-        downloadOptions: drive.DownloadOptions.metadata,
-      ) as drive.Media;
+        downloadOptions: drive.DownloadOptions.fullMedia,
+      );
 
-      final List<int> dataChunks = [];
-      await for (var chunk in media.stream) {
-        dataChunks.addAll(chunk);
+      if (response is! drive.Media) {
+        throw Exception("No se pudo obtener el contenido del archivo $fileId");
       }
 
-      final String decoded = utf8.decode(dataChunks);
-      final List<dynamic> jsonList = json.decode(decoded);
-
-      return jsonList
-          .map((item) => fromMap(Map<String, dynamic>.from(item)))
+      // 2. Forma más eficiente de recolectar bytes en Dart
+      final List<int> dataChunks = await response.stream
+          .expand((chunk) => chunk)
           .toList();
+
+      final String decoded = utf8.decode(dataChunks);
+      final dynamic jsonData = json.decode(decoded);
+
+      // Manejamos si el JSON viene como un objeto único o una lista
+      if (jsonData is List) {
+        return jsonData
+            .map((item) => fromMap(Map<String, dynamic>.from(item)))
+            .toList();
+      } else if (jsonData is Map) {
+        // Por si acaso subes un Wrapper único en lugar de una lista
+        return [fromMap(Map<String, dynamic>.from(jsonData))];
+      }
+      
+      return [];
     } catch (e) {
+      debugPrint("DriveDataService.downloadArray Error: $e");
       throw Exception("Error descargando $fileId: $e");
     }
   }
@@ -41,42 +54,49 @@ class DriveDataService {
   // SUBIDA (PUSH)
   // ==========================================
 
-  /// Crea o actualiza un archivo JSON en Drive
   Future<String> uploadArray<T>({
     required List<T> items,
     required Map<String, dynamic> Function(T) toMap,
     required String fileName,
     String? existingFileId,
   }) async {
-    final List<Map<String, dynamic>> jsonList = 
-        items.map((item) => toMap(item)).toList();
-    
-    final String jsonString = json.encode(jsonList);
-    final List<int> bytes = utf8.encode(jsonString);
-    final Stream<List<int>> stream = Stream.value(bytes);
+    try {
+      final List<Map<String, dynamic>> jsonList = 
+          items.map((item) => toMap(item)).toList();
+      
+      // Si solo hay un item (como tus Wrappers), podrías decidir 
+      // si mandas la lista o solo el objeto. Aquí seguimos con lista:
+      final String jsonString = json.encode(jsonList);
+      final List<int> bytes = utf8.encode(jsonString);
+      final Stream<List<int>> stream = Stream.value(bytes);
 
-    final drive.File fileMetadata = drive.File()
-      ..name = fileName
-      ..mimeType = 'application/json';
+      final drive.File fileMetadata = drive.File()
+        ..name = fileName
+        ..mimeType = 'application/json';
 
-    final drive.Media media = drive.Media(stream, bytes.length);
+      final drive.Media media = drive.Media(stream, bytes.length);
 
-    if (existingFileId != null) {
-      // Actualizar archivo existente
-      final updatedFile = await _driveApi.files.update(
-        fileMetadata,
-        existingFileId,
-        uploadMedia: media,
-      );
-      return updatedFile.id!;
-    } else {
-      // Crear nuevo archivo (Asegúrate de ponerlo en la carpeta de la app)
-      fileMetadata.parents = ['appDataFolder'];
-      final newFile = await _driveApi.files.create(
-        fileMetadata,
-        uploadMedia: media,
-      );
-      return newFile.id!;
+      if (existingFileId != null) {
+        // 3. Optimizamos la respuesta pidiendo solo el ID
+        final updatedFile = await _driveApi.files.update(
+          fileMetadata,
+          existingFileId,
+          uploadMedia: media,
+          $fields: 'id', 
+        );
+        return updatedFile.id!;
+      } else {
+        fileMetadata.parents = ['appDataFolder'];
+        final newFile = await _driveApi.files.create(
+          fileMetadata,
+          uploadMedia: media,
+          $fields: 'id',
+        );
+        return newFile.id!;
+      }
+    } catch (e) {
+      debugPrint("DriveDataService.uploadArray Error: $e");
+      rethrow;
     }
   }
 }

@@ -126,6 +126,7 @@ final syncManagerProvider = Provider<SyncManager?>((ref) {
 
   // Obtenemos el API para el servicio de transporte
   final auth = ref.watch(authProvider);
+  if (auth.driveApi == null) return null;
   final dataService = DriveDataService(auth.driveApi!);
   final lastSync = ref.watch(lastSyncTimestampProvider.notifier);
 

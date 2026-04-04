@@ -24,11 +24,11 @@ class SyncPusher {
     required NotesRepository notesRepo,
     required FolderRepository folderRepo,
     required TagsRepository tagsRepo,
-  })  : _syncQueueRepo = syncQueueRepo,
-        _driveDataService = driveDataService,
-        _notesRepo = notesRepo,
-        _folderRepo = folderRepo,
-        _tagsRepo = tagsRepo;
+  }) : _syncQueueRepo = syncQueueRepo,
+       _driveDataService = driveDataService,
+       _notesRepo = notesRepo,
+       _folderRepo = folderRepo,
+       _tagsRepo = tagsRepo;
 
   /// Procesa las subidas pendientes limitando a N archivos para cuidar la cuota.
   Future<ArchiveInfo> pushLocalChanges({
@@ -62,13 +62,16 @@ class SyncPusher {
           // 3. Subimos usando tu uploadArray (tu función ya maneja create vs update)
           // Usamos una lista de un solo elemento porque es un Wrapper que contiene la lista real
           final driveId = await _driveDataService.uploadArray(
-            items: [wrapper], 
+            items: [wrapper],
             toMap: (w) => w.toMap(),
             fileName: fileMeta.fileName,
             existingFileId: fileMeta.driveFileId,
           );
 
           // 4. Actualización Local: Marcamos como sincronizado
+          if (driveId == null || driveId.isEmpty) {
+            throw Exception("Drive no devolvió un ID válido");
+          }
           await _syncQueueRepo.markItemsAsSynced(
             type: type,
             id: localId,
@@ -77,10 +80,19 @@ class SyncPusher {
           );
 
           // 5. Actualización de la Configuración:
-          workingArchive = _updateArchiveInfo(workingArchive, type, driveId, fileMeta.id, fileMeta.fileName, now);
-          
+          workingArchive = _updateArchiveInfo(
+            workingArchive,
+            type,
+            driveId,
+            fileMeta.id,
+            fileMeta.fileName,
+            now,
+          );
+
           filesProcessed++;
-          debugPrint("SyncPusher: Subido con éxito bucket ${fileMeta.fileName}");
+          debugPrint(
+            "SyncPusher: Subido con éxito bucket ${fileMeta.fileName}",
+          );
         } catch (e) {
           debugPrint("SyncPusher Error en bucket $localId: $e");
         }
@@ -96,18 +108,43 @@ class SyncPusher {
     switch (type) {
       case TypeQueue.tags:
         final items = await _tagsRepo.getByFileId(meta.id);
-        return TagsFile(id: meta.id, fileId: meta.driveFileId ?? '', tags: items, createdAt: now, updatedAt: now);
+        return TagsFile(
+          id: meta.id,
+          fileId: meta.driveFileId ?? '',
+          tags: items,
+          createdAt: now,
+          updatedAt: now,
+        );
       case TypeQueue.folders:
         final items = await _folderRepo.getByFileId(meta.id);
-        return FoldersFile(id: meta.id, fileId: meta.driveFileId ?? '', folders: items, createdAt: now, updatedAt: now);
+        return FoldersFile(
+          id: meta.id,
+          fileId: meta.driveFileId ?? '',
+          folders: items,
+          createdAt: now,
+          updatedAt: now,
+        );
       case TypeQueue.notes:
         final items = await _notesRepo.getByFileId(meta.id);
-        return NotesFile(id: meta.id, fileId: meta.driveFileId ?? '', notes: items, createdAt: now, updatedAt: now);
+        return NotesFile(
+          id: meta.id,
+          fileId: meta.driveFileId ?? '',
+          notes: items,
+          createdAt: now,
+          updatedAt: now,
+        );
     }
   }
 
   /// Actualiza la lista de ArchiveItems para el config.json
-  ArchiveInfo _updateArchiveInfo(ArchiveInfo info, TypeQueue type, String driveId, String localId, String fileName, int now) {
+  ArchiveInfo _updateArchiveInfo(
+    ArchiveInfo info,
+    TypeQueue type,
+    String driveId,
+    String localId,
+    String fileName,
+    int now,
+  ) {
     final newItem = ArchiveItem(
       id: localId, // Tu ID local (UUID)
       driveFileId: driveId, // El ID de Google Drive
@@ -115,18 +152,23 @@ class SyncPusher {
       lastUpdate: now,
     );
 
-    switch (type) {
-      case TypeQueue.tags:
-        return info.copyWith(tags: _mergeArchiveList(info.tags, newItem));
-      case TypeQueue.folders:
-        return info.copyWith(folders: _mergeArchiveList(info.folders, newItem));
-      case TypeQueue.notes:
-        return info.copyWith(notes: _mergeArchiveList(info.notes, newItem));
-      default: return info;
-    }
+    return switch (type) {
+      TypeQueue.tags => info.copyWith(
+        tags: _mergeArchiveList(info.tags, newItem),
+      ),
+      TypeQueue.folders => info.copyWith(
+        folders: _mergeArchiveList(info.folders, newItem),
+      ),
+      TypeQueue.notes => info.copyWith(
+        notes: _mergeArchiveList(info.notes, newItem),
+      ),
+    };
   }
 
-  List<ArchiveItem> _mergeArchiveList(List<ArchiveItem> list, ArchiveItem newItem) {
+  List<ArchiveItem> _mergeArchiveList(
+    List<ArchiveItem> list,
+    ArchiveItem newItem,
+  ) {
     final index = list.indexWhere((item) => item.id == newItem.id);
     if (index != -1) {
       final newList = List<ArchiveItem>.from(list);
