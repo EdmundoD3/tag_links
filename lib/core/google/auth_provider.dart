@@ -90,7 +90,7 @@ class AuthNotifier extends Notifier<AuthState> {
     // Si no haces esto, y el usuario alguna vez logueó,
     // al cerrar sesión podría quedarse bloqueado en WelcomePage
     // o saltar a Home erróneamente.
-    await ref.read(skipedAuthProvider.notifier).clear();
+    await ref.read(skipedAuthProvider.notifier).saveHasSkippedAuth(true);
 
     // 3. Reset total del estado
     state = AuthState(

@@ -16,7 +16,7 @@ final localSyncQueueRepositoryProvider = Provider<LocalSyncQueueRepository>((
 class LocalSyncQueueRepository {
   final LocalSyncQueueDao _dao;
   LocalSyncQueueRepository(this._dao);
-  Future<LocalSyncQueue> getById(String id) async {
+  Future<LocalSyncQueue?> getById(String id) async {
     return _dao.getById(id);
   }
 
@@ -57,13 +57,17 @@ class LocalSyncQueueRepository {
     try {
       return _dao.getOrCreateAvailableFileId(tableType);
     } catch (e) {
-      debugPrint("LocalSyncQueueRepository.getOrCreateAvailableFileId Error: $e");
+      debugPrint(
+        "LocalSyncQueueRepository.getOrCreateAvailableFileId Error: $e",
+      );
       rethrow;
     }
   }
+
   Future<List<String>> getDirtyFileIds(TypeQueue type, {int limit = 50}) async {
     return _dao.getDirtyFileIds(type, limit: limit);
   }
+
   Future<void> markItemsAsSynced({
     required String id,
     required String fileId,
@@ -77,18 +81,33 @@ class LocalSyncQueueRepository {
       syncTimestamp: syncTimestamp,
     );
   }
-  /// Sincroniza los IDs locales con los IDs de Drive obtenidos del config.json
+
   Future<void> reconcileDriveIds(ArchiveInfo remoteArchive) async {
-    // 1. Aplanamos todos los items remotos en una sola lista para procesar
+    // 1. Aplanamos todos los items remotos (Notas, Carpetas, Etiquetas)
     final allRemoteItems = [
       ...remoteArchive.notes,
       ...remoteArchive.folders,
       ...remoteArchive.tags,
+      ...remoteArchive
+          .deletes, // IMPORTANTE: No olvides incluir los buckets de borrado
     ];
 
     if (allRemoteItems.isEmpty) return;
 
-    // 2. Ejecutamos una actualización masiva (o por lotes)
+    // 2. Actualización masiva en la tabla de sincronización local
+    // Esto vincula el UUID local con el driveFileId real de Google Drive
     await _dao.updateMissingDriveIds(allRemoteItems);
+  }
+
+  Future<void> syncBucketsFromArchive(ArchiveInfo archive) async {
+    return _dao.syncBucketsFromArchive(archive);
+  }
+
+  Future<ArchiveInfo> getLocalArchiveAsRemote() async {
+    return _dao.getLocalArchiveAsRemote();
+  } // En LocalSyncQueueDao / Repository
+
+  Future<void> clearDriveId(String localId) async {
+    await _dao.clearDriveId(localId);
   }
 }

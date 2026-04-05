@@ -1,6 +1,6 @@
-import 'package:tag_links/sync/models/file_base.dart';
+import 'package:tag_links/sync/models/sync_file_wrapper.dart';
 
-class DeleteFile extends FileBase {
+class DeleteFile extends SyncFileWrapper {
   final List<DeleteItem> tags;
   final List<DeleteItem> notes;
   final List<DeleteItem> folders;

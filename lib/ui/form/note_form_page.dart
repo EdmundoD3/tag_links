@@ -10,7 +10,7 @@ import 'package:tag_links/models/note.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/state/notes_provider.dart';
 import 'package:tag_links/state/pending_note_provider.dart';
-import 'package:tag_links/sync/sync_manager.dart';
+import 'package:tag_links/sync/sync_notifier_provider.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
 import 'package:tag_links/ui/form/app_bar_form.dart';
 import 'package:tag_links/ui/form/body_form.dart';
@@ -102,7 +102,7 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
   }
 
   Note _captureNote() {
-    final now = DateTime.now();
+    final now = DateTime.now().millisecondsSinceEpoch;
 
     final link = _linkPreview;
 
@@ -148,11 +148,8 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
     } catch (e) {
       debugPrint("Error en guardado final: $e");
     }
-    
-    final sync = ref.read(syncManagerProvider);
-    if (sync != null) {
-      unawaited(sync.synchronize());
-    }
+
+    unawaited(ref.read(syncProvider.notifier).synchronize());
 
     // Continuar con los anuncios y cerrar...
     final adService = ref.read(adServiceProvider);
@@ -215,7 +212,8 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
       TitleFormController(
         titleCtrl: _titleCtrl,
         label: ref.tr(TKeys.forms.title, fallback: 'Título'),
-        validatorMsg: ref.tr(TKeys.forms.folderNameRequired,
+        validatorMsg: ref.tr(
+          TKeys.forms.folderNameRequired,
           fallback: 'El título es obligatorio',
         ),
         onChange: () => _onUserChange(),

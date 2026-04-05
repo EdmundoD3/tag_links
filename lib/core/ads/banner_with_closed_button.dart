@@ -25,8 +25,8 @@ class BannerWithCloseButton extends StatelessWidget {
 
           if (showClose)
             Positioned(
-              top: 3,
-              right: 8,
+              top: 0,
+              right: 0,
               child: _CloseButton(onTap: onCloseTap),
             ),
         ],

@@ -15,7 +15,7 @@ class FolderTile extends ConsumerStatefulWidget {
   final Folder folder;
   final void Function() goFolder;
   final void Function() onDeleteFolder;
-  final void Function(Folder folder) onMove;
+  final void Function() onMove;
 
   const FolderTile({
     super.key,
@@ -89,7 +89,7 @@ class _FolderTileState extends ConsumerState<FolderTile> {
         ActionMenuItem(
           icon: Icons.move_down_rounded,
           label: ref.tr(TKeys.actions.move, fallback: 'Mover'),
-          onTap: () => widget.onMove(widget.folder),
+          onTap: () => widget.onMove(),
         ),
         ...widget.actionsItems,
       ],

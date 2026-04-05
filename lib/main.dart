@@ -21,6 +21,7 @@ import 'package:tag_links/pages/home_page.dart';
 import 'package:tag_links/data/shared_prefs_provider.dart';
 import 'package:tag_links/state/url_provider.dart';
 import 'package:tag_links/core/theme/app_theme.dart';
+import 'package:tag_links/sync/widgets/app_life_cycle_observer.dart';
 import 'package:tag_links/utils/handle_media_in_coming_url.dart';
 
 void main() async {
@@ -28,8 +29,7 @@ void main() async {
   await initializeDateFormatting();
   await GoogleSignIn.instance.initialize(
     // El ID de cliente web es necesario para Drive en Android
-    serverClientId:
-        GoogleSignInAppConfig.clientId,
+    serverClientId: GoogleSignInAppConfig.clientId,
   );
   // Cargamos ambos motores en paralelo para ganar velocidad
   final results = await Future.wait([
@@ -119,7 +119,7 @@ class _MyAppState extends ConsumerState<MyApp> {
     return MaterialApp(
       debugShowCheckedModeBanner: false, // Opcional: quita la banda roja
       theme: getPalette(palette: palette),
-      home: const MainPageRouter(),
+      home: const AppLifecycleObserver(child: MainPageRouter()),
     );
   }
 }
@@ -143,7 +143,7 @@ class MainPageRouter extends ConsumerWidget {
     }
 
     // 3. PARA TODO LO DEMÁS: HomePage
-    // Incluye: isAuthenticated, isLoading (mientras carga entra a Home), 
+    // Incluye: isAuthenticated, isLoading (mientras carga entra a Home),
     // networkError, o simplemente si ya pasó el welcome antes.
     return const HomePage(folder: null);
   }

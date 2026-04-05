@@ -143,10 +143,10 @@ class NotesDao {
     );
     return success >= ids.length;
   }
+
   Future<bool> hasAnyData() async {
     return await _fetch.hasAnyData();
   }
-
 
   /* ----------------------------- HYDRATION ----------------------------- */
   List<Note> _hydrate(List<NoteJoinRow> rows) {
@@ -170,11 +170,11 @@ class NotesDao {
           title: row.title,
           content: row.content ?? '',
           color: row.color,
-          createdAt: DateTime.fromMillisecondsSinceEpoch(row.createdAt),
-          updatedAt: DateTime.fromMillisecondsSinceEpoch(row.updatedAt),
+          createdAt: row.createdAt,
+          updatedAt: row.updatedAt,
           isFavorite: row.isFavorite,
           tags: [], // Lista vacía que iremos llenando
-          syncAt: DateTime.fromMillisecondsSinceEpoch(row.syncAt ?? 0),
+          syncAt: row.syncAt,
           link: row.linkId == null
               ? null
               : LinkPreview(
@@ -203,6 +203,7 @@ class NotesDao {
               name: row.tagName!,
               fileId: row.fileId, //provisional
               isFavorite: row.isFavorite,
+              updatedAt: DateTime.now().millisecondsSinceEpoch
             ),
           );
         }
@@ -233,7 +234,6 @@ class FetchersNotesDao {
     final result = await _db.query('notes', limit: 1);
     return result.isNotEmpty;
   }
-
 
   Future<List<NoteJoinRow>> searchByQuery(
     SearchQuery searchQuery, {
@@ -534,9 +534,9 @@ class FetchersNotesDao {
           note.title,
           note.content,
           note.color,
-          note.createdAt.millisecondsSinceEpoch,
-          note.updatedAt.millisecondsSinceEpoch,
-          note.syncAt?.millisecondsSinceEpoch,
+          note.createdAt,
+          note.updatedAt,
+          note.syncAt,
           note.isFavorite ? 1 : 0,
         ],
       );
@@ -584,13 +584,17 @@ class FetchersNotesDao {
       final batch = txn.batch();
 
       for (final note in notes) {
-        // 1. Upsert de la Nota
+        // 1. Upsert de la Nota - CORREGIDO
         batch.rawInsert(
           '''
-        INSERT INTO notes (id, folderId, title, content, color, createdAt, updatedAt, syncAt, isFavorite)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO notes (
+          id, folderId, fileId, title, content, color, 
+          createdAt, updatedAt, syncAt, isFavorite
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) -- 10 signos de interrogación
         ON CONFLICT(id) DO UPDATE SET
           folderId = excluded.folderId,
+          fileId = excluded.fileId, -- Agregado
           title = excluded.title,
           content = excluded.content,
           color = excluded.color,
@@ -601,31 +605,29 @@ class FetchersNotesDao {
           [
             note.id,
             note.folderId,
+            note.fileId, // <--- Faltaba este argumento
             note.title,
             note.content,
             note.color,
-            note.createdAt.millisecondsSinceEpoch,
-            note.updatedAt.millisecondsSinceEpoch,
-            note.syncAt?.millisecondsSinceEpoch,
+            note.createdAt,
+            note.updatedAt,
+            note.syncAt,
             note.isFavorite ? 1 : 0,
           ],
         );
 
-        // 2. Tags: Borrado y re-insertado es aceptable solo en BATCH masivo
+        // 2. Tags y 3. Links (Esto está bien, asumiendo que los DAOs aceptan batch)
         _tagsNotesDao.deleteBatch(batch, noteId: note.id);
         for (final tag in note.tags) {
           _tagsNotesDao.upsertBatch(batch, noteId: note.id, tagId: tag.id);
         }
 
-        // 3. Links: DEBEN ir en el batch también
         if (note.link != null) {
           _linkDao.upsertBatch(batch, note.link!);
         } else {
           _linkDao.deleteBatch(batch, note.id);
         }
       }
-
-      // 🚀 UN SOLO VIAJE A LA DB
       await batch.commit(noResult: true);
     });
   }
@@ -698,6 +700,7 @@ class FetchersNotesDao {
 
     return result.map(NoteJoinRow.fromMap).toList();
   }
+
   Future<List<NoteJoinRow>> getPendingSync({int limit = 200}) async {
     final sql =
         '''

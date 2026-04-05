@@ -1,9 +1,10 @@
 import 'package:tag_links/models/link_preview.dart';
 import 'package:tag_links/models/note.dart';
 import 'package:tag_links/models/tag.dart';
-import 'package:tag_links/sync/models/file_base.dart';
+import 'package:tag_links/sync/models/sync_file_wrapper.dart';
+import 'package:uuid/uuid.dart';
 
-class NotesFile extends FileBase {
+class NotesFile extends SyncFileWrapper {
   final List<Note> notes;
   NotesFile({
     required super.id,
@@ -29,6 +30,7 @@ class NotesFile extends FileBase {
     );
   }
 
+  @override
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -46,12 +48,13 @@ class NotesToFile {
     return {
       'id': note.id,
       'folderId': note.folderId,
+      'fileId': note.fileId, // Agregado para que sea simétrico
       'title': note.title,
       'content': note.content,
       'color': note.color,
-      'createdAt': note.createdAt.millisecondsSinceEpoch,
-      'updatedAt': note.updatedAt.millisecondsSinceEpoch,
-      'syncAt': note.syncAt?.millisecondsSinceEpoch,
+      'createdAt': note.createdAt,
+      'updatedAt': note.updatedAt,
+      'syncAt': note.syncAt,
       'isFavorite': note.isFavorite ? 1 : 0,
       // Guardamos el objeto Tag completo (es ligero y útil)
       'tags': note.tags.map((t) => t.toMap()).toList(),
@@ -63,26 +66,25 @@ class NotesToFile {
   /// Reconstruye una Note desde el Map del JSON
   // En NotesToFile.fromMap
   static Note fromMap(Map<String, dynamic> map) {
-    final noteId = map['id'] as String;
+    final noteId = map['id']?.toString() ?? const Uuid().v4();
 
-    // Usamos el constructor de Note, pero asegúrate de que
-    // no intente disparar lógica de DB en el constructor.
     return Note(
       id: noteId,
       folderId: map['folderId'] as String?,
-      fileId: map['fileId'] as String,
-      title: map['title'] ?? '',
-      content: map['content'] ?? '',
-      color: map['color'],
-      createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt']),
-      updatedAt: DateTime.fromMillisecondsSinceEpoch(map['updatedAt']),
-      syncAt: map['syncAt'] != null
-          ? DateTime.fromMillisecondsSinceEpoch(map['syncAt'])
-          : null,
-      isFavorite: map['isFavorite'] == 1,
-      // Aquí es importante: si el Tag ya existe en el otro dispositivo,
-      // el Repositorio deberá decidir si lo ignora o lo actualiza.
-      tags: (map['tags'] as List? ?? []).map((t) => Tag.fromMap(t)).toList(),
+      // Si no viene fileId en el JSON, usamos un String vacío o un valor por defecto
+      fileId: map['fileId'] as String? ?? '',
+      title: map['title']?.toString() ?? '',
+      content: map['content']?.toString() ?? '',
+      color: map['color'] as String?,
+      createdAt: 
+        map['createdAt'],
+      updatedAt: 
+        map['updatedAt'],
+      syncAt: map['syncAt'],
+      isFavorite: (map['isFavorite'] == 1 || map['isFavorite'] == true),
+      tags: (map['tags'] as List? ?? [])
+          .map((t) => Tag.fromMap(Map<String, dynamic>.from(t)))
+          .toList(),
       link: map['link'] != null
           ? LinkPreview.fromMiniMap(map['link'], noteId)
           : null,

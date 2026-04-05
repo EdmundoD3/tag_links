@@ -9,7 +9,7 @@ import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/state/folders_provider.dart';
 import 'package:tag_links/state/pending_folder_provider.dart';
-import 'package:tag_links/sync/sync_manager.dart';
+import 'package:tag_links/sync/sync_notifier_provider.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
 import 'package:tag_links/ui/form/app_bar_form.dart';
 import 'package:tag_links/ui/form/body_form.dart';
@@ -107,7 +107,7 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
           // 🔥 El borrado debe ocurrir SOLO si el usuario aceptó salir (discard == true)
           if (discard == true) {
             if (widget.folder == null && _didAutoSaveAtLeastOnce) {
-              await ref.read(_provider.notifier).deleteFolder(_folder.id);
+              await ref.read(_provider.notifier).deleteFolder(_folder);
             }
 
             if (context.mounted) Navigator.pop(context);
@@ -201,7 +201,7 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
   }
 
   Folder _captureFolder() {
-    final now = DateTime.now();
+    final now = DateTime.now().millisecondsSinceEpoch;
 
     final folder = Folder(
       id: _folder.id,
@@ -233,10 +233,8 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
     try {
       await _autoSave.flush(folder);
 
-      final sync = ref.read(syncManagerProvider);
-      if (sync != null) {
-        unawaited(sync.synchronize());
-      }
+        unawaited(ref.read(syncProvider.notifier).synchronize());
+      
 
       final adService = ref.read(adServiceProvider);
       final tocaIntersticial = ref.read(showInterstitialAdsProvider);

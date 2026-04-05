@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/models/folder_preference.dart';
 import 'package:tag_links/models/search_query.dart';
@@ -138,15 +139,12 @@ class FoldersNotifier extends AsyncNotifier<List<Folder>> {
     });
   }
 
-  Future<void> deleteFolder(String id) async {
+  Future<void> deleteFolder(Folder folder) async {
     // 1. Borrar de la base de datos (¡Este faltaba!)
-    await _repo.delete(id);
-
-    // 2. Sync
-    // unawaited(ref.read(syncNotifierProvider.notifier).performSync());
-
+    debugPrint('FoldersNotifier.deleteFolder: ${folder.toMap().toString()}');
+    await _repo.delete(folder);
     // 3. Quitar de la UI
-    removeFolder(id);
+    removeFolder(folder.id);
   }
 
   Future<void> toggleFavorite(Folder folder) async {

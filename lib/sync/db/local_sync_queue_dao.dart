@@ -1,4 +1,6 @@
+import 'package:flutter/widgets.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:tag_links/sync/models/archive_info.dart';
 import 'package:tag_links/sync/models/archive_item.dart';
 import 'package:tag_links/sync/models/config_info.dart';
 import 'package:tag_links/sync/models/local_sync_queue.dart';
@@ -9,12 +11,13 @@ class LocalSyncQueueDao {
   final Database _db;
   LocalSyncQueueDao(this._db);
 
-  Future<LocalSyncQueue> getById(String id) async {
+  Future<LocalSyncQueue?> getById(String id) async {
     final result = await _db.query(
       _tableName,
       where: 'id = ?',
       whereArgs: [id],
     );
+    if (result.isEmpty) return null;
     return LocalSyncQueue.fromMap(result.first);
   }
 
@@ -171,45 +174,56 @@ class LocalSyncQueueDao {
 
   //---------------------------------------------------------------
   // En LocalSyncQueueRepository
-  Future<List<String>> getDirtyFileIds(TypeQueue type, {int limit = 50}) async {
-    final String tableName = type.tableName;
+Future<List<String>> getDirtyFileIds(TypeQueue type, {int limit = 50}) async {
+  final String tableName = type.tableName;
 
-    // La lógica es idéntica para las 3 tablas gracias a tu diseño estándar
-    final sql =
-        '''
+  // Ahora que todas las tablas (notes, folders, tags) tienen 
+  // exactamente las mismas columnas gracias a $itemsBaseColumns...
+  final sql = '''
     SELECT DISTINCT fileId 
     FROM $tableName 
     WHERE fileId IS NOT NULL 
-      AND (syncAt IS NULL OR syncAt < updatedAt)
+      AND (
+        syncAt IS NULL 
+        OR (updatedAt - syncAt) > 1000 
+      )
     LIMIT ?
   ''';
 
-    final result = await _db.rawQuery(sql, [limit]);
+  final result = await _db.rawQuery(sql, [limit]);
 
-    return result.map((row) => row['fileId'] as String).toList();
-  }
+  // Esto devolverá los UUIDs de los buckets (archivos JSON en Drive)
+  // que necesitan ser resubidos porque su contenido local cambió.
+  return result.map((row) => row['fileId'] as String).toList();
+}
 
-  Future<void> markItemsAsSynced({
-    required String id,
-    required TypeQueue type,
-    required String fileId,
-    required int syncTimestamp,
-  }) async {
-    await _db.update(
-      type.tableName,
-      {'syncAt': syncTimestamp, 'fileId': fileId},
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+Future<void> markItemsAsSynced({
+  required String id,          // Este es el ID de la tabla 'files'
+  required TypeQueue type,
+  required String fileId,      // Este es el ID que agrupa las notas/carpetas
+  required int syncTimestamp,
+}) async {
+  // 1. ACTUALIZAR EL CONTENIDO (Notas/Carpetas/Tags)
+  // Cambiamos 'id = ?' por 'fileId = ?' para limpiar TODO el grupo
+  await _db.update(
+    type.tableName,
+    {'syncAt': syncTimestamp},
+    where: 'fileId = ?', 
+    whereArgs: [id], // Usamos el id del bucket que es el fileId en las notas
+  );
 
-    // Opcional: También actualizamos la tabla 'files' para que syncStatus sea 1 (Synced)
-    await _db.update(
-      'files',
-      {'syncStatus': 1, 'lastUpdate': syncTimestamp},
-      where: 'id = ?',
-      whereArgs: [fileId],
-    );
-  }
+  // 2. ACTUALIZAR EL BUCKET (Tabla 'files')
+  await _db.update(
+    'files',
+    {
+      'syncStatus': 1, 
+      'lastUpdate': syncTimestamp,
+      // 'driveFileId': fileId, // Si necesitas guardar el ID de Drive aquí
+    },
+    where: 'id = ?',
+    whereArgs: [id], // Aquí sí usamos el id porque estamos en la tabla 'files'
+  );
+}
 
   /// Solo actualizamos si el driveFileId local es NULL o diferente al de la nube
   Future<void> updateMissingDriveIds(List<ArchiveItem> items) async {
@@ -228,5 +242,85 @@ class LocalSyncQueueDao {
         );
       }
     });
+  }
+
+  Future<void> syncBucketsFromArchive(ArchiveInfo archive) async {
+    await _db.transaction((txn) async {
+      final batch = txn.batch();
+
+      // Función ayudante interna para no repetir código
+      void addItemsToBatch(List<ArchiveItem> items, TypeQueue type) {
+        for (var item in items) {
+          // Solo registramos si tiene driveFileId (si existe en la nube)
+          if (item.driveFileId != null) {
+            batch.rawInsert(
+              '''
+            INSERT INTO files (id, driveFileId, fileName, lastUpdate, type, syncStatus, itemCount)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+              driveFileId = excluded.driveFileId,
+              lastUpdate = excluded.lastUpdate,
+              syncStatus = 1 -- Marcamos como sincronizado porque viene del config remoto
+          ''',
+              [
+                item.id,
+                item.driveFileId,
+                item.fileName,
+                item.lastUpdate,
+                type.tableName,
+                1, // syncStatus
+                0, // itemCount (se actualizará al descargar el json)
+              ],
+            );
+          }
+        }
+      }
+
+      addItemsToBatch(archive.tags, TypeQueue.tags);
+      addItemsToBatch(archive.folders, TypeQueue.folders);
+      addItemsToBatch(archive.notes, TypeQueue.notes);
+
+      await batch.commit(noResult: true);
+    });
+  }
+
+  // En LocalSyncQueueDao
+  Future<ArchiveInfo> getLocalArchiveAsRemote() async {
+    final List<Map<String, dynamic>> res = await _db.query(_tableName);
+
+    final List<ArchiveItem> tags = [];
+    final List<ArchiveItem> folders = [];
+    final List<ArchiveItem> notes = [];
+
+    for (var row in res) {
+      final item = ArchiveItem(
+        id: row['id'] as String,
+        driveFileId:
+            row['driveFileId'] as String?, // Puede ser null si no se ha subido
+        fileName: row['fileName'] as String,
+        lastUpdate: row['lastUpdate'] as int,
+      );
+
+      // Solo nos interesan para el ArchiveInfo los que ya tienen presencia en Drive
+      // o que al menos existen localmente para ser registrados
+      if (row['type'] == 'tags') tags.add(item);
+      if (row['type'] == 'folders') folders.add(item);
+      if (row['type'] == 'notes') notes.add(item);
+    }
+
+    return ArchiveInfo(tags: tags, folders: folders, notes: notes, deletes: []);
+  }
+
+  // En LocalSyncQueueDao / Repository
+  Future<void> clearDriveId(String localId) async {
+    await _db.update(
+      'files',
+      {
+        'driveFileId': null,
+        'syncStatus': 0,
+      }, // Al ser null, el Pusher lo recreará
+      where: 'id = ?',
+      whereArgs: [localId],
+    );
   }
 }

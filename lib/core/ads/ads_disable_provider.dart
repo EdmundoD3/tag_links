@@ -59,7 +59,7 @@ class AdsDisabledNotifier extends AsyncNotifier<DateTime?> {
 }
 
 final adsStorageProvider = Provider((ref) {
-  final prefs = ref.watch(sharedPrefsProvider);
+  final prefs = ref.read(sharedPrefsProvider);
   return _AdsStorage(prefs);
 });
 

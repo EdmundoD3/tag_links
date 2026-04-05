@@ -15,7 +15,7 @@ class BuildFoldersList extends ConsumerWidget {
   final FoldersNotifier notifier;
   final AsyncValue<List<Folder>> foldersAsync;
   final ScrollController scrollController;
-  final void Function(String id) onDeleteFolder;
+  final void Function(Folder id) onDeleteFolder;
 
   const BuildFoldersList({
     super.key,
@@ -56,11 +56,11 @@ class BuildFoldersList extends ConsumerWidget {
               folder: folder,
               actionsItems: const [],
               goFolder: () => _goFolder(context, folder),
-              onDeleteFolder: () => onDeleteFolder(folder.id),
-              onMove: (f) async {
+              onDeleteFolder: () => onDeleteFolder(folder),
+              onMove: () async {
                 final isConfirm = await ConfirmDialog.moveFolder(context, ref);
                 if (isConfirm == true) {
-                  ref.read(pendingFolderProvider.notifier).set(f);
+                  ref.read(pendingFolderProvider.notifier).set(folder);
                 }
               },
             );

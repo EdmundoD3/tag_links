@@ -5,7 +5,7 @@ import 'package:tag_links/data/shared_prefs_provider.dart';
 
 // --- El Almacenamiento ---
 final _paletteStorageProvider = Provider((ref) {
-  final prefs = ref.watch(sharedPrefsProvider);
+  final prefs = ref.read(sharedPrefsProvider);
   return _PaletteStorage(prefs);
 });
 

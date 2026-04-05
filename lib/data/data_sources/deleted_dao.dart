@@ -27,8 +27,9 @@ class DeletedTagsDao {
 
 class DeletedFoldersDao {
   final _DeletedDao _dao;
+  // Pasamos 'deleted_folders', no el SQL completo
   DeletedFoldersDao({required Database db})
-    : _dao = _DeletedDao(tableName: DeletedFoldersDao.table, db: db);
+    : _dao = _DeletedDao(tableName: 'deleted_folders', db: db);
 
   static String get table => _DeletedDao.getTable('deleted_folders');
 
@@ -40,8 +41,9 @@ class DeletedFoldersDao {
 
 class DeletedNotesDao {
   final _DeletedDao _dao;
+  // Pasamos 'deleted_notes'
   DeletedNotesDao({required Database db})
-    : _dao = _DeletedDao(tableName: DeletedNotesDao.table, db: db);
+    : _dao = _DeletedDao(tableName: 'deleted_notes', db: db);
 
   static String get table => _DeletedDao.getTable('deleted_notes');
 

@@ -8,7 +8,7 @@ class SkipedAuthNotifier extends Notifier<bool?> {
   @override
   bool? build() {
     // Leemos el valor inicial de SharedPreferences
-    final prefs = ref.watch(sharedPrefsProvider);
+    final prefs = ref.read(sharedPrefsProvider);
     return prefs.getBool(_key);
   }
 

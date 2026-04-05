@@ -1,8 +1,8 @@
 import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/models/tag.dart';
-import 'package:tag_links/sync/models/file_base.dart';
+import 'package:tag_links/sync/models/sync_file_wrapper.dart';
 
-class FoldersFile extends FileBase {
+class FoldersFile extends SyncFileWrapper {
   final List<Folder> folders;
 
   FoldersFile({
@@ -29,6 +29,7 @@ class FoldersFile extends FileBase {
     );
   }
 
+  @override
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -51,9 +52,9 @@ class FoldersToFile {
       'image': folder.image,
       'color': folder.color,
       'isFavorite': folder.isFavorite ? 1 : 0,
-      'createdAt': folder.createdAt.millisecondsSinceEpoch,
-      'updatedAt': folder.updatedAt.millisecondsSinceEpoch,
-      'syncAt': folder.syncAt?.millisecondsSinceEpoch,
+      'createdAt': folder.createdAt,
+      'updatedAt': folder.updatedAt,
+      'syncAt': folder.syncAt,
       // Guardamos los tags completos de la carpeta
       'tags': folder.tags.map((t) => t.toMap()).toList(),
     };
@@ -69,11 +70,9 @@ class FoldersToFile {
       image: map['image'] as String?,
       color: map['color'] as String?,
       isFavorite: (map['isFavorite'] ?? 0) == 1,
-      createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt'] ?? 0),
-      updatedAt: DateTime.fromMillisecondsSinceEpoch(map['updatedAt'] ?? 0),
-      syncAt: map['syncAt'] != null
-          ? DateTime.fromMillisecondsSinceEpoch(map['syncAt'])
-          : null,
+      createdAt: map['createdAt'],
+      updatedAt: map['updatedAt'],
+      syncAt: map['syncAt'],
       tags: (map['tags'] as List? ?? [])
           .map((t) => Tag.fromMap(t as Map<String, dynamic>))
           .toList(),

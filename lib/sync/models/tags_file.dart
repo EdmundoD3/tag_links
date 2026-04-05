@@ -1,7 +1,7 @@
 import 'package:tag_links/models/tag.dart';
-import 'package:tag_links/sync/models/file_base.dart';
+import 'package:tag_links/sync/models/sync_file_wrapper.dart';
 
-class TagsFile extends FileBase {
+class TagsFile extends SyncFileWrapper {
   final List<Tag> tags;
 
   TagsFile({
@@ -14,10 +14,10 @@ class TagsFile extends FileBase {
 
   factory TagsFile.fromMap(Map<String, dynamic> map) {
     return TagsFile(
-      id: map['id'],
-      fileId: map['fileId'],
+      id: map['id']?.toString() ?? '',
+      fileId: map['fileId']?.toString() ?? '',
       tags: (map['tags'] as List? ?? [])
-          .map((t) => Tag.fromMap(t as Map<String, dynamic>))
+          .map((t) => Tag.fromMap(Map<String, dynamic>.from(t as Map)))
           .toList(),
       createdAt: DateTime.fromMillisecondsSinceEpoch(
         map['createdAt'] ?? DateTime.now().millisecondsSinceEpoch,
@@ -28,6 +28,7 @@ class TagsFile extends FileBase {
     );
   }
 
+  @override
   Map<String, dynamic> toMap() {
     return {
       'id': id,

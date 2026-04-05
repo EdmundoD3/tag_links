@@ -35,15 +35,15 @@ class FolderRepository {
   }
 
   Future<void> upsert(Folder folder) {
-    debugPrint(folder.parentId);
+    debugPrint('FolderRepository.upsert 38: ${folder.parentId}');
 
     final folderToUpdate = folder.ensureForInsert();
     return _dao.upsert(folderToUpdate);
   }
 
-  Future<void> delete(String folderId) async {
-    await _deletedDao.saveId(folderId);
-    await _dao.delete(folderId);
+  Future<void> delete(Folder folder) async {
+    if(folder.syncAt == null) await _dao.delete(folder.id);
+    await _deletedDao.saveId(folder.id);
   }
 
   Future<Folder?> getById(String id) => _dao.getById(id);

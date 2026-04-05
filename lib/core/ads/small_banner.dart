@@ -58,8 +58,9 @@ class _SmartBannerAdState extends ConsumerState<SmartBannerAd> {
     return Container(
       alignment: Alignment.center,
       width: double.infinity, // Centramos en el ancho disponible
-      height: _bannerAd!.size.height.toDouble() + 10, // Un poco de aire para el padding
+      height: _bannerAd!.size.height.toDouble() + 18, // Un poco de aire para el padding
       child: BannerWithCloseButton(
+        padding: const EdgeInsets.symmetric(horizontal: 10),
         onCloseTap: () => showAdManagementMenu(
           context,
           ref,

@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/core/google/auth_provider.dart';
 import 'package:tag_links/repository/folder_repository.dart';
 import 'package:tag_links/repository/notes_repository.dart';
 import 'package:tag_links/repository/tags_repository.dart';
@@ -6,6 +8,7 @@ import 'package:tag_links/sync/db/local_sync_queue_repository.dart';
 import 'package:tag_links/sync/drive_data_service.dart';
 import 'package:tag_links/sync/models/archive_info.dart';
 import 'package:tag_links/sync/models/archive_item.dart';
+import 'package:tag_links/sync/models/sync_file_wrapper.dart';
 import 'package:tag_links/sync/models/local_sync_queue.dart';
 import 'package:tag_links/sync/models/notes_file.dart'; // Tus Wrappers
 import 'package:tag_links/sync/models/folders_file.dart';
@@ -52,12 +55,28 @@ class SyncPusher {
         if (filesProcessed >= maxFiles) break;
 
         try {
-          final LocalSyncQueue fileMeta = await _syncQueueRepo.getById(localId);
+          final LocalSyncQueue? fileMeta = await _syncQueueRepo.getById(
+            localId,
+          );
           if (fileMeta == null) continue;
-
           // 2. Preparamos el Wrapper con los datos reales
-          final dynamic wrapper = await _createWrapper(type, fileMeta);
-          if (wrapper == null) continue;
+          final SyncFileWrapper? wrapper = await _createWrapper(type, fileMeta);
+
+          if (wrapper == null) {
+            // SILENT CLEANUP:
+            // Si está vacío, lo marcamos como sincronizado localmente
+            // para que getDirtyFileIds no lo vuelva a traer.
+            await _syncQueueRepo.markItemsAsSynced(
+              type: type,
+              id: localId,
+              syncTimestamp: now,
+              fileId: fileMeta.driveFileId ?? '', // Mantenemos el que tenía
+            );
+            debugPrint(
+              "SyncPusher: Bucket ${fileMeta.fileName} estaba vacío. Marcado como limpio.",
+            );
+            continue;
+          }
 
           // 3. Subimos usando tu uploadArray (tu función ya maneja create vs update)
           // Usamos una lista de un solo elemento porque es un Wrapper que contiene la lista real
@@ -81,12 +100,12 @@ class SyncPusher {
 
           // 5. Actualización de la Configuración:
           workingArchive = _updateArchiveInfo(
-            workingArchive,
-            type,
-            driveId,
-            fileMeta.id,
-            fileMeta.fileName,
-            now,
+            info: workingArchive,
+            type: type,
+            driveId: driveId,
+            localId: fileMeta.id,
+            fileName: fileMeta.fileName,
+            now: now,
           );
 
           filesProcessed++;
@@ -94,7 +113,9 @@ class SyncPusher {
             "SyncPusher: Subido con éxito bucket ${fileMeta.fileName}",
           );
         } catch (e) {
-          debugPrint("SyncPusher Error en bucket $localId: $e");
+          debugPrint(
+            "SyncPusher Error en bucket $localId Error: $e \n SyncPusher:${currentArchive.toMap().toString()}",
+          );
         }
       }
     }
@@ -103,11 +124,15 @@ class SyncPusher {
   }
 
   /// Helper para crear el Wrapper correcto según el tipo
-  Future<dynamic> _createWrapper(TypeQueue type, LocalSyncQueue meta) async {
+  Future<SyncFileWrapper?> _createWrapper(
+    TypeQueue type,
+    LocalSyncQueue meta,
+  ) async {
     final now = DateTime.now();
     switch (type) {
       case TypeQueue.tags:
         final items = await _tagsRepo.getByFileId(meta.id);
+        if (items.isEmpty) return null;
         return TagsFile(
           id: meta.id,
           fileId: meta.driveFileId ?? '',
@@ -117,6 +142,7 @@ class SyncPusher {
         );
       case TypeQueue.folders:
         final items = await _folderRepo.getByFileId(meta.id);
+        if (items.isEmpty) return null;
         return FoldersFile(
           id: meta.id,
           fileId: meta.driveFileId ?? '',
@@ -126,6 +152,7 @@ class SyncPusher {
         );
       case TypeQueue.notes:
         final items = await _notesRepo.getByFileId(meta.id);
+        if (items.isEmpty) return null;
         return NotesFile(
           id: meta.id,
           fileId: meta.driveFileId ?? '',
@@ -137,14 +164,14 @@ class SyncPusher {
   }
 
   /// Actualiza la lista de ArchiveItems para el config.json
-  ArchiveInfo _updateArchiveInfo(
-    ArchiveInfo info,
-    TypeQueue type,
-    String driveId,
-    String localId,
-    String fileName,
-    int now,
-  ) {
+  ArchiveInfo _updateArchiveInfo({
+    required ArchiveInfo info,
+    required TypeQueue type,
+    required String driveId,
+    required String localId,
+    required String fileName,
+    required int now,
+  }) {
     final newItem = ArchiveItem(
       id: localId, // Tu ID local (UUID)
       driveFileId: driveId, // El ID de Google Drive
@@ -178,3 +205,19 @@ class SyncPusher {
     return [...list, newItem];
   }
 }
+
+final syncPusherProvider = Provider<SyncPusher?>((ref) {
+  // Observamos el estado de autenticación
+  final auth = ref.watch(authProvider);
+
+  // Si no hay API de Drive, el Pusher no debería existir
+  if (auth.driveApi == null) return null;
+
+  return SyncPusher(
+    syncQueueRepo: ref.watch(localSyncQueueRepositoryProvider),
+    driveDataService: DriveDataService(auth.driveApi!),
+    folderRepo: ref.watch(folderRepositoryProvider),
+    notesRepo: ref.watch(notesRepositoryProvider),
+    tagsRepo: ref.watch(tagsRepositoryProvider),
+  );
+});

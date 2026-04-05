@@ -1,35 +1,33 @@
 import 'package:tag_links/models/link_preview.dart';
 import 'package:tag_links/models/tag.dart';
+import 'package:tag_links/sync/models/sync_item_wrapper.dart';
 import 'package:uuid/uuid.dart';
 
-class Note {
-  final String id;
+class Note extends BaseSyncModel {
   final String? folderId;
-  final String fileId;
   final String title;
   final String content;
   final String? color;
   LinkPreview? link;
   final List<Tag> tags;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-  final DateTime? syncAt;
+  final int createdAt; // Cambiado a int
   final bool isFavorite;
 
   Note({
-    required this.id,
+    required super.id,
     required this.folderId,
-    required this.fileId,
+    required super.fileId,
     required this.title,
     required this.content,
     this.color,
     required this.link,
     required this.tags,
     required this.createdAt,
-    required this.updatedAt,
-    this.syncAt,
+    required super.updatedAt,
+    super.syncAt,
     this.isFavorite = false,
   });
+
   factory Note.baseNote({
     String? id,
     String? title,
@@ -39,10 +37,11 @@ class Note {
     String? color,
     LinkPreview? link,
     List<Tag> tags = const [],
-    DateTime? createdAt,
-    DateTime? updatedAt,
+    int? createdAt,
+    int? updatedAt,
     bool isFavorite = false,
   }) {
+    final now = DateTime.now().millisecondsSinceEpoch;
     return Note(
       id: id?.isEmpty ?? true ? const Uuid().v4() : id!,
       folderId: folderId,
@@ -52,31 +51,28 @@ class Note {
       color: color,
       link: link,
       tags: tags,
-      createdAt: createdAt ?? DateTime.now(),
-      updatedAt: updatedAt ?? DateTime.now(),
+      createdAt: createdAt ?? now,
+      updatedAt: updatedAt ?? now,
       isFavorite: isFavorite,
     );
   }
 
   static Note fromMap(Map<String, dynamic> map) {
+    final now = DateTime.now().millisecondsSinceEpoch;
     return Note(
       id: map['id'],
       folderId: map['folderId'],
       fileId: map['fileId'],
-      title: map['title'],
-      content: map['content'],
+      title: map['title'] ?? 'Sin título',
+      content: map['content'] ?? '',
       color: map['color'],
-      link: null, // luego lo conectas si aplica
-      tags: const [], // se cargan después
-      createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt']),
-      updatedAt: DateTime.fromMillisecondsSinceEpoch(map['updatedAt']),
-      syncAt: map['syncAt'] == null ? null : DateTime.fromMillisecondsSinceEpoch(map['syncAt']),
+      link: null, 
+      tags: const [], 
+      createdAt: map['createdAt'] ?? now,
+      updatedAt: map['updatedAt'] ?? now,
+      syncAt: map['syncAt'], // Ya es int o null
       isFavorite: map['isFavorite'] == 1,
     );
-  }
-  String copyText() {
-    final String link = this.link?.url ?? '';
-    return '$title\n\n$link\n$content';
   }
 
   Map<String, dynamic> toMap() {
@@ -87,29 +83,29 @@ class Note {
       'title': title,
       'content': content,
       'color': color,
-      'createdAt': createdAt.millisecondsSinceEpoch,
-      'updatedAt': updatedAt.millisecondsSinceEpoch,
-      'syncAt': syncAt?.millisecondsSinceEpoch,
+      'createdAt': createdAt,
+      'updatedAt': updatedAt,
+      'syncAt': syncAt,
       'isFavorite': isFavorite ? 1 : 0,
     };
   }
 
   Note copyWith({
     String? id,
-    required String? folderId,
+    String? folderId, // Quitamos required para permitir null (raíz)
     String? title,
     String? content,
     String? color,
     LinkPreview? link,
     List<Tag>? tags,
     bool? isFavorite,
-    DateTime? updatedAt,
-    DateTime? createdAt,
-    DateTime? syncAt,
+    int? updatedAt,
+    int? createdAt,
+    int? syncAt,
   }) {
     return Note(
       id: id ?? this.id,
-      folderId: folderId,
+      folderId: folderId, 
       fileId: fileId,
       title: title ?? this.title,
       content: content ?? this.content,
@@ -127,7 +123,15 @@ class Note {
     if (link != null && link!.noteId != id) {
       throw StateError('LinkPreview.noteId does not match Note.id');
     }
-    return copyWith(updatedAt: DateTime.now(), folderId: folderId);
+    return copyWith(
+      updatedAt: DateTime.now().millisecondsSinceEpoch, 
+      folderId: folderId
+    );
+  }
+
+  String copyText() {
+    final String url = link?.url ?? '';
+    return '$title\n\n$url\n$content';
   }
 }
 class NoteConfig {
@@ -141,18 +145,15 @@ class NoteConfig {
   static final maxTags = 10;
 }
 String noteTable = '''
-          CREATE TABLE notes (
-            id TEXT PRIMARY KEY,
-            folderId TEXT,
-            fileId TEXT NOT NULL,
-            title TEXT NOT NULL,
-            content TEXT,
-            color TEXT,
-            createdAt INTEGER NOT NULL,
-            updatedAt INTEGER NOT NULL,
-            syncAt INTEGER,
-            isFavorite INTEGER NOT NULL DEFAULT 0 CHECK (isFavorite IN (0,1)),
-            FOREIGN KEY (folderId) REFERENCES folders(id) ON DELETE CASCADE,
-            FOREIGN KEY (fileId) REFERENCES files(id) ON DELETE CASCADE
-          );
+  CREATE TABLE notes (
+    id TEXT PRIMARY KEY,
+    folderId TEXT,
+    title TEXT NOT NULL,
+    content TEXT,
+    color TEXT,
+    createdAt INTEGER NOT NULL,
+    isFavorite INTEGER NOT NULL DEFAULT 0 CHECK (isFavorite IN (0,1)),
+    $itemsBaseColumns, -- fileId, updatedAt, syncAt y el FOREIGN KEY a files
+    FOREIGN KEY (folderId) REFERENCES folders(id) ON DELETE CASCADE
+  );
 ''';

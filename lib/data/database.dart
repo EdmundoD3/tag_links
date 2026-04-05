@@ -36,6 +36,11 @@ class AppDatabase {
     'CREATE INDEX idx_folders_fileId ON folders(fileId);',
     'CREATE INDEX idx_notes_fileId ON notes(fileId);',
     'CREATE INDEX idx_tags_fileId ON tags(fileId);',
+
+    // Reemplaza o añade estos para máxima velocidad en el SyncPusher:
+    'CREATE INDEX idx_notes_file_sync ON notes(fileId, syncAt, updatedAt);',
+    'CREATE INDEX idx_folders_file_sync ON folders(fileId, syncAt, updatedAt);',
+    'CREATE INDEX idx_tags_file_sync ON tags(fileId, syncAt, updatedAt);',
   ];
   static List<String> triggers = [
     // -- TRIGGERS PARA NOTAS

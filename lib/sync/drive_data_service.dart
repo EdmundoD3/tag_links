@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
+import 'package:tag_links/sync/exceptions/path_not_found.dart';
+
 class DriveDataService {
   final drive.DriveApi _driveApi;
 
@@ -13,6 +15,9 @@ class DriveDataService {
   Future<List<T>> downloadArray<T>({
     required String fileId,
     required T Function(Map<String, dynamic>) fromMap,
+
+    ///opcional para debug
+    String? fileName,
   }) async {
     try {
       // 1. IMPORTANTE: Cambiado a fullMedia para obtener el contenido real
@@ -42,11 +47,18 @@ class DriveDataService {
         // Por si acaso subes un Wrapper único en lugar de una lista
         return [fromMap(Map<String, dynamic>.from(jsonData))];
       }
-      
+
       return [];
     } catch (e) {
-      debugPrint("DriveDataService.downloadArray Error: $e");
-      throw Exception("Error descargando $fileId: $e");
+      // DETECCIÓN DE ARCHIVO NO ENCONTRADO
+      if (e.toString().contains("404") ||
+          e.toString().contains("File not found")) {
+        debugPrint("⚠️ El archivo $fileId ya no existe en Drive.");
+        // Lanzamos una excepción específica o retornamos una lista vacía
+        // Pero es mejor lanzar una excepción personalizada para que el Puller sepa qué pasó
+        throw PathNotFoundException(fileId);
+      }
+      rethrow;
     }
   }
 
@@ -54,49 +66,62 @@ class DriveDataService {
   // SUBIDA (PUSH)
   // ==========================================
 
-  Future<String> uploadArray<T>({
-    required List<T> items,
-    required Map<String, dynamic> Function(T) toMap,
-    required String fileName,
-    String? existingFileId,
-  }) async {
-    try {
-      final List<Map<String, dynamic>> jsonList = 
-          items.map((item) => toMap(item)).toList();
-      
-      // Si solo hay un item (como tus Wrappers), podrías decidir 
-      // si mandas la lista o solo el objeto. Aquí seguimos con lista:
-      final String jsonString = json.encode(jsonList);
-      final List<int> bytes = utf8.encode(jsonString);
-      final Stream<List<int>> stream = Stream.value(bytes);
+Future<String> uploadArray<T>({
+  required List<T> items,
+  required Map<String, dynamic> Function(T) toMap,
+  required String fileName,
+  String? existingFileId,
+}) async {
+  final List<Map<String, dynamic>> jsonList = items.map((item) => toMap(item)).toList();
+  final String jsonString = json.encode(jsonList);
+  final List<int> bytes = utf8.encode(jsonString);
 
-      final drive.File fileMetadata = drive.File()
-        ..name = fileName
-        ..mimeType = 'application/json';
+  final drive.File fileMetadata = drive.File()
+    ..name = fileName
+    ..mimeType = 'application/json';
 
-      final drive.Media media = drive.Media(stream, bytes.length);
+  // 💡 Función local para generar un Media "fresco" cada vez
+  drive.Media createMedia() => drive.Media(Stream.value(bytes), bytes.length);
 
-      if (existingFileId != null) {
-        // 3. Optimizamos la respuesta pidiendo solo el ID
+  try {
+    if (existingFileId != null) {
+      try {
+        // 1. Primer intento: Update con un media nuevo
         final updatedFile = await _driveApi.files.update(
           fileMetadata,
           existingFileId,
-          uploadMedia: media,
-          $fields: 'id', 
-        );
-        return updatedFile.id!;
-      } else {
-        fileMetadata.parents = ['appDataFolder'];
-        final newFile = await _driveApi.files.create(
-          fileMetadata,
-          uploadMedia: media,
+          uploadMedia: createMedia(), // <-- Media fresco
           $fields: 'id',
         );
-        return newFile.id!;
+        return updatedFile.id!;
+      } catch (e) {
+        // 2. Detección de archivo borrado en Drive
+        if (e.toString().contains("404") || e.toString().contains("File not found")) {
+          debugPrint("⚠️ El archivo $existingFileId no existe. Creando uno nuevo...");
+          
+          // 3. Segundo intento: Create con OTRO media nuevo
+          return await _createNewFile(fileMetadata, createMedia()); 
+        }
+        rethrow; 
       }
-    } catch (e) {
-      debugPrint("DriveDataService.uploadArray Error: $e");
-      rethrow;
+    } else {
+      // 4. No había ID, crear directamente con media nuevo
+      return await _createNewFile(fileMetadata, createMedia());
     }
+  } catch (e) {
+    debugPrint("DriveDataService.uploadArray Error: $e");
+    rethrow;
+  }
+}
+
+  // Helper simple para no repetir código de creación
+  Future<String> _createNewFile(drive.File metadata, drive.Media media) async {
+    metadata.parents = ['appDataFolder'];
+    final newFile = await _driveApi.files.create(
+      metadata,
+      uploadMedia: media,
+      $fields: 'id',
+    );
+    return newFile.id!;
   }
 }

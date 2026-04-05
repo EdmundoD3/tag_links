@@ -8,34 +8,31 @@ final lastSyncTimestampProvider = NotifierProvider<LastSyncNotifier, int?>(
 
 // El Notifier que mantiene el estado en memoria y sincroniza con el storage
 class LastSyncNotifier extends Notifier<int?> {
-  SyncStorage get _storage => ref.watch(_syncStorageProvider);
+  SyncStorage get _storage => ref.read(_syncStorageProvider);
 
-  @override
+@override
   int? build() {
-    _init();
-    return null;
+    // 2. LEER DIRECTAMENTE: Sin _init(), sin async.
+    // Accedemos a los SharedPreferences que ya están en el provider.
+    return _storage.getLastPulledAt();
   }
 
-  Future<void> _init() async {
-    state = await getLastPulledAt();
-  }
-
-  Future<void> updateTimestamp(int timestamp) async {
-    await _storage.setLastPulledAt(timestamp);
+  void updateTimestamp(int timestamp)  {
+     _storage.setLastPulledAt(timestamp);
     state = timestamp; // Esto notifica a todos los que hacen ref.watch
   }
-  Future<int?> getLastPulledAt() async {
+  int? getLastPulledAt()  {
     return state;
   }
 
-  Future<void> clear() async {
-    await _storage.clear();
+  void clear()  {
+     _storage.clear();
     state = null;
   }
 }
 
 final _syncStorageProvider = Provider<SyncStorage>((ref) {
-  return SyncStorage(ref.watch(sharedPrefsProvider));
+  return SyncStorage(ref.read(sharedPrefsProvider));
 });
 
 class SyncStorage {
@@ -48,7 +45,7 @@ class SyncStorage {
   // GETTERS
   // =========================
 
-  Future<int?> getLastPulledAt() async {
+  int? getLastPulledAt() {
     return _prefs.getInt(_lastPulledKey);
   }
 
@@ -56,15 +53,15 @@ class SyncStorage {
   // SETTERS
   // =========================
 
-  Future<void> setLastPulledAt(int timestamp) async {
-    await _prefs.setInt(_lastPulledKey, timestamp);
+  void setLastPulledAt(int timestamp) {
+     _prefs.setInt(_lastPulledKey, timestamp);
   }
 
   // =========================
   // RESET
   // =========================
 
-  Future<void> clear() async {
-    await _prefs.remove(_lastPulledKey);
+  void clear() {
+     _prefs.remove(_lastPulledKey);
   }
 }

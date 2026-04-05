@@ -11,7 +11,7 @@ import 'package:tag_links/ui/utils/empty_indicator.dart';
 
 class BuildNotesList extends ConsumerWidget {
   final bool isLoadingMore;
-  final Future<void> Function(Note id) onDeleteNote;
+  final Future<void> Function(Note note) onDeleteNote;
   final AsyncValue<List<Note>> notesAsync;
   final ScrollController scrollController;
   final List<ActionMenuItem>? actionsItems;
@@ -57,7 +57,7 @@ class BuildNotesList extends ConsumerWidget {
               // Cambiamos GlobalKey por ValueKey si es posible
               key: ValueKey(note.id),
               note: note,
-              onDeleteNote: (n) async => await onDeleteNote(n),
+              onDeleteNote: () => onDeleteNote(note),
               onMove: (n) async {
                 final isConfirm = await ConfirmDialog.moveNote(context, ref);
                 if (isConfirm == true) {

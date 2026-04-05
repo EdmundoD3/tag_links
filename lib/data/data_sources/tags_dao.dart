@@ -44,32 +44,6 @@ class TagsDao {
     );
   }
 
-  Future<void> upsert(Tag tag) async {
-    try {
-      final tagToUpdate = tag.ensureForInsert();
-      await _db.rawInsert(
-        '''
-      INSERT INTO tags (id, name, fileId, isFavorite, usageCount)
-      VALUES (?, ?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        name = excluded.name,
-        fileId = excluded.fileId,
-        isFavorite = excluded.isFavorite,
-        usageCount = excluded.usageCount
-    ''',
-        [
-          tagToUpdate.id,
-          tagToUpdate.name,
-          tagToUpdate.fileId,
-          tagToUpdate.isFavorite ? 1 : 0,
-          tagToUpdate.usageCount,
-        ],
-      );
-    } catch (e) {
-      debugPrint('TagsDao.upsert error: ${e.toString()}');
-    }
-  }
-
   Future<void> delete(String id) async {
     await _db.delete(_tableName, where: 'id = ?', whereArgs: [id]);
   }
@@ -142,6 +116,35 @@ class TagsDao {
     );
     return result.map(Tag.fromMap).toList();
   }
+
+  Future<void> upsert(Tag tag) async {
+    try {
+      final tagToUpdate = tag.ensureForInsert();
+      await _db.rawInsert(
+        '''
+      INSERT INTO tags (id, name, fileId, isFavorite, usageCount, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?) -- 6 columnas, 6 signos '?'
+      ON CONFLICT(id) DO UPDATE SET
+        name = excluded.name,
+        fileId = excluded.fileId,
+        isFavorite = excluded.isFavorite,
+        usageCount = excluded.usageCount,
+        updatedAt = excluded.updatedAt
+    ''',
+        [
+          tagToUpdate.id,
+          tagToUpdate.name,
+          tagToUpdate.fileId,
+          tagToUpdate.isFavorite ? 1 : 0,
+          tagToUpdate.usageCount,
+          tagToUpdate.updatedAt,
+        ],
+      );
+    } catch (e) {
+      debugPrint('TagsDao.upsert error: $e');
+    }
+  }
+
   Future<void> upsertAll(List<Tag> tags) async {
     try {
       _db.transaction((txn) async {
@@ -156,27 +159,28 @@ class TagsDao {
     }
   }
 
-  Future<void> _upsertAllBatch(Tag tag, Batch batch) async {
+  void _upsertAllBatch(Tag tag, Batch batch) {
+    // Quité el async porque batch no lo requiere
     final tagToUpdate = tag.ensureForInsert();
-    // Dentro de TagsDao
     batch.rawInsert(
       '''
-  INSERT INTO tags (id, name, isFavorite, usageCount, updatedAt)
-  VALUES (?, ?, ?, ?, ?)
-  ON CONFLICT(id) DO UPDATE SET
-    name = excluded.name,
-    isFavorite = excluded.isFavorite,
-    usageCount = excluded.usageCount,
-    updatedAt = excluded.updatedAt
-  WHERE excluded.updatedAt > updatedAt -- Lógica de "el más reciente gana"
-  ''',
+      INSERT INTO tags (id, name, fileId, isFavorite, usageCount, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?) -- Agregamos fileId
+      ON CONFLICT(id) DO UPDATE SET
+        name = excluded.name,
+        fileId = excluded.fileId,
+        isFavorite = excluded.isFavorite,
+        usageCount = excluded.usageCount,
+        updatedAt = excluded.updatedAt
+      WHERE excluded.updatedAt > updatedAt 
+      ''',
       [
         tagToUpdate.id,
         tagToUpdate.name,
+        tagToUpdate.fileId, // <--- Faltaba este
         tagToUpdate.isFavorite ? 1 : 0,
         tagToUpdate.usageCount,
-        tagToUpdate.updatedAt?.millisecondsSinceEpoch ??
-            DateTime.now().millisecondsSinceEpoch,
+        tagToUpdate.updatedAt,
       ],
     );
   }

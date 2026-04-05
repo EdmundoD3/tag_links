@@ -4,7 +4,7 @@ import 'package:tag_links/data/shared_prefs_provider.dart';
 import 'package:uuid/uuid.dart';
 
 final localIdManagerProvider = Provider<LocalIdManager>((ref) {
-  final prefs = ref.watch(sharedPrefsProvider);
+  final prefs = ref.read(sharedPrefsProvider);
   return LocalIdManager(prefs);
 });
 

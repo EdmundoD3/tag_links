@@ -69,7 +69,7 @@ class FolderMoveService {
 
     final moved = folder.copyWith(
       parentId: toParentId,
-      updatedAt: DateTime.now(),
+      updatedAt: DateTime.now().millisecondsSinceEpoch,
       syncAt: null, // Aseguramos que el sync lo detecte
     );
 
@@ -99,7 +99,7 @@ class FolderMoveService {
     // 2. UI: Actualizar la carpeta principal
     final moved = folder.copyWith(
       parentId: toParentId, 
-      updatedAt: DateTime.now(),
+      updatedAt: DateTime.now().millisecondsSinceEpoch,
       syncAt: null,
     );
     

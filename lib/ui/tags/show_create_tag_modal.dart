@@ -47,7 +47,10 @@ Future<Tag?> showCreateTagModal({
               decoration: InputDecoration(
                 filled: true,
                 fillColor: theme.inputDecorationTheme.fillColor?.withAlpha(60),
-                labelText: ref.tr(TKeys.tags.nameField, fallback: 'Nombre del tag'),
+                labelText: ref.tr(
+                  TKeys.tags.nameField,
+                  fallback: 'Nombre del tag',
+                ),
                 alignLabelWithHint: true,
                 border: OutlineInputBorder(),
                 labelStyle: TextStyle(color: theme.textTheme.bodyMedium?.color),
@@ -66,8 +69,11 @@ Future<Tag?> showCreateTagModal({
             Align(
               alignment: Alignment.centerRight,
               child: FilledButton(
-                onPressed: () async =>
-                    await _submit(context: context, controller: controller, ref: ref),
+                onPressed: () async => await _submit(
+                  context: context,
+                  controller: controller,
+                  ref: ref,
+                ),
                 style: FilledButton.styleFrom(
                   backgroundColor:
                       theme.scaffoldBackgroundColor, // Color de fondo
@@ -98,10 +104,15 @@ Future<void> _submit({
   try {
     final notifier = ref.read(tagsProvider.notifier);
     final fileId = await ref
-            .read(localSyncQueueRepositoryProvider)
-            .getOrCreateAvailableFileId(TypeQueue.tags);
+        .read(localSyncQueueRepositoryProvider)
+        .getOrCreateAvailableFileId(TypeQueue.tags);
     // 3. Si no existe, crear el nuevo
-    final Tag newTag = Tag(id: const Uuid().v4(), name: name,fileId: fileId);
+    final Tag newTag = Tag(
+      id: const Uuid().v4(),
+      name: name,
+      fileId: fileId,
+      updatedAt: DateTime.now().millisecondsSinceEpoch,
+    );
 
     // Guardamos DESPUÉS (en segundo plano)
     final savedTag = await notifier.addTag(newTag);

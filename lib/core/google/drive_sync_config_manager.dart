@@ -3,8 +3,8 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:tag_links/core/google/auth_provider.dart';
+import 'package:tag_links/sync/db/local_sync_queue_repository.dart';
 import 'package:tag_links/sync/models/config_info.dart';
-import 'package:tag_links/sync/models/archive_info.dart';
 import 'package:tag_links/core/google/local_id_manager.dart';
 import 'package:tag_links/sync/models/device_info.dart';
 
@@ -19,8 +19,13 @@ class DriveSyncConfigManager {
   final drive.DriveApi _driveApi;
   static const String _configName = 'sync_config.json';
   final LocalIdManager localIdManager;
+  final LocalSyncQueueRepository _syncQueueRepo;
 
-  DriveSyncConfigManager(this._driveApi, {required this.localIdManager});
+  DriveSyncConfigManager(
+    this._driveApi, {
+    required this.localIdManager,
+    required LocalSyncQueueRepository syncQueueRepo,
+  }) : _syncQueueRepo = syncQueueRepo;
 
   /// Obtiene o inicializa la configuración de Drive usando caché de ID para optimizar.
   Future<RemoteConfigData?> getOrInitializeRemoteConfig() async {
@@ -28,41 +33,37 @@ class DriveSyncConfigManager {
     final String? cachedFileId = localIdManager.getDriveFileId();
 
     try {
-      // 1. Intento Rápido: Usar el ID que ya conocemos
+      // 1. Intento Rápido
       if (cachedFileId != null) {
         try {
-          print("🚀 Intentando acceso rápido por ID: $cachedFileId");
           final remoteMap = await _downloadConfig(cachedFileId);
-          return await _processExistingConfig(cachedFileId, remoteMap, myId);
+          if (remoteMap != null) {
+            return await _processExistingConfig(cachedFileId, remoteMap, myId);
+          }
         } catch (e) {
-          // Si falla (ej. 404), el archivo fue borrado. Limpiamos caché y seguimos.
-          print("⚠️ ID en caché no válido o archivo borrado. Re-escaneando...");
           await localIdManager.clearDriveFileId();
         }
       }
 
-      // 2. Camino Lento: Buscar por nombre en la AppDataFolder
+      // 2. Camino Lento (Búsqueda por nombre)
       final drive.FileList found = await _findConfigFileId();
-
       if (found.files != null && found.files!.isNotEmpty) {
         final fileId = found.files!.first.id!;
-        await localIdManager.saveDriveFileId(
-          fileId,
-        ); // Guardamos para la próxima vez
-
         final remoteMap = await _downloadConfig(fileId);
-        return await _processExistingConfig(fileId, remoteMap, myId);
+
+        if (remoteMap != null) {
+          await localIdManager.saveDriveFileId(fileId);
+          return await _processExistingConfig(fileId, remoteMap, myId);
+        }
       }
 
-      // 3. Inicialización: Si realmente no existe, lo creamos
-      print("🔍 Config no encontrada en Drive. Creando una nueva...");
+      // 3. Recreación/Inicialización (Aquí entra tu lógica de inyectar metadata local)
+      print("🔍 Reconstruyendo configuración desde estado local...");
       final newData = await _createInitialRemoteConfig(myId);
-
-      // Guardamos el ID del nuevo archivo creado
       await localIdManager.saveDriveFileId(newData.fileId);
       return newData;
     } catch (e) {
-      debugPrint("❌ Error de comunicación con Drive: $e");
+      debugPrint("❌ Fallo crítico en ConfigManager: $e");
       return null;
     }
   }
@@ -87,7 +88,9 @@ class DriveSyncConfigManager {
   }
 
   /// Crea el archivo por primera vez en Drive
+  /// Crea el archivo por primera vez, pero inyectando lo que ya conocemos localmente
   Future<RemoteConfigData> _createInitialRemoteConfig(String myId) async {
+    final localState = await _syncQueueRepo.getLocalArchiveAsRemote();
     final currentDevice = DeviceInfo.createCurrent(myId);
 
     final config = ConfigInfo(
@@ -95,7 +98,7 @@ class DriveSyncConfigManager {
       devices: [currentDevice],
       version: 1,
       premiumUntil: 0,
-      archiveInfo: ArchiveInfo(tags: [], folders: [], notes: [], deletes: []),
+      archiveInfo: localState, // <--- Aquí inyectamos la metadata local
     );
 
     final driveFile = drive.File()
@@ -123,49 +126,56 @@ class DriveSyncConfigManager {
   }
 
   /// Descarga el JSON de Drive
-  /// Descarga el JSON de Drive
-  Future<Map<String, dynamic>> _downloadConfig(String fileId) async {
+  Future<Map<String, dynamic>?> _downloadConfig(String fileId) async {
     try {
       final response = await _driveApi.files.get(
         fileId,
         downloadOptions: drive.DownloadOptions.fullMedia,
       );
-      // Verificamos el tipo antes de usarlo
+
       if (response is drive.Media) {
-        final List<int> bytes = await response.stream
-            .expand((chunk) => chunk)
-            .toList();
-        final String decoded = utf8.decode(bytes);
+        // Usamos una forma más directa de convertir el stream a string
+        final String decoded = await response.stream
+            .transform(utf8.decoder)
+            .join();
+
+        if (decoded.trim().isEmpty) return null;
         return jsonDecode(decoded) as Map<String, dynamic>;
-      } else {
-        // Si no es Media, devolvemos un mapa vacío para que el
-        // flujo de "inicialización" de tu Manager tome el control.
-        debugPrint("⚠️ El archivo $fileId no devolvió contenido Media.");
-        return {};
       }
+      return null;
     } catch (e) {
-      debugPrint("❌ Error en _downloadConfig: $e");
-      rethrow; // Dejamos que el Manager decida si reintentar o crear uno nuevo
+      debugPrint("❌ Error descargando $fileId: $e");
+      // Si es un 404, retornamos null para que el llamador intente recrear
+      return null;
     }
   }
 
   /// Sube cambios a un archivo existente
   Future<void> updateRemoteConfig(String fileId, ConfigInfo config) async {
-    final content = utf8.encode(jsonEncode(config.toMap()));
+    try {
+      final content = utf8.encode(jsonEncode(config.toMap()));
     final media = drive.Media(Stream.value(content), content.length);
 
     await _driveApi.files.update(drive.File(), fileId, uploadMedia: media);
     print("📱 Drive: Configuración actualizada.");
+    } catch (e) {
+      debugPrint("DriveSyncConfigManager.updateRemoteConfig: Error actualizando $fileId: $e");
+    }
+    
   }
 }
 
 // Provider de Riverpod
 final syncConfigProvider = Provider<DriveSyncConfigManager?>((ref) {
-  final auth = ref.watch(authProvider); // Esto ahora es seguro
+  final auth = ref.watch(authProvider);
   if (auth.driveApi == null) return null;
-
+  
+  // Usar watch es mejor para mantener la reactividad en el grafo de dependencias
+  final localSyncQueueRepository = ref.watch(localSyncQueueRepositoryProvider);
+  
   return DriveSyncConfigManager(
     auth.driveApi!,
     localIdManager: ref.watch(localIdManagerProvider),
+    syncQueueRepo: localSyncQueueRepository,
   );
 });

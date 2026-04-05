@@ -9,7 +9,7 @@ import 'package:tag_links/core/locate/lang_selector.dart';
 import 'package:tag_links/core/ads/ads_disable_provider.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/core/theme/theme_selector_widget.dart';
-import 'package:tag_links/sync/sync_info.dart';
+import 'package:tag_links/sync/widgets/sync_info.dart';
 
 class SupportProjectPage extends ConsumerWidget {
   const SupportProjectPage({super.key});

@@ -20,7 +20,7 @@ import 'dart:math' as math;
 class NoteTile extends ConsumerStatefulWidget {
   final Note note;
   final List<ActionMenuItem> actionsItems;
-  final void Function(Note note) onDeleteNote;
+  final void Function() onDeleteNote;
   final void Function(Note note) onMove;
 
   const NoteTile({
@@ -123,7 +123,7 @@ class _NoteTileState extends ConsumerState<NoteTile> {
         ActionMenuItem(
           icon: Icons.delete,
           label: ref.tr(TKeys.actions.delete, fallback: 'Eliminar'),
-          onTap: () => widget.onDeleteNote(widget.note),
+          onTap: () => widget.onDeleteNote(),
         ),
 
         ...widget.actionsItems,

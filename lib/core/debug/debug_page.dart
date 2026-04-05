@@ -45,10 +45,10 @@ class DebugPage extends ConsumerWidget {
             content: "Contenido de la nota de prueba",
             link: null,
             tags: [],
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
+            createdAt: DateTime.now().millisecondsSinceEpoch,
+            updatedAt: DateTime.now().millisecondsSinceEpoch,
           ),
-          onDeleteNote: (Note nothing) {
+          onDeleteNote: () {
             debugPrint("onDeleteNote: nothing");
           },
           onMove: (Note nothing) {
@@ -61,14 +61,14 @@ class DebugPage extends ConsumerWidget {
             fileId: "",
             title: "Carpeta de prueba",
             tags: [],
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now()
+            createdAt: DateTime.now().millisecondsSinceEpoch,
+            updatedAt: DateTime.now().millisecondsSinceEpoch
           ),
           actionsItems: [],
           onDeleteFolder: () {
             
           },
-          onMove: (Folder nothing) {
+          onMove: () {
             debugPrint("onMove: nothing");
           },
           goFolder: (){},
