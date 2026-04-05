@@ -54,7 +54,6 @@ class NotesToFile {
       'color': note.color,
       'createdAt': note.createdAt,
       'updatedAt': note.updatedAt,
-      'syncAt': note.syncAt,
       'isFavorite': note.isFavorite ? 1 : 0,
       // Guardamos el objeto Tag completo (es ligero y útil)
       'tags': note.tags.map((t) => t.toMap()).toList(),
@@ -80,7 +79,6 @@ class NotesToFile {
         map['createdAt'],
       updatedAt: 
         map['updatedAt'],
-      syncAt: map['syncAt'],
       isFavorite: (map['isFavorite'] == 1 || map['isFavorite'] == true),
       tags: (map['tags'] as List? ?? [])
           .map((t) => Tag.fromMap(Map<String, dynamic>.from(t)))

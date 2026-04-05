@@ -23,7 +23,6 @@ class Folder extends BaseSyncModel {
     this.color,
     required this.createdAt,
     required super.updatedAt,
-    super.syncAt,
     this.isFavorite = false,
   });
 
@@ -44,7 +43,6 @@ class Folder extends BaseSyncModel {
       color: null,
       createdAt: now,
       updatedAt: now,
-      syncAt: null,
       isFavorite: false,
     ).ensureForInsert();
   }
@@ -62,7 +60,6 @@ class Folder extends BaseSyncModel {
       isFavorite: (map['isFavorite'] == 1 || map['isFavorite'] == true),
       createdAt: map['createdAt'] ?? now,
       updatedAt: map['updatedAt'] ?? now,
-      syncAt: map['syncAt'], // Ya es int o null
       tags: (map['tags'] as List? ?? [])
           .map((t) => Tag.fromMap(Map<String, dynamic>.from(t)))
           .toList(),
@@ -80,7 +77,6 @@ class Folder extends BaseSyncModel {
       'color': color,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
-      'syncAt': syncAt,
       'isFavorite': isFavorite ? 1 : 0,
     };
   }
@@ -95,7 +91,6 @@ class Folder extends BaseSyncModel {
     String? color,
     int? createdAt,
     int? updatedAt,
-    int? syncAt,
     bool? isFavorite,
   }) {
     return Folder(
@@ -109,7 +104,6 @@ class Folder extends BaseSyncModel {
       color: color ?? this.color,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      syncAt: syncAt ?? this.syncAt,
       isFavorite: isFavorite ?? this.isFavorite,
     );
   }

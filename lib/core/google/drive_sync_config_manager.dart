@@ -90,7 +90,7 @@ class DriveSyncConfigManager {
   /// Crea el archivo por primera vez en Drive
   /// Crea el archivo por primera vez, pero inyectando lo que ya conocemos localmente
   Future<RemoteConfigData> _createInitialRemoteConfig(String myId) async {
-    final localState = await _syncQueueRepo.getLocalArchiveAsRemote();
+    final localState = await _syncQueueRepo.getLocalArchiveForConfig();
     final currentDevice = DeviceInfo.createCurrent(myId);
 
     final config = ConfigInfo(
@@ -154,14 +154,15 @@ class DriveSyncConfigManager {
   Future<void> updateRemoteConfig(String fileId, ConfigInfo config) async {
     try {
       final content = utf8.encode(jsonEncode(config.toMap()));
-    final media = drive.Media(Stream.value(content), content.length);
+      final media = drive.Media(Stream.value(content), content.length);
 
-    await _driveApi.files.update(drive.File(), fileId, uploadMedia: media);
-    print("📱 Drive: Configuración actualizada.");
+      await _driveApi.files.update(drive.File(), fileId, uploadMedia: media);
+      print("📱 Drive: Configuración actualizada.");
     } catch (e) {
-      debugPrint("DriveSyncConfigManager.updateRemoteConfig: Error actualizando $fileId: $e");
+      debugPrint(
+        "DriveSyncConfigManager.updateRemoteConfig: Error actualizando $fileId: $e",
+      );
     }
-    
   }
 }
 
@@ -169,10 +170,10 @@ class DriveSyncConfigManager {
 final syncConfigProvider = Provider<DriveSyncConfigManager?>((ref) {
   final auth = ref.watch(authProvider);
   if (auth.driveApi == null) return null;
-  
+
   // Usar watch es mejor para mantener la reactividad en el grafo de dependencias
   final localSyncQueueRepository = ref.watch(localSyncQueueRepositoryProvider);
-  
+
   return DriveSyncConfigManager(
     auth.driveApi!,
     localIdManager: ref.watch(localIdManagerProvider),

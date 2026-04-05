@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 
 class DeletedTables {
@@ -8,21 +9,22 @@ class DeletedTables {
 
 class DeletedTagsDao {
   final _DeletedDao _dao;
-  
+
   DeletedTagsDao({required Database db})
     : _dao = _DeletedDao(tableName: 'deleted_tags', db: db);
 
   // Genera el SQL para la tabla de tags borrados
   static String get table => _DeletedDao.getTable('deleted_tags');
 
-  Future<void> saveId(String id, {Transaction? executor}) => 
+  Future<void> saveId(String id, {Transaction? executor}) =>
       _dao.saveId(id, executor: executor);
 
-  Future<List<DeletedData>> getBatch({int limit = 500}) => 
+  Future<List<DeletedData>> getBatch({int limit = 500}) =>
       _dao.getBatch(limit: limit);
 
-  Future<void> deleteIds(List<String> ids) => 
-      _dao.deleteIds(ids);
+  Future<void> deleteIds(List<String> ids) => _dao.deleteIds(ids);
+  Future<List<String>> extractDirtyIds(List<String> ids) =>
+      _dao.extractDirtyIds(ids);
 }
 
 class DeletedFoldersDao {
@@ -33,10 +35,13 @@ class DeletedFoldersDao {
 
   static String get table => _DeletedDao.getTable('deleted_folders');
 
-  Future<void> saveId(String id, {Transaction? executor}) => _dao.saveId(id,executor: executor);
+  Future<void> saveId(String id, {Transaction? executor}) =>
+      _dao.saveId(id, executor: executor);
 
   Future<List<DeletedData>> Function({int limit}) get getBatch => _dao.getBatch;
-  Future<void> Function(List<String> ids) get deleteIds => _dao.deleteIds;
+  Future<void> deleteIds(List<String> ids) => _dao.deleteIds(ids);
+  Future<List<String>> extractDirtyIds(List<String> ids) =>
+      _dao.extractDirtyIds(ids);
 }
 
 class DeletedNotesDao {
@@ -47,10 +52,13 @@ class DeletedNotesDao {
 
   static String get table => _DeletedDao.getTable('deleted_notes');
 
-  Future<void> saveId(String id, {Transaction? executor}) => _dao.saveId(id,executor: executor);
+  Future<void> saveId(String id, {Transaction? executor}) =>
+      _dao.saveId(id, executor: executor);
 
   Future<List<DeletedData>> Function({int limit}) get getBatch => _dao.getBatch;
-  Future<void> Function(List<String> ids) get deleteIds => _dao.deleteIds;
+  Future<void> deleteIds(List<String> ids) => _dao.deleteIds(ids);
+  Future<List<String>> extractDirtyIds(List<String> ids) =>
+      _dao.extractDirtyIds(ids);
 }
 
 // -----------------
@@ -71,7 +79,7 @@ class DeletedData {
 class _DeletedDao {
   final String tableName;
   final Database _db;
-// Fix: Asignación correcta en el constructor
+
   _DeletedDao({required this.tableName, required Database db}) : _db = db;
 
   static String getTable(String tableName) => '''
@@ -81,15 +89,15 @@ class _DeletedDao {
     );
   ''';
 
-  Future<void> saveId(String id, {Transaction? executor}) async {
+  // Usamos DatabaseExecutor para que acepte transacciones y db normal
+  Future<void> saveId(String id, {DatabaseExecutor? executor}) async {
     final now = DateTime.now().millisecondsSinceEpoch;
-    final db = executor ?? _db; 
+    final db = executor ?? _db;
 
-    await db.insert(
-      tableName,
-      {'id': id, 'deletedAt': now},
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    await db.insert(tableName, {
+      'id': id,
+      'deletedAt': now,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<List<DeletedData>> getBatch({int limit = 500}) async {
@@ -98,14 +106,31 @@ class _DeletedDao {
       limit: limit,
       orderBy: 'deletedAt ASC',
     );
-
     return result.map(DeletedData.fromRaw).toList();
   }
 
   Future<void> deleteIds(List<String> ids) async {
     if (ids.isEmpty) return;
-
     final placeholders = List.filled(ids.length, '?').join(',');
-    await _db.delete(tableName, where: 'id IN ($placeholders)', whereArgs: ids);
+    await _db.delete(
+      tableName,
+      where: 'id IN ($placeholders)',
+      whereArgs: ids,
+    );
+  }
+
+  // MÉTODO CORREGIDO
+  Future<List<String>> extractDirtyIds(List<String> ids) async {
+    if (ids.isEmpty) return [];
+    final placeholders = List.filled(ids.length, '?').join(',');
+    
+    final result = await _db.query(
+      tableName,
+      columns: ['id'],
+      where: 'id IN ($placeholders)',
+      whereArgs: ids,
+    );
+    
+    return result.map((e) => e['id'] as String).toList();
   }
 }

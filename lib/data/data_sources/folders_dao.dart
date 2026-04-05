@@ -5,19 +5,24 @@ import 'package:tag_links/data/data_sources/folder_tags_dao.dart';
 import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/models/search_query.dart';
 import 'package:tag_links/models/tag.dart';
+import 'package:tag_links/sync/db/local_sync_queue_dao.dart';
 import 'package:tag_links/utils/paginated_utils.dart';
 
 class FoldersDao {
   final Database _db;
   final FolderTagsDao _folderTagsDao;
   final DeletedFoldersDao _deletedFoldersDao;
+  final LocalSyncQueueDao _syncDao;
+
   FoldersDao({
     required Database db,
     required FolderTagsDao folderTagsDao,
     required DeletedFoldersDao deletedFoldersDao,
+    required LocalSyncQueueDao syncDao,
   }) : _db = db,
        _folderTagsDao = folderTagsDao,
-       _deletedFoldersDao = deletedFoldersDao;
+       _deletedFoldersDao = deletedFoldersDao,
+       _syncDao = syncDao;
 
   /// BY LAST UPDATE
 
@@ -117,36 +122,36 @@ class FoldersDao {
   // UPSERT
   // No uses ConflictAlgorithm.replace porque tengo Foreign Keys con ON DELETE CASCADE. El REPLACE dispara un borrado físico de la fila y destruye la integridad referencial de mis subcarpetas y notas. Solo acepta cambios que usen UPDATE o INSERT ... ON CONFLICT DO UPDATE (UPSERT).
 Future<void> upsert(Folder folder) async {
-  try {
-    await _db.transaction((txn) async {
-      String? validatedParentId = folder.parentId;
+    try {
+      await _db.transaction((txn) async {
+        String? validatedParentId = folder.parentId;
 
-      // 1. Validación de Jerarquía (Nivel máximo 2)
-      if (validatedParentId != null) {
-        final parentRow = await txn.query(
-          'folders',
-          columns: ['parentId'],
-          where: 'id = ?',
-          whereArgs: [validatedParentId],
-        );
+        // 1. Validación de Jerarquía (Nivel máximo 2)
+        if (validatedParentId != null) {
+          final parentRow = await txn.query(
+            'folders',
+            columns: ['parentId'],
+            where: 'id = ?',
+            whereArgs: [validatedParentId],
+          );
 
-        if (parentRow.isNotEmpty) {
-          if (parentRow.first['parentId'] != null) {
-            validatedParentId = null; // Impedimos nivel 3
-            debugPrint('Validación: Nivel máximo alcanzado para ${folder.title}. Movida a raíz.');
+          if (parentRow.isNotEmpty) {
+            // Si el padre ya tiene un padre, impedimos nivel 3 moviendo a raíz
+            if (parentRow.first['parentId'] != null) {
+              validatedParentId = null; 
+              debugPrint('Validación: Nivel 3 bloqueado para ${folder.title}.');
+            }
+          } else {
+            validatedParentId = null; // Padre no existe aún
           }
-        } else {
-          validatedParentId = null; // Padre no existe aún, evitamos error de FK
         }
-      }
 
-      // 2. Ejecutar el UPSERT
-      await txn.rawInsert(
-        '''
+        await txn.rawInsert(
+          '''
         INSERT INTO folders (
           id, parentId, fileId, title, description, image, color, 
-          createdAt, updatedAt, syncAt, isFavorite
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          createdAt, updatedAt, isFavorite
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
           parentId = ?, 
           fileId = excluded.fileId,
@@ -155,149 +160,158 @@ Future<void> upsert(Folder folder) async {
           image = excluded.image,
           color = excluded.color,
           updatedAt = excluded.updatedAt,
-          syncAt = excluded.syncAt,
           isFavorite = excluded.isFavorite
+        WHERE excluded.updatedAt >= updatedAt
         ''',
-        [
-          folder.id, validatedParentId, folder.fileId, folder.title, 
-          folder.description, folder.image, folder.color,
-          folder.createdAt,
-          folder.updatedAt,
-          folder.syncAt,
-          folder.isFavorite ? 1 : 0,
-          validatedParentId, // Argumento para el SET parentId = ?
-        ],
-      );
-
-      // 3. Sincronizar Etiquetas (Relación many-to-many)
-      final currentTagRows = await txn.query(
-        'folder_tags',
-        columns: ['tagId'],
-        where: 'folderId = ?',
-        whereArgs: [folder.id],
-      );
-
-      final currentTagIds = currentTagRows.map((e) => e['tagId'] as String).toSet();
-      final newTagIds = folder.tags.map((t) => t.id).toSet();
-
-      final tagsToAdd = newTagIds.difference(currentTagIds);
-      final tagsToRemove = currentTagIds.difference(newTagIds);
-
-      for (final tagId in tagsToAdd) {
-        await _folderTagsDao.upsert(folderId: folder.id, tagId: tagId, executor: txn);
-      }
-      for (final tagId in tagsToRemove) {
-        await _folderTagsDao.delete(folderId: folder.id, tagId: tagId, executor: txn);
-      }
-    });
-  } catch (e) {
-    debugPrint('FoldersDao.upsert ERROR: $e');
-    rethrow; // Es mejor rethrow para que el Puller sepa que falló
-  }
-}
-
-  // Helper para no repetir el SQL del rawInsert
-Future<void> upsertAll(List<Folder> folders) async {
-  if (folders.isEmpty) return;
-
-  // 1. Ordenamos: Primero los que no tienen padre para evitar errores de FK
-  final sortedFolders = [
-    ...folders.where((f) => f.parentId == null),
-    ...folders.where((f) => f.parentId != null),
-  ];
-
-  await _db.transaction((txn) async {
-    final batch = txn.batch();
-
-    for (final folder in sortedFolders) {
-      // A. Insertar/Actualizar carpeta
-      _addFolderToBatch(batch, folder);
-
-      // B. Sincronizar etiquetas dentro del mismo batch
-      // Primero borramos las relaciones viejas para esta carpeta
-      batch.delete(
-        'folder_tags',
-        where: 'folderId = ?',
-        whereArgs: [folder.id],
-      );
-
-      // Luego insertamos las nuevas
-      for (final tag in folder.tags) {
-        batch.insert(
-          'folder_tags',
-          {'folderId': folder.id, 'tagId': tag.id},
-          conflictAlgorithm: ConflictAlgorithm.ignore,
+          [
+            folder.id, validatedParentId, folder.fileId, folder.title,
+            folder.description, folder.image, folder.color,
+            folder.createdAt, folder.updatedAt,
+            folder.isFavorite ? 1 : 0,
+            validatedParentId, // Para el SET parentId = ?
+          ],
         );
-      }
+
+        // 3. Sincronizar Etiquetas (Relación many-to-many)
+        final currentTagRows = await txn.query(
+          'folder_tags',
+          columns: ['tagId'],
+          where: 'folderId = ?',
+          whereArgs: [folder.id],
+        );
+
+        final currentTagIds = currentTagRows.map((e) => e['tagId'] as String).toSet();
+        final newTagIds = folder.tags.map((t) => t.id).toSet();
+
+        for (final tagId in newTagIds.difference(currentTagIds)) {
+          await _folderTagsDao.upsert(folderId: folder.id, tagId: tagId, executor: txn);
+        }
+        for (final tagId in currentTagIds.difference(newTagIds)) {
+          await _folderTagsDao.delete(folderId: folder.id, tagId: tagId, executor: txn);
+        }
+
+        // 🚀 4. NOTIFICAR AL BUCKET: Marcar como Dirty (syncStatus = 2)
+        await txn.update(
+          'files',
+          {
+            'syncStatus': 2, 
+            'lastUpdate': folder.updatedAt,
+          },
+          where: 'id = ?',
+          whereArgs: [folder.fileId],
+        );
+      });
+    } catch (e) {
+      debugPrint('FoldersDao.upsert ERROR: $e');
+      rethrow;
     }
+  }
 
-    await batch.commit(noResult: true);
-  });
-}
+  Future<void> upsertAll(List<Folder> folders) async {
+    if (folders.isEmpty) return;
 
-void _addFolderToBatch(Batch batch, Folder folder) {
-  batch.rawInsert(
-    '''
-    INSERT INTO folders (
-      id, parentId, fileId, title, description, image, color, 
-      createdAt, updatedAt, syncAt, isFavorite
-    )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(id) DO UPDATE SET
-      parentId = excluded.parentId,
-      fileId = excluded.fileId,
-      title = excluded.title,
-      description = excluded.description,
-      image = excluded.image,
-      color = excluded.color,
-      updatedAt = excluded.updatedAt,
-      syncAt = excluded.syncAt,
-      isFavorite = excluded.isFavorite
-    WHERE excluded.updatedAt > updatedAt OR syncAt IS NULL
-    ''',
-    [
-      folder.id,
-      folder.parentId,
-      folder.fileId,
-      folder.title,
-      folder.description,
-      folder.image,
-      folder.color,
-      folder.createdAt,
-      folder.updatedAt,
-      folder.syncAt,
-      folder.isFavorite ? 1 : 0,
-    ],
-  );
-}
+    // Ordenamos: Primero carpetas raíz para que las subcarpetas encuentren su FK
+    final sortedFolders = [
+      ...folders.where((f) => f.parentId == null),
+      ...folders.where((f) => f.parentId != null),
+    ];
 
-  /// DELETE
+    await _db.transaction((txn) async {
+      final batch = txn.batch();
+
+      for (final folder in sortedFolders) {
+        batch.rawInsert(
+          '''
+        INSERT INTO folders (
+          id, parentId, fileId, title, description, image, color, 
+          createdAt, updatedAt, isFavorite
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+          parentId = excluded.parentId,
+          fileId = excluded.fileId,
+          title = excluded.title,
+          description = excluded.description,
+          image = excluded.image,
+          color = excluded.color,
+          updatedAt = excluded.updatedAt,
+          isFavorite = excluded.isFavorite
+        WHERE excluded.updatedAt >= updatedAt
+        ''',
+          [
+            folder.id, folder.parentId, folder.fileId, folder.title,
+            folder.description, folder.image, folder.color,
+            folder.createdAt, folder.updatedAt,
+            folder.isFavorite ? 1 : 0,
+          ],
+        );
+
+        // B. Sincronizar etiquetas (Limpieza rápida en batch)
+        batch.delete('folder_tags', where: 'folderId = ?', whereArgs: [folder.id]);
+        for (final tag in folder.tags) {
+          batch.insert('folder_tags', {
+            'folderId': folder.id,
+            'tagId': tag.id,
+          }, conflictAlgorithm: ConflictAlgorithm.ignore);
+        }
+      }
+
+      await batch.commit(noResult: true);
+      // Al ser PULL (upsertAll), no marcamos el bucket como sucio.
+    });
+  }
+
+/// DELETE RECURSIVO
   Future<void> delete(String id) async {
     await _db.transaction((txn) async {
       // 1. Obtener todos los hijos recursivamente (incluyendo el ID actual)
-      // Nota: Modifica getAllDescendantIds para que acepte un 'executor' (txn)
+      // Asegúrate de que esta función use el 'executor' (txn) para ser atómica
       final idsToDelete = await getAllDescendantIds(id, executor: txn);
+      if (idsToDelete.isEmpty) return;
 
-      // 2. Verificar cuáles de esos IDs ya conocen el servidor
       final placeholders = List.filled(idsToDelete.length, '?').join(',');
-      final synchronized = await txn.query(
+
+      // 2. Antes de borrar, obtenemos los datos necesarios: 
+      // - driveFileId: Para saber si hay que avisarle a Drive (DeletedDao)
+      // - fileId: Para saber qué buckets quedaron "sucios" localmente
+      final List<Map<String, dynamic>> affectedData = await txn.query(
         'folders',
-        columns: ['id'],
-        where: 'id IN ($placeholders) AND syncAt IS NOT NULL',
+        columns: ['id', 'driveFileId', 'fileId'],
+        where: 'id IN ($placeholders)',
         whereArgs: idsToDelete.toList(),
       );
 
-      // 3. Registrar los borrados para el servidor
-      for (final row in synchronized) {
-        await _deletedFoldersDao.saveId(row['id'] as String, executor: txn);
+      final Set<String> bucketsToDirty = {};
+
+      // 3. Procesar datos para sincronización
+      for (final row in affectedData) {
+        final folderId = row['id'] as String;
+        final driveId = row['driveFileId']; // Puede ser null si nunca se subió
+        final bucketId = row['fileId'] as String;
+
+        // Guardamos el bucket para marcarlo como sucio después
+        bucketsToDirty.add(bucketId);
+
+        // Si el servidor ya conocía esta carpeta, registramos el borrado
+        if (driveId != null) {
+          await _deletedFoldersDao.saveId(folderId, executor: txn);
+        }
       }
 
-      // 4. Borrado físico (El ON DELETE CASCADE limpiará las tablas hijas)
+      // 4. Borrado físico local
+      // El ON DELETE CASCADE de tu base de datos se encargará de limpiar 
+      // las tablas dependientes (como folder_tags o notes si así lo configuraste)
       await txn.delete(
         'folders',
         where: 'id IN ($placeholders)',
         whereArgs: idsToDelete.toList(),
       );
+
+      // 5. "Manchar" todos los buckets involucrados
+      // Importante: markAsDirty debe aceptar Transaction? executor
+      for (final bId in bucketsToDirty) {
+        await _syncDao.markAsDirty(bId, executor: txn);
+      }
     });
   }
 
@@ -423,37 +437,36 @@ void _addFolderToBatch(Batch batch, Folder folder) {
     });
   }
 
-  /// MAP FOLDER + TAGS
+/// MAP FOLDER + TAGS
   Future<Folder> _mapFolderWithTags(
     Database db,
     Map<String, dynamic> map,
   ) async {
-    final tags = await _getTagsByFolderId(db, map['id']);
+    // 1. Obtenemos las etiquetas asociadas a esta carpeta
+    final tags = await _getTagsByFolderId(db, map['id'] as String);
 
+    // 2. Construimos el objeto Folder mapeando tipos de SQLite a Dart
     return Folder(
-      id: map['id'],
-      parentId: map['parentId'],
-      title: map['title'],
-      description: map['description'],
-      image: map['image'],
-      color: map['color'],
+      id: map['id'] as String,
+      parentId: map['parentId'] as String?,
+      fileId: map['fileId'] as String, // Crucial para la sincronización por buckets
+      title: map['title'] as String? ?? 'Carpeta sin título',
+      description: map['description'] as String?,
+      image: map['image'] as String?,
+      color: map['color'] as String?,
       tags: tags,
-      // IMPORTANTE: Asegúrate de que el modelo Folder tenga el campo fileId
-      // y que lo estés pasando aquí para que viaje al JSON de Drive.
-      fileId: map['fileId'],
-      createdAt: map['createdAt'],
-      updatedAt: map['updatedAt'],
-      syncAt: map['syncAt'],
-      isFavorite: map['isFavorite'] == 1,
+      createdAt: map['createdAt'] as int,
+      updatedAt: map['updatedAt'] as int,
+      isFavorite: (map['isFavorite'] == 1 || map['isFavorite'] == true),
     );
   }
 
   /// GET TAGS BY FOLDER
   Future<List<Tag>> _getTagsByFolderId(Database db, String folderId) async {
-    // Agregamos updatedAt y syncAt al SELECT para que Tag.fromMap no falle
+    // Agregamos updatedAt al SELECT para que Tag.fromMap no falle
     final result = await db.rawQuery(
       '''
-      SELECT t.id, t.name, t.fileId, t.isFavorite, t.usageCount, t.updatedAt, t.syncAt
+      SELECT t.id, t.name, t.fileId, t.isFavorite, t.usageCount, t.updatedAt
       FROM tags t
       INNER JOIN folder_tags ft ON ft.tagId = t.id
       WHERE ft.folderId = ?
@@ -472,47 +485,6 @@ void _addFolderToBatch(Batch batch, Folder folder) {
       whereArgs: [fileId],
     );
     return Future.wait(result.map((f) => _mapFolderWithTags(_db, f)));
-  }
-
-  Future<List<Folder>> getPendingSync({int limit = 200}) async {
-    final sql = '''
-    SELECT *
-    FROM folders
-    WHERE syncAt IS NULL OR syncAt < updatedAt
-    ORDER BY updatedAt DESC
-    LIMIT ?
-  ''';
-
-    final result = await _db.rawQuery(sql, [limit]);
-
-    return Future.wait(result.map((f) => _mapFolderWithTags(_db, f)));
-  }
-
-  Future<bool> updateSyncAt({
-    required List<String> ids,
-    required int syncAt,
-    required String fileId,
-  }) async {
-    if (ids.isEmpty) return false;
-
-    final db = _db;
-    final placeholders = List.filled(ids.length, '?').join(',');
-
-    // Ahora actualizamos tanto la fecha de sync como el ID del archivo
-    final sql =
-        '''
-          UPDATE folders
-          SET syncAt = ?, 
-              fileId = ?
-          WHERE id IN ($placeholders)
-        ''';
-
-    // Los argumentos deben seguir el orden de los '?'
-    final count = await db.rawUpdate(sql, [syncAt, fileId, ...ids]);
-
-    // Es mejor retornar si afectó a alguna fila que comparar estrictamente el length
-    // por si alguna ID ya no existiera, pero en general count == ids.length es lo ideal.
-    return count > 0;
   }
 
   Future<void> serverDeleteByIds(List<String> ids) async {

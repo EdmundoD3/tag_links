@@ -51,8 +51,8 @@ class TagsNotifier extends AsyncNotifier<List<Tag>> {
     ref.invalidateSelf();
   }
 
-  Future<void> deleteTag(String id) async {
-    await _repo.delete(id);
+  Future<void> deleteTag(Tag tag) async {
+    await _repo.delete(tag);
     ref.invalidateSelf();
   }
   Future<Tag?> getByExactlyName(String name){

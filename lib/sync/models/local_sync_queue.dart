@@ -59,6 +59,14 @@ enum TypeQueue {
   }
 }
 
+// En tu LocalSyncQueue podrías añadir constantes o un Enum para no liarte con los números
+class SyncStatus {
+  static const int localOnly = 0;
+  static const int synced = 1;
+  static const int dirty = 2;
+  static const int error = 3;
+}
+
 final localSyncQueueTable = '''
 CREATE TABLE IF NOT EXISTS files (
     id TEXT PRIMARY KEY,       -- Tu ID interno (ej: 'notes_bucket_1', UUID, o auto-increment)

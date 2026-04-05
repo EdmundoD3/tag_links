@@ -10,7 +10,6 @@ class Tag extends BaseSyncModel {
     required super.id,
     required super.fileId,
     required super.updatedAt,
-    super.syncAt,
     required this.name,
     this.isFavorite = false,
     this.usageCount = 0,
@@ -25,7 +24,6 @@ static Tag fromMap(Map<String, dynamic> map) {
       usageCount: map['usageCount'] ?? 0,
       // IMPORTANTE: Asegurar que sea int
       updatedAt: map['updatedAt'] ?? DateTime.now().millisecondsSinceEpoch,
-      syncAt: map['syncAt'],
     );
   }
 
@@ -37,7 +35,6 @@ static Tag fromMap(Map<String, dynamic> map) {
       'isFavorite': isFavorite ? 1 : 0,
       'usageCount': usageCount,
       'updatedAt': updatedAt,
-      'syncAt': syncAt,
     };
   }
 
@@ -47,7 +44,6 @@ static Tag fromMap(Map<String, dynamic> map) {
     bool? isFavorite,
     int? usageCount,
     int? updatedAt,
-    int? syncAt,
   }) {
     return Tag(
       id: id ?? this.id,
@@ -56,7 +52,6 @@ static Tag fromMap(Map<String, dynamic> map) {
       isFavorite: isFavorite ?? this.isFavorite,
       usageCount: usageCount ?? this.usageCount,
       updatedAt: updatedAt ?? this.updatedAt,
-      syncAt: syncAt ?? this.syncAt,
     );
   }
 

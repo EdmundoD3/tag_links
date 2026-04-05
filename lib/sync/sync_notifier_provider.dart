@@ -95,10 +95,10 @@ class SyncNotifier extends AsyncNotifier<SyncState> {
     try {
       // Obtenemos dependencias bajo demanda
       final configManager = ref.read(syncConfigProvider);
+      if (configManager == null) throw Exception("ConfigManager no disponible");
+
       final idManager = ref.read(localIdManagerProvider);
       final storage = ref.read(lastSyncTimestampProvider.notifier);
-
-      if (configManager == null) throw Exception("ConfigManager no disponible");
 
       // FASE 0: Config
       final remoteData = await configManager.getOrInitializeRemoteConfig();

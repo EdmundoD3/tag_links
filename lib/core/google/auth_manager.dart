@@ -57,11 +57,18 @@ class AuthManager {
       await _checkInitialSync();
 
       return SilentLoginResult.success;
+      // En trySilentLogin
     } catch (e) {
       debugPrint("⚠️ Error en silent login: $e");
-      if (e.toString().contains('network_error')) {
+
+      // Si el error es específicamente de red, GoogleSignIn suele lanzar
+      // excepciones que podemos identificar.
+      final errorStr = e.toString().toLowerCase();
+      if (errorStr.contains('network') || errorStr.contains('socket')) {
         return SilentLoginResult.networkError;
       }
+
+      // Para cualquier otra cosa (token inválido, revocado, etc)
       return SilentLoginResult.expired;
     }
   }
@@ -71,7 +78,10 @@ class AuthManager {
     _currentUser = user;
 
     final Map<String, String>? authHeaders = await user.authorizationClient
-        .authorizationHeaders(_driveScopes);
+        .authorizationHeaders(
+          _driveScopes,
+          promptIfNecessary: false, // <--- LA CLAVE
+        );
 
     if (authHeaders == null) {
       throw Exception("No se pudieron construir los headers de autorización.");

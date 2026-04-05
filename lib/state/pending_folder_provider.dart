@@ -70,7 +70,6 @@ class FolderMoveService {
     final moved = folder.copyWith(
       parentId: toParentId,
       updatedAt: DateTime.now().millisecondsSinceEpoch,
-      syncAt: null, // Aseguramos que el sync lo detecte
     );
 
     await _repo.upsert(moved);
@@ -100,7 +99,6 @@ class FolderMoveService {
     final moved = folder.copyWith(
       parentId: toParentId, 
       updatedAt: DateTime.now().millisecondsSinceEpoch,
-      syncAt: null,
     );
     
     _updateUi(

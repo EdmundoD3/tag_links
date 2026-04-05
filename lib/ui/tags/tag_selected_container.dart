@@ -38,7 +38,7 @@ class TagsSelectedContainer extends ConsumerWidget {
               final result = await showEditTagModal(context, ref, realTag??tag);
 
               if (result == null) {
-                ref.read(tagsProvider.notifier).deleteTag(tag.id);
+                ref.read(tagsProvider.notifier).deleteTag(tag);
                 return;
               }
 

@@ -215,7 +215,6 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
       createdAt: widget.folder != null ? _folder.createdAt : now,
       updatedAt: now,
       isFavorite: _isFavorite,
-      syncAt: _folder.syncAt,
     );
 
     _folder = folder;

@@ -118,7 +118,6 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
       updatedAt: now,
       isFavorite: _isFavorite,
       color: widget.note?.color, //cambiar cuando se pueda agregar colores
-      syncAt: widget.note?.syncAt,
     );
     return note;
   }

@@ -22,14 +22,12 @@ class AppDatabase {
     // -- NOTES
     'CREATE INDEX idx_notes_folder_updated ON notes(folderId, updatedAt DESC);',
     'CREATE INDEX idx_notes_favorite_updated ON notes(isFavorite, updatedAt DESC);',
-    'CREATE INDEX idx_notes_sync ON notes(updatedAt, syncAt);',
 
     // -- TAGS
     'CREATE INDEX idx_note_tags_tag_note ON note_tags(tagId, noteId);',
 
     // -- FOLDERS
     'CREATE INDEX idx_folders_parentId ON folders(parentId);',
-    'CREATE INDEX idx_folders_sync ON folders(updatedAt, syncAt);',
     // -- LINKS
     'CREATE INDEX idx_link_noteId ON link_previews(noteId);',
     // -- FILE
@@ -37,10 +35,6 @@ class AppDatabase {
     'CREATE INDEX idx_notes_fileId ON notes(fileId);',
     'CREATE INDEX idx_tags_fileId ON tags(fileId);',
 
-    // Reemplaza o añade estos para máxima velocidad en el SyncPusher:
-    'CREATE INDEX idx_notes_file_sync ON notes(fileId, syncAt, updatedAt);',
-    'CREATE INDEX idx_folders_file_sync ON folders(fileId, syncAt, updatedAt);',
-    'CREATE INDEX idx_tags_file_sync ON tags(fileId, syncAt, updatedAt);',
   ];
   static List<String> triggers = [
     // -- TRIGGERS PARA NOTAS

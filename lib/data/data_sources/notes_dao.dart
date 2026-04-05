@@ -8,6 +8,7 @@ import 'package:tag_links/models/note.dart';
 import 'package:tag_links/models/note_join_row.dart';
 import 'package:tag_links/models/search_query.dart';
 import 'package:tag_links/models/tag.dart';
+import 'package:tag_links/sync/db/local_sync_queue_dao.dart';
 import 'package:tag_links/utils/paginated_utils.dart';
 
 //DAO = Data Access Object
@@ -19,6 +20,7 @@ class NotesDao {
         linkDao: LinkPreviewDao(db),
         tagsNotesDao: TagsNotesDao(db),
         deletedNotesDao: DeletedNotesDao(db: db),
+        synDao: LocalSyncQueueDao(db),
       );
   /* ----------------------------- PUBLIC API ----------------------------- */
   Future<List<Note>> searchByQuery(
@@ -123,44 +125,21 @@ class NotesDao {
     return _hydrate(rows);
   }
 
-  Future<List<Note>> getPendingSync({int limit = 200}) async {
-    final rows = await _fetch.getPendingSync(limit: limit);
-    return _hydrate(rows);
-  }
-
-  Future<bool> updateNotesSyncAt({
-    required List<String> ids,
-    required int syncAt,
-    required String fileId,
-  }) async {
-    if (ids.isEmpty) {
-      return true; //si no habia nada entonces fue un exito actualizar 0 datos
-    }
-    final success = await _fetch.updateNotesSyncAt(
-      ids: ids,
-      syncAt: syncAt,
-      fileId: fileId,
-    );
-    return success >= ids.length;
-  }
-
   Future<bool> hasAnyData() async {
     return await _fetch.hasAnyData();
   }
 
   /* ----------------------------- HYDRATION ----------------------------- */
   List<Note> _hydrate(List<NoteJoinRow> rows) {
-    // 1. Mapa principal de notas (el que ya tenías)
+    // 1. Mapa principal para agrupar filas por ID de nota
     final Map<String, Note> map = {};
 
-    // 2. Mapa auxiliar de Sets para que la búsqueda de etiquetas sea instantánea O(1)
-    // Esto evita usar el .any() que hace lento el proceso con muchos datos
+    // 2. Rastreador de Tags por nota (evita duplicados si una nota tiene múltiples links o tags)
     final Map<String, Set<String>> tagsTracker = {};
 
     for (final row in rows) {
-      // Intentamos obtener o crear la nota
+      // Si la nota no está en el mapa, la creamos con sus datos base
       final note = map.putIfAbsent(row.noteId, () {
-        // Si la nota es nueva en el mapa, también inicializamos su set de rastreo
         tagsTracker[row.noteId] = {};
 
         return Note(
@@ -173,8 +152,7 @@ class NotesDao {
           createdAt: row.createdAt,
           updatedAt: row.updatedAt,
           isFavorite: row.isFavorite,
-          tags: [], // Lista vacía que iremos llenando
-          syncAt: row.syncAt,
+          tags: [], // Lista inicial vacía
           link: row.linkId == null
               ? null
               : LinkPreview(
@@ -189,27 +167,28 @@ class NotesDao {
         );
       });
 
-      // 3. Lógica optimizada para etiquetas
+      // 3. Hidratación de Etiquetas (Tags)
+      // Solo entramos si la fila actual contiene datos de un Tag
       if (row.tagId != null) {
-        // Obtenemos el set de IDs de etiquetas ya procesadas para esta nota
         final processedTags = tagsTracker[row.noteId]!;
 
-        // .add() intenta agregar el ID al Set. Si ya existía, devuelve false.
-        // Si no existía, devuelve true y lo agrega. Todo en un solo paso súper rápido.
+        // Si este tag específico aún no ha sido agregado a esta nota
         if (processedTags.add(row.tagId!)) {
           note.tags.add(
             Tag(
               id: row.tagId!,
               name: row.tagName!,
-              fileId: row.fileId, //provisional
-              isFavorite: row.isFavorite,
-              updatedAt: DateTime.now().millisecondsSinceEpoch
+              fileId: row.tagFileId ?? '',
+              isFavorite: row.tagIsFavorite ?? false,
+              updatedAt: row.tagUpdatedAt ?? row.updatedAt,
+              usageCount: row.tagUsageCount ?? 0,
             ),
           );
         }
       }
     }
 
+    // Devolvemos la lista de notas únicas y completamente armadas
     return map.values.toList();
   }
 }
@@ -220,15 +199,18 @@ class FetchersNotesDao {
   final LinkPreviewDao _linkDao;
   final TagsNotesDao _tagsNotesDao;
   final DeletedNotesDao _deletedNotesDao;
+  final LocalSyncQueueDao _syncDao;
   FetchersNotesDao({
     required Database db,
     required LinkPreviewDao linkDao,
     required TagsNotesDao tagsNotesDao,
     required DeletedNotesDao deletedNotesDao,
+    required LocalSyncQueueDao synDao,
   }) : _db = db,
        _linkDao = linkDao,
        _tagsNotesDao = tagsNotesDao,
-       _deletedNotesDao = deletedNotesDao;
+       _deletedNotesDao = deletedNotesDao, 
+       _syncDao = synDao;
 
   Future<bool> hasAnyData() async {
     final result = await _db.query('notes', limit: 1);
@@ -512,11 +494,11 @@ class FetchersNotesDao {
 
   Future<void> upsert(Note note) async {
     await _db.transaction((txn) async {
-      // 1. Nota Principal (Manteniendo tu lógica inteligente de fecha)
+      // 1. Nota Principal
       await txn.rawInsert(
         '''
-      INSERT INTO notes (id, folderId, fileId, title, content, color, createdAt, updatedAt, syncAt, isFavorite)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO notes (id, folderId, fileId, title, content, color, createdAt, updatedAt, isFavorite)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         folderId = excluded.folderId,
         fileId = excluded.fileId,
@@ -525,7 +507,7 @@ class FetchersNotesDao {
         color = excluded.color,
         updatedAt = excluded.updatedAt,
         isFavorite = excluded.isFavorite
-      WHERE excluded.updatedAt > updatedAt 
+      WHERE excluded.updatedAt >= updatedAt 
     ''',
         [
           note.id,
@@ -536,12 +518,11 @@ class FetchersNotesDao {
           note.color,
           note.createdAt,
           note.updatedAt,
-          note.syncAt,
           note.isFavorite ? 1 : 0,
         ],
       );
 
-      // 2. Tags: Optimización por Diferencia (Ahorra batería y procesos)
+      // 2. Tags: Diferencia de Sets (Muy eficiente)
       final currentRows = await txn.query(
         'note_tags',
         columns: ['tagId'],
@@ -551,7 +532,6 @@ class FetchersNotesDao {
       final currentIds = currentRows.map((e) => e['tagId'] as String).toSet();
       final newIds = note.tags.map((t) => t.id).toSet();
 
-      // Ahora usamos el DAO de Tags
       for (final tagId in currentIds.difference(newIds)) {
         await _tagsNotesDao.delete(
           noteId: note.id,
@@ -559,7 +539,6 @@ class FetchersNotesDao {
           executor: txn,
         );
       }
-
       for (final tagId in newIds.difference(currentIds)) {
         await _tagsNotesDao.upsert(
           noteId: note.id,
@@ -568,12 +547,23 @@ class FetchersNotesDao {
         );
       }
 
-      // 3. Link Preview (Usando el DAO con upsert que ya corregimos)
+      // 3. Link Preview
       if (note.link != null) {
         await _linkDao.upsert(link: note.link!, txn: txn);
       } else {
         await _linkDao.delete(txn, note.id);
       }
+
+      // 🚀 NOTIFICAR AL BUCKET: Cambio local detectado
+      await txn.update(
+        'files',
+        {
+          'syncStatus': 2, // 2 = Dirty (necesita subir)
+          'lastUpdate': note.updatedAt,
+        },
+        where: 'id = ?',
+        whereArgs: [note.fileId],
+      );
     });
   }
 
@@ -584,17 +574,16 @@ class FetchersNotesDao {
       final batch = txn.batch();
 
       for (final note in notes) {
-        // 1. Upsert de la Nota - CORREGIDO
         batch.rawInsert(
           '''
         INSERT INTO notes (
           id, folderId, fileId, title, content, color, 
-          createdAt, updatedAt, syncAt, isFavorite
+          createdAt, updatedAt, isFavorite
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) -- 10 signos de interrogación
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) -- 9 argumentos
         ON CONFLICT(id) DO UPDATE SET
           folderId = excluded.folderId,
-          fileId = excluded.fileId, -- Agregado
+          fileId = excluded.fileId,
           title = excluded.title,
           content = excluded.content,
           color = excluded.color,
@@ -605,18 +594,17 @@ class FetchersNotesDao {
           [
             note.id,
             note.folderId,
-            note.fileId, // <--- Faltaba este argumento
+            note.fileId,
             note.title,
             note.content,
             note.color,
             note.createdAt,
             note.updatedAt,
-            note.syncAt,
             note.isFavorite ? 1 : 0,
           ],
         );
 
-        // 2. Tags y 3. Links (Esto está bien, asumiendo que los DAOs aceptan batch)
+        // Tags y Links en Batch
         _tagsNotesDao.deleteBatch(batch, noteId: note.id);
         for (final tag in note.tags) {
           _tagsNotesDao.upsertBatch(batch, noteId: note.id, tagId: tag.id);
@@ -628,6 +616,9 @@ class FetchersNotesDao {
           _linkDao.deleteBatch(batch, note.id);
         }
       }
+
+      // Al ser upsertAll (PULL), NO marcamos el archivo como sucio
+      // porque los datos ya vienen sincronizados de Drive.
       await batch.commit(noResult: true);
     });
   }
@@ -636,26 +627,32 @@ class FetchersNotesDao {
    * DELETE
    * -------------------------------------------------------------------- */
 
-  Future<void> delete(String id) async {
+Future<void> delete(String id) async {
     await _db.transaction((txn) async {
-      // 1. Verificar si el servidor conoce este elemento
+      // 1. Antes de borrar, obtenemos el driveFileId y el fileId (Bucket)
       final result = await txn.query(
-        'notes', // o 'folders'
-        columns: ['syncAt'],
+        'notes',
+        columns: ['driveFileId', 'fileId'], 
         where: 'id = ?',
         whereArgs: [id],
       );
 
       if (result.isNotEmpty) {
-        final syncAt = result.first['syncAt'];
+        final driveId = result.first['driveFileId'];
+        final bucketId = result.first['fileId'] as String;
 
-        // 2. Solo registramos el borrado si ya fue sincronizado alguna vez
-        if (syncAt != null) {
+        // 2. Si el servidor la conoce (driveFileId != null), registramos el borrado
+        // Esto le avisará al servidor que debe eliminarla de su índice global
+        if (driveId != null) {
           await _deletedNotesDao.saveId(id, executor: txn);
         }
+
+        // 3. ¡IMPORTANTE! "Manchamos" el bucket local
+        // Esto obliga al SyncPusher a generar un nuevo JSON que ya NO incluya esta nota
+        await _syncDao.markAsDirty(bucketId, executor: txn);
       }
 
-      // 3. Borrado físico de la base de datos local
+      // 4. Borrado físico de la base de datos local
       await txn.delete('notes', where: 'id = ?', whereArgs: [id]);
     });
   }
@@ -699,41 +696,5 @@ class FetchersNotesDao {
     final result = await _db.rawQuery(sql, [fileId]);
 
     return result.map(NoteJoinRow.fromMap).toList();
-  }
-
-  Future<List<NoteJoinRow>> getPendingSync({int limit = 200}) async {
-    final sql =
-        '''
-    ${NoteJoinRow.selectQuery}
-    WHERE n.syncAt IS NULL OR n.syncAt < n.updatedAt
-    ORDER BY n.updatedAt DESC
-    LIMIT ?
-  ''';
-
-    final result = await _db.rawQuery(sql, [limit]);
-
-    return result.map(NoteJoinRow.fromMap).toList();
-  }
-
-  Future<int> updateNotesSyncAt({
-    required List<String> ids,
-    required int syncAt,
-    required String fileId,
-  }) async {
-    if (ids.isEmpty) return 0;
-
-    final db = _db;
-
-    final placeholders = List.filled(ids.length, '?').join(',');
-
-    final sql =
-        '''
-    UPDATE notes
-    SET syncAt = ?,
-    fileId = ?
-    WHERE id IN ($placeholders)
-  ''';
-
-    return await db.rawUpdate(sql, [syncAt, ...ids]);
   }
 }

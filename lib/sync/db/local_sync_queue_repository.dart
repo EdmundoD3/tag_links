@@ -16,6 +16,9 @@ final localSyncQueueRepositoryProvider = Provider<LocalSyncQueueRepository>((
 class LocalSyncQueueRepository {
   final LocalSyncQueueDao _dao;
   LocalSyncQueueRepository(this._dao);
+
+  // --- MÉTODOS DE BUCKETS (CRUD) ---
+
   Future<LocalSyncQueue?> getById(String id) async {
     return _dao.getById(id);
   }
@@ -24,38 +27,40 @@ class LocalSyncQueueRepository {
     return _dao.upsert(item);
   }
 
+  // --- LÓGICA DE SINCRONIZACIÓN (PUSH/PULL) ---
+
+  /// PULL: Compara la config remota con la local para saber qué archivos JSON descargar
   Future<List<LocalSyncQueue>> getPendingDownloads(
     ConfigInfo remoteConfig,
   ) async {
     return _dao.getPendingDownloads(remoteConfig);
   }
 
-  // Método genérico para marcar sincronización en cualquier tabla
-  Future<void> updateSyncAt({
-    required String tableName, // 'notes', 'folders' o 'tags'
-    required List<String> ids,
-    required int syncAt,
-    required String fileId,
+  /// Marca los archivos sucios para poder enviarlos al servidor
+  Future<void> markAsDirty(String id) {
+    return _dao.markAsDirty(id);
+  }
+
+  /// PUSH: Obtiene los buckets que están en estado Dirty o LocalOnly para subirlos a Drive
+  Future<List<LocalSyncQueue>> getDirtyFiles({int limit = 10}) async {
+    return _dao.getDirtyFiles(limit: limit);
+  }
+
+  /// CIERRE DE CICLO: Marca un bucket como sincronizado tras subirlo con éxito
+  Future<void> markAsSynced({
+    required String bucketId,
+    required String driveFileId,
+    required int timestamp,
   }) async {
-    return _dao.updateSyncAt(
-      tableName: tableName,
-      ids: ids,
-      syncAt: syncAt,
-      fileId: fileId,
-    );
+    return _dao.markAsSynced(bucketId, driveFileId, timestamp);
   }
 
-  Future<void> refreshItemCount(LocalSyncQueue file) async {
-    return _dao.refreshItemCount(file);
-  }
+  // --- GESTIÓN DE ESPACIO ---
 
-  Future<void> auditAndFixCounts(TypeQueue type) async {
-    return _dao.auditAndFixCounts(type);
-  }
-
+  /// Obtiene un ID de bucket que tenga espacio disponible o crea uno nuevo
   Future<String> getOrCreateAvailableFileId(TypeQueue tableType) async {
     try {
-      return _dao.getOrCreateAvailableFileId(tableType);
+      return await _dao.getOrCreateAvailableFileId(tableType);
     } catch (e) {
       debugPrint(
         "LocalSyncQueueRepository.getOrCreateAvailableFileId Error: $e",
@@ -64,32 +69,27 @@ class LocalSyncQueueRepository {
     }
   }
 
-  Future<List<String>> getDirtyFileIds(TypeQueue type, {int limit = 50}) async {
-    return _dao.getDirtyFileIds(type, limit: limit);
+  /// Recalcula el conteo de notas/carpetas/tags para cada bucket
+  Future<void> refreshAllCounts() async {
+    return _dao.refreshAllCounts();
   }
 
-  Future<void> markItemsAsSynced({
-    required String id,
-    required String fileId,
-    required TypeQueue type,
-    required int syncTimestamp,
-  }) async {
-    return _dao.markItemsAsSynced(
-      id: id,
-      type: type,
-      fileId: fileId,
-      syncTimestamp: syncTimestamp,
-    );
+  // --- INTEGRACIÓN CON CONFIG.JSON ---
+
+  /// Genera el ArchiveInfo local necesario para actualizar el config.json en Drive
+  Future<ArchiveInfo> getLocalArchiveForConfig() async {
+    return _dao.getLocalArchiveForConfig();
   }
 
+  /// Vincula IDs locales con DriveFileIds remotos (Reconciliación)
   Future<void> reconcileDriveIds(ArchiveInfo remoteArchive) async {
     // 1. Aplanamos todos los items remotos (Notas, Carpetas, Etiquetas)
     final allRemoteItems = [
       ...remoteArchive.notes,
       ...remoteArchive.folders,
       ...remoteArchive.tags,
-      ...remoteArchive
-          .deletes, // IMPORTANTE: No olvides incluir los buckets de borrado
+      // IMPORTANTE: No olvides incluir los buckets de borrado
+      ...remoteArchive.deletes,
     ];
 
     if (allRemoteItems.isEmpty) return;
@@ -98,14 +98,6 @@ class LocalSyncQueueRepository {
     // Esto vincula el UUID local con el driveFileId real de Google Drive
     await _dao.updateMissingDriveIds(allRemoteItems);
   }
-
-  Future<void> syncBucketsFromArchive(ArchiveInfo archive) async {
-    return _dao.syncBucketsFromArchive(archive);
-  }
-
-  Future<ArchiveInfo> getLocalArchiveAsRemote() async {
-    return _dao.getLocalArchiveAsRemote();
-  } // En LocalSyncQueueDao / Repository
 
   Future<void> clearDriveId(String localId) async {
     await _dao.clearDriveId(localId);

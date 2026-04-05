@@ -54,7 +54,6 @@ class FoldersToFile {
       'isFavorite': folder.isFavorite ? 1 : 0,
       'createdAt': folder.createdAt,
       'updatedAt': folder.updatedAt,
-      'syncAt': folder.syncAt,
       // Guardamos los tags completos de la carpeta
       'tags': folder.tags.map((t) => t.toMap()).toList(),
     };
@@ -72,7 +71,6 @@ class FoldersToFile {
       isFavorite: (map['isFavorite'] ?? 0) == 1,
       createdAt: map['createdAt'],
       updatedAt: map['updatedAt'],
-      syncAt: map['syncAt'],
       tags: (map['tags'] as List? ?? [])
           .map((t) => Tag.fromMap(t as Map<String, dynamic>))
           .toList(),

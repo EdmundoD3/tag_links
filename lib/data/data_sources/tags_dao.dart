@@ -197,33 +197,4 @@ class TagsDao {
     }
   }
 
-  Future<List<Tag>> getPendingSync({int limit = 200}) async {
-    final sql = '''
-    SELECT *
-    FROM tags
-    WHERE syncAt IS NULL OR syncAt < updatedAt
-    ORDER BY updatedAt DESC
-    LIMIT ?
-  ''';
-
-    final result = await _db.rawQuery(sql, [limit]);
-
-    return result.map(Tag.fromMap).toList();
-  }
-
-  Future<void> updateSyncAt({
-    required List<String> ids,
-    required int syncAt,
-    required String fileId,
-  }) async {
-    _db.rawInsert(
-      '''
-    UPDATE tags
-    SET syncAt = ?, 
-        fileId = ?
-    WHERE id IN (?)
-  ''',
-      [syncAt, fileId, ids.join(',')],
-    );
-  }
 }

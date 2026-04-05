@@ -4,40 +4,42 @@ import 'package:tag_links/data/data_sources/deleted_dao.dart';
 import 'package:tag_links/data/data_sources/tags_dao.dart';
 import 'package:tag_links/data/database.dart';
 import 'package:tag_links/models/tag.dart';
+import 'package:tag_links/sync/db/local_sync_queue_repository.dart';
 import 'package:tag_links/utils/paginated_utils.dart';
 
 class TagsRepository {
   final TagsDao _tagsDao;
   final DeletedTagsDao _deletedDao;
+  final LocalSyncQueueRepository _syncRepo;
 
-  TagsRepository({required Database db, required DeletedTagsDao deletedTagsDao})
-    : _tagsDao = TagsDao(db),
-      _deletedDao = deletedTagsDao;
+  TagsRepository({
+    required Database db,
+    required DeletedTagsDao deletedTagsDao,
+    required LocalSyncQueueRepository syncRepo,
+  }) : _tagsDao = TagsDao(db),
+       _deletedDao = deletedTagsDao,
+       _syncRepo = syncRepo;
 
   Future<Tag?> upsert(Tag tag) async {
     final tagToInsert = tag.ensureForInsert();
+    await _syncRepo.markAsDirty(tag.fileId);
     return _tagsDao.insertIfNotExist(tagToInsert);
   }
 
-  Future<void> update(Tag tag) {
+  Future<void> update(Tag tag) async {
     final tagToUpdate = tag.ensureForInsert();
+    await _syncRepo.markAsDirty(tag.fileId);
     return _tagsDao.update(tagToUpdate);
   }
 
-  Future<void> delete(String id) => _tagsDao.delete(id);
-  Future<void> deleteTag(Tag tag) async {
-    // Si nunca se sincronizó, borrado físico directo sin dejar rastro
-    if (tag.syncAt == null) {
-      return _tagsDao.delete(tag.id);
-    }
-
+  Future<void> delete(Tag tag) async {
+    await _syncRepo.markAsDirty(tag.fileId);
     // Si ya existía en Drive, registramos el ID para la próxima sincronización
     await _deletedDao.saveId(tag.id);
-
-    // Borrado físico local (Triggers y Cascade se encargan del resto)
-    return _tagsDao.delete(tag.id);
+    _tagsDao.delete(tag.id);
   }
-// ---------- get ----------
+
+  // ---------- get ----------
   Future<Tag?> getById(String id) => _tagsDao.getById(id);
 
   Future<List<Tag>> getAll({required PaginatedByUsage paginated}) =>
@@ -53,16 +55,21 @@ class TagsRepository {
   // --- SYNC section ---
   Future<List<Tag>> getByFileId(String fileId) => _tagsDao.getByFileId(fileId);
 
-  Future<void> upsertAll(List<Tag> tags) => _tagsDao.upsertAll(tags);
+  Future<void> upsertAll(List<Tag> tags) async {
+    final dirtysIds = await _deletedDao.extractDirtyIds(
+      tags.map((e) => e.id).toList(),
+    );
+    final cleanTags = tags.where((e) => !dirtysIds.contains(e.id)).toList();
 
-  Future<List<Tag>> getPendingSync() => _tagsDao.getPendingSync();
+    return _tagsDao.upsertAll(cleanTags);
+  }
 
-  Future<void> updateSyncAt(List<String> ids, int syncAt, String fileId) => 
-      _tagsDao.updateSyncAt(ids: ids, syncAt: syncAt, fileId: fileId);
+  Future<void> serverDeleteByIds(List<String> ids) async {
+    await _deletedDao.deleteIds(ids);
+    return _tagsDao.serverDeleteByIds(ids);
+  }
 
-  Future<void> deleteByIds(List<String> ids) => _tagsDao.serverDeleteByIds(ids);
-
-  Future<List<DeletedData>> getDeletedBatch({int limit = 500}) => 
+  Future<List<DeletedData>> getDeletedBatch({int limit = 500}) =>
       _deletedDao.getBatch(limit: limit);
 
   Future<void> clearDeletedTags(List<String> ids) => _deletedDao.deleteIds(ids);
@@ -73,5 +80,6 @@ final tagsRepositoryProvider = Provider<TagsRepository>((ref) {
   return TagsRepository(
     db: db,
     deletedTagsDao: DeletedTagsDao(db: db),
+    syncRepo: ref.read(localSyncQueueRepositoryProvider),
   );
 });

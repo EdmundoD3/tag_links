@@ -24,7 +24,6 @@ class Note extends BaseSyncModel {
     required this.tags,
     required this.createdAt,
     required super.updatedAt,
-    super.syncAt,
     this.isFavorite = false,
   });
 
@@ -70,7 +69,6 @@ class Note extends BaseSyncModel {
       tags: const [], 
       createdAt: map['createdAt'] ?? now,
       updatedAt: map['updatedAt'] ?? now,
-      syncAt: map['syncAt'], // Ya es int o null
       isFavorite: map['isFavorite'] == 1,
     );
   }
@@ -85,7 +83,6 @@ class Note extends BaseSyncModel {
       'color': color,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
-      'syncAt': syncAt,
       'isFavorite': isFavorite ? 1 : 0,
     };
   }
@@ -101,7 +98,6 @@ class Note extends BaseSyncModel {
     bool? isFavorite,
     int? updatedAt,
     int? createdAt,
-    int? syncAt,
   }) {
     return Note(
       id: id ?? this.id,
@@ -114,7 +110,6 @@ class Note extends BaseSyncModel {
       tags: tags ?? this.tags,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      syncAt: syncAt ?? this.syncAt,
       isFavorite: isFavorite ?? this.isFavorite,
     );
   }
@@ -153,7 +148,7 @@ String noteTable = '''
     color TEXT,
     createdAt INTEGER NOT NULL,
     isFavorite INTEGER NOT NULL DEFAULT 0 CHECK (isFavorite IN (0,1)),
-    $itemsBaseColumns, -- fileId, updatedAt, syncAt y el FOREIGN KEY a files
+    $itemsBaseColumns, -- fileId, updatedAt y el FOREIGN KEY a files
     FOREIGN KEY (folderId) REFERENCES folders(id) ON DELETE CASCADE
   );
 ''';

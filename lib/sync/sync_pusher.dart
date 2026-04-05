@@ -32,96 +32,92 @@ class SyncPusher {
        _notesRepo = notesRepo,
        _folderRepo = folderRepo,
        _tagsRepo = tagsRepo;
+/// Procesa las subidas pendientes de "Buckets" sucios.
+Future<ArchiveInfo> pushLocalChanges({
+  required ArchiveInfo currentArchive,
+  int maxFiles = 10,
+}) async {
+  ArchiveInfo workingArchive = currentArchive;
+  int filesProcessed = 0;
+  final int now = DateTime.now().millisecondsSinceEpoch;
 
-  /// Procesa las subidas pendientes limitando a N archivos para cuidar la cuota.
-  Future<ArchiveInfo> pushLocalChanges({
-    required ArchiveInfo currentArchive,
-    int maxFiles = 10,
-  }) async {
-    ArchiveInfo workingArchive = currentArchive;
-    int filesProcessed = 0;
-    final int now = DateTime.now().millisecondsSinceEpoch;
+  // 1. Obtenemos TODOS los archivos sucios (LocalOnly o Dirty)
+  // El Repo ya nos devuelve objetos LocalSyncQueue ordenados por importancia
+  final dirtyFiles = await _syncQueueRepo.getDirtyFiles(limit: maxFiles);
 
-    // Iteramos por categorías para dar prioridad (Tags -> Folders -> Notes)
-    final categories = [TypeQueue.tags, TypeQueue.folders, TypeQueue.notes];
+  for (var fileMeta in dirtyFiles) {
+    if (filesProcessed >= maxFiles) break;
 
-    for (var type in categories) {
-      if (filesProcessed >= maxFiles) break;
+    try {
+      // Determinamos el tipo de contenido basado en el type del bucket
+      final type = _getTypeQueueFromStr(fileMeta.type);
 
-      // 1. Obtenemos solo los IDs de los buckets "sucios"
-      final dirtyIds = await _syncQueueRepo.getDirtyFileIds(type);
+      // 2. Preparamos el Wrapper con los datos reales del bucket
+      // _createWrapper debe consultar la tabla (notes/folders/tags) 
+      // filtrando por where: 'fileId = ?', fileMeta.id
+      final SyncFileWrapper? wrapper = await _createWrapper(type, fileMeta);
 
-      for (var localId in dirtyIds) {
-        if (filesProcessed >= maxFiles) break;
-
-        try {
-          final LocalSyncQueue? fileMeta = await _syncQueueRepo.getById(
-            localId,
-          );
-          if (fileMeta == null) continue;
-          // 2. Preparamos el Wrapper con los datos reales
-          final SyncFileWrapper? wrapper = await _createWrapper(type, fileMeta);
-
-          if (wrapper == null) {
-            // SILENT CLEANUP:
-            // Si está vacío, lo marcamos como sincronizado localmente
-            // para que getDirtyFileIds no lo vuelva a traer.
-            await _syncQueueRepo.markItemsAsSynced(
-              type: type,
-              id: localId,
-              syncTimestamp: now,
-              fileId: fileMeta.driveFileId ?? '', // Mantenemos el que tenía
-            );
-            debugPrint(
-              "SyncPusher: Bucket ${fileMeta.fileName} estaba vacío. Marcado como limpio.",
-            );
-            continue;
-          }
-
-          // 3. Subimos usando tu uploadArray (tu función ya maneja create vs update)
-          // Usamos una lista de un solo elemento porque es un Wrapper que contiene la lista real
-          final driveId = await _driveDataService.uploadArray(
-            items: [wrapper],
-            toMap: (w) => w.toMap(),
-            fileName: fileMeta.fileName,
-            existingFileId: fileMeta.driveFileId,
-          );
-
-          // 4. Actualización Local: Marcamos como sincronizado
-          if (driveId == null || driveId.isEmpty) {
-            throw Exception("Drive no devolvió un ID válido");
-          }
-          await _syncQueueRepo.markItemsAsSynced(
-            type: type,
-            id: localId,
-            syncTimestamp: now,
-            fileId: driveId, // IMPORTANTE: Guardamos el ID que nos dio Drive
-          );
-
-          // 5. Actualización de la Configuración:
-          workingArchive = _updateArchiveInfo(
-            info: workingArchive,
-            type: type,
-            driveId: driveId,
-            localId: fileMeta.id,
-            fileName: fileMeta.fileName,
-            now: now,
-          );
-
-          filesProcessed++;
-          debugPrint(
-            "SyncPusher: Subido con éxito bucket ${fileMeta.fileName}",
-          );
-        } catch (e) {
-          debugPrint(
-            "SyncPusher Error en bucket $localId Error: $e \n SyncPusher:${currentArchive.toMap().toString()}",
-          );
-        }
+      if (wrapper == null) {
+        // Si el bucket está vacío en DB pero marcado como sucio, lo limpiamos
+        await _syncQueueRepo.markAsSynced(
+          bucketId: fileMeta.id,
+          driveFileId: fileMeta.driveFileId ?? '',
+          timestamp: now,
+        );
+        debugPrint("SyncPusher: Bucket ${fileMeta.fileName} vacío. Ignorado.");
+        continue;
       }
-    }
 
-    return workingArchive;
+      // 3. Subida a Google Drive
+      // uploadArray detecta si 'existingFileId' es null para hacer CREATE o UPDATE
+      final driveId = await _driveDataService.uploadArray(
+        items: [wrapper],
+        toMap: (w) => w.toMap(),
+        fileName: fileMeta.fileName,
+        existingFileId: fileMeta.driveFileId,
+      );
+
+      if (driveId == null || driveId.isEmpty) {
+        throw Exception("Drive no devolvió un ID válido");
+      }
+
+      // 4. Actualización Local: El bucket ahora está LIMPIO (statusSynced)
+      await _syncQueueRepo.markAsSynced(
+        bucketId: fileMeta.id,
+        driveFileId: driveId,
+        timestamp: now,
+      );
+
+      // 5. Actualización del ArchiveInfo (para el config.json final)
+      workingArchive = _updateArchiveInfo(
+        info: workingArchive,
+        type: type,
+        driveId: driveId,
+        localId: fileMeta.id,
+        fileName: fileMeta.fileName,
+        now: now,
+      );
+
+      filesProcessed++;
+      debugPrint("SyncPusher: ✅ Bucket ${fileMeta.fileName} sincronizado.");
+
+    } catch (e) {
+      debugPrint("SyncPusher: ❌ Error en bucket ${fileMeta.id}: $e");
+      // Opcional: markAsError(fileMeta.id) para no reintentar infinitamente
+    }
   }
+
+  return workingArchive;
+}
+
+// Helper sencillo para convertir el string de la DB al enum TypeQueue
+TypeQueue _getTypeQueueFromStr(String type) {
+  switch (type) {
+    case 'tags': return TypeQueue.tags;
+    case 'folders': return TypeQueue.folders;
+    default: return TypeQueue.notes;
+  }
+}
 
   /// Helper para crear el Wrapper correcto según el tipo
   Future<SyncFileWrapper?> _createWrapper(

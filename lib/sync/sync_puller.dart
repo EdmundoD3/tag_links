@@ -106,15 +106,15 @@ Future<PullResult> processRemoteDeletes(
 
   try {
     if (deleteNotesIds.isNotEmpty) {
-      await _notesRepo.deleteByIds(deleteNotesIds);
+      await _notesRepo.serverDeleteByIds(deleteNotesIds);
       notesChanged = true;
     }
     if (deleteFoldersIds.isNotEmpty) {
-      await _folderRepo.deleteByIds(deleteFoldersIds);
+      await _folderRepo.serverDeleteByIds(deleteFoldersIds);
       foldersChanged = true;
     }
     if (deleteTagsIds.isNotEmpty) {
-      await _tagsRepo.deleteByIds(deleteTagsIds);
+      await _tagsRepo.serverDeleteByIds(deleteTagsIds);
       tagsChanged = true;
     }
   } catch (e) {
@@ -130,7 +130,7 @@ Future<PullResult> processRemoteDeletes(
   );
 }
 
-  Future<PullResult> processRemoteData(
+Future<PullResult> processRemoteData(
     ArchiveInfo remote,
     int lastPulledAt,
   ) async {
@@ -139,26 +139,24 @@ Future<PullResult> processRemoteDeletes(
     bool foldersChanged = false;
     bool tagsChanged = false;
 
-    // --- PROCESAR ETIQUETAS, CARPETAS Y NOTAS (Estructura similar para todos) ---
     final allCategories = [
-      {'items': remote.tags, 'type': TypeQueue.tags, 'repo': _tagsRepo},
-      {'items': remote.folders, 'type': TypeQueue.folders, 'repo': _folderRepo},
-      {'items': remote.notes, 'type': TypeQueue.notes, 'repo': _notesRepo},
+      {'items': remote.tags, 'type': TypeQueue.tags},
+      {'items': remote.folders, 'type': TypeQueue.folders},
+      {'items': remote.notes, 'type': TypeQueue.notes},
     ];
 
     for (var cat in allCategories) {
-      final items = (cat['items'] as List<ArchiveItem>).where(
+      final type = cat['type'] as TypeQueue;
+      // Solo descargamos si el lastUpdate de Drive es mayor a nuestra última sincronización exitosa
+      final itemsToDownload = (cat['items'] as List<ArchiveItem>).where(
         (f) => f.lastUpdate > lastPulledAt,
       );
-      final type = cat['type'] as TypeQueue;
-      final repo = cat['repo'];
 
-      for (var file in items) {
+      for (var file in itemsToDownload) {
         try {
-          await _registerFileInQueue(file, type);
           if (file.driveFileId == null) continue;
 
-          // Intentamos descargar según el tipo
+          // 1. Descargamos y procesamos según tipo
           if (type == TypeQueue.tags) {
             final res = await _driveDataService.downloadArray<TagsFile>(
               fileId: file.driveFileId!,
@@ -167,7 +165,7 @@ Future<PullResult> processRemoteDeletes(
             );
             if (res.isNotEmpty) {
               await _tagsRepo.upsertAll(res.first.tags);
-              tagsChanged = true; // <--- Marcamos cambio
+              tagsChanged = true;
             }
           } else if (type == TypeQueue.folders) {
             final res = await _driveDataService.downloadArray<FoldersFile>(
@@ -177,9 +175,9 @@ Future<PullResult> processRemoteDeletes(
             );
             if (res.isNotEmpty) {
               await _folderRepo.upsertAll(res.first.folders);
-              foldersChanged = true; // <--- Marcamos cambio
+              foldersChanged = true;
             }
-          } else {
+          } else if (type == TypeQueue.notes) {
             final res = await _driveDataService.downloadArray<NotesFile>(
               fileId: file.driveFileId!,
               fromMap: NotesFile.fromMap,
@@ -187,22 +185,24 @@ Future<PullResult> processRemoteDeletes(
             );
             if (res.isNotEmpty) {
               await _notesRepo.upsertAll(res.first.notes);
-              notesChanged = true; // <--- Marcamos cambio
+              notesChanged = true;
             }
           }
+
+          // 2. REGISTRO POST-DESCARGA: 
+          // Una vez que los datos están en sus tablas, registramos el bucket como "Synced" (1)
+          await _registerFileInQueue(file, type);
+
         } on PathNotFoundException catch (e) {
-          debugPrint("🧹 Archivo fantasma detectado y limpiando: ${e.fileId}");
-          await _localSyncRepo.clearDriveId(
-            file.id,
-          ); // Usamos el ID local del bucket
-          // No retornamos false, dejamos que siga con el siguiente archivo
+          debugPrint("🧹 SyncPuller.processRemoteData Archivo fantasma en Drive: ${e.fileId}");
+          await _localSyncRepo.clearDriveId(file.id);
         } catch (e) {
-          debugPrint("❌ Error grave en ${file.fileName}: $e");
-          overallSuccess =
-              false; // Algo salió mal (ej. red), pero intentaremos los demás
+          debugPrint("❌ SyncPuller.processRemoteData Error descargando bucket ${file.fileName}: $e");
+          overallSuccess = false; 
         }
       }
     }
+    
     return PullResult(
       success: overallSuccess,
       notesChanged: notesChanged,
@@ -212,21 +212,16 @@ Future<PullResult> processRemoteDeletes(
   }
 
   // Helper para registrar el "Cubo" en la tabla de sincronización local
-  Future<void> _registerFileInQueue(
-    ArchiveItem remoteFile,
-    TypeQueue type,
-  ) async {
-    // Aquí usamos tu repositorio de colas para hacer un upsert del archivo
-    // 'remoteFile.id' es el UUID local que vive en el nombre del archivo en Drive
+Future<void> _registerFileInQueue(ArchiveItem remoteFile, TypeQueue type) async {
     await _localSyncRepo.upsert(
       LocalSyncQueue(
-        id: remoteFile.id, // El ID que las carpetas/notas usan como fileId
+        id: remoteFile.id,
         driveFileId: remoteFile.driveFileId,
         fileName: remoteFile.fileName,
-        lastUpdate: remoteFile.lastUpdate,
+        lastUpdate: remoteFile.lastUpdate, // La estampa de tiempo de Drive
         type: type.tableName,
-        syncStatus: 1, // Ya está en la nube (Synced)
-        itemCount: 0, // Se actualizará después si es necesario
+        syncStatus: 1, // Constante de statusSynced
+        itemCount: 0,  // Se puede recalcular con refreshAllCounts() al final del proceso
       ),
     );
   }
