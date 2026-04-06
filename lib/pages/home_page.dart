@@ -46,61 +46,63 @@ class HomePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final preferenceAsync = ref.watch(_foldersPreferenceProvider);
     final theme = Theme.of(context);
-    return preferenceAsync.when(
+return preferenceAsync.when(
       loading: () => const ScaffoldLoading(),
       error: (err, _) {
         debugPrint('_HomePage.build Error: $err');
-        return Scaffold(body: Center(child: Text('Error: preferences')));
+        return const Scaffold(body: Center(child: Text('Error: preferences')));
       },
       data: (preference) {
         final showFolders = _isLimitFolder
             ? false
             : preference == FolderDefaultView.folders;
-        return Scaffold(
-          backgroundColor: theme.scaffoldBackgroundColor,
-          appBar: _appBar(showFolders, preference, ref),
-          floatingActionButton: _floatingActionButton(showFolders),
-          //--------------------- body ---------------------
-          body: SafeArea(
-            child: Column(
+
+        // --- ENVOLVEMOS EL SCAFFOLD AQUÍ ---
+        return GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(), // <--- Quita el foco de cualquier TextField
+          child: Scaffold(
+            backgroundColor: theme.scaffoldBackgroundColor,
+            appBar: _appBar(showFolders, preference, ref),
+            floatingActionButton: _floatingActionButton(showFolders),
+            body: SafeArea(
+              child: Column(
+                children: [
+                  BannerPendingNote(
+                    key: const ValueKey('banner_note'),
+                    toFolderId: folder?.id,
+                    onToggleView: () => _selectView(FolderDefaultView.notes, ref),
+                  ),
+                  BannerPendingFolder(
+                    key: const ValueKey('banner_folder'),
+                    toParent: folder,
+                    onToggleView: () => _selectView(FolderDefaultView.folders, ref),
+                  ),
+                  // Aquí es donde vive tu RootSearchSection que contiene el SearchListBar
+                  if (_isRoot) const RootSearchSection(), 
+                  
+                  Expanded(
+                    child: showFolders
+                        ? FoldersSection(parentId: folder?.id)
+                        : NotesSection(
+                            folderId: folder?.id,
+                            highlightNoteId: highlightNoteId,
+                          ),
+                  ),
+                ],
+              ),
+            ),
+            bottomNavigationBar: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                BannerPendingNote(
-                  key: const ValueKey('banner_note'),
-                  toFolderId: folder?.id,
-                  onToggleView: () => _selectView(
-                    FolderDefaultView.notes, ref
-                  ), // Cambia a notas al guardar
-                ),
-                BannerPendingFolder(
-                  key: const ValueKey('banner_folder'),
-                  toParent: folder,
-                  onToggleView: () =>
-                      _selectView(FolderDefaultView.folders, ref), // Cambia a
-                ),
-                if (_isRoot) const RootSearchSection(),
-                Expanded(
-                  child: showFolders
-                      ? FoldersSection(parentId: folder?.id)
-                      : NotesSection(
-                          folderId: folder?.id,
-                          highlightNoteId: highlightNoteId,
-                        ),
-                ),
+                const SmartBannerAd(key: Key('global_banner')),
+                const SizedBox(height: 8),
+                if (!_isLimitFolder)
+                  BottomButtonBar(
+                    defaultview: preference,
+                    onSelect: (newPreference) => _selectView(newPreference, ref),
+                  ),
               ],
             ),
-          ),
-          // --------------------- footer ---------------------
-          bottomNavigationBar: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SmartBannerAd(key: Key('global_banner')),
-              const SizedBox(height: 8),
-              if (!_isLimitFolder)
-                BottomButtonBar(
-                  defaultview: preference,
-                  onSelect: (newPreference) => _selectView(newPreference, ref),
-                ),
-            ],
           ),
         );
       },

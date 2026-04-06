@@ -57,6 +57,32 @@ class ConfirmDialog {
     );
   }
 
+  static Future<void> deleteTag(
+    BuildContext context,
+    WidgetRef ref,
+    Future<void> Function() onDelete,
+  ) {
+    return _deleteAction(
+      context,
+      onDelete,
+      title: ref.tr(TKeys.alerts.deleteTagTitle, fallback: 'Eliminar etiqueta'),
+      // Mensaje específico para advertir la permanencia
+      message: ref.tr(
+        TKeys.alerts.deleteTagPermanent,
+        fallback: '¿Estás seguro de eliminar permanentemente esta etiqueta? Se quitará de todas las notas.',
+      ),
+      succesText: ref.tr(
+        TKeys.alerts.deleteTagSuccess,
+        fallback: 'Etiqueta eliminada para siempre',
+      ),
+      errorText: ref.tr(
+        TKeys.alerts.deleteTagError,
+        fallback: 'Error al intentar borrar la etiqueta',
+      ),
+      ref: ref,
+    );
+  }
+
   static Future<bool?> moveFolder(BuildContext context, WidgetRef ref) {
     return showConfirmDialog(
       context,
@@ -106,6 +132,17 @@ class ConfirmDialog {
       ),
     );
   }
+  static Future<bool?> logout(BuildContext context, WidgetRef ref) async {
+  return showConfirmDialog(
+    context,
+    title: ref.tr(TKeys.auth.logOut, fallback: 'Cerrar sesión'),
+    message: ref.tr(
+      TKeys.auth.confirmLogoutMessage, // Asegúrate de tener esta llave o usa fallback
+      fallback: '¿Estás seguro de que quieres cerrar sesión?',
+    ),
+    ref: ref,
+  );
+}
 }
 
 Future<void> _deleteAction(
@@ -137,6 +174,7 @@ Future<void> _deleteAction(
       backgroundColor: Colors.deepOrangeAccent,
     );
   }
+  
 }
 
 Future<bool?> showConfirmDialog(

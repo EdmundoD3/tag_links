@@ -1,47 +1,63 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
-import 'package:tag_links/models/tag.dart';
-import 'package:tag_links/ui/text/empty_tags_text.dart';
 
-class SearchListBar extends StatefulWidget {
+/// usar en el Scaffold onTap: () => FocusScope.of(context).unfocus(), si es que se usa este buscador
+class SearchListBar<T> extends StatefulWidget {
   final String queryText;
-  final AsyncValue<List<Tag>> tagsSuggestion;
+  final AsyncValue<List<T>> itemsSuggestion;
   final void Function(String text) onChangeText;
-  final void Function(Tag tag) onTagSelected;
+  final void Function(T item) onTagSelected;
   final Widget? iconLeftBtn;
   final Function(String text)? addIconBtnCtrl;
+  final SuggestionListBuilder<T> suggestionBuilder;
+
   const SearchListBar({
     super.key,
     required this.queryText,
-    required this.tagsSuggestion,
+    required this.itemsSuggestion,
     required this.onChangeText,
     required this.onTagSelected,
     this.iconLeftBtn,
     this.addIconBtnCtrl,
+    required this.suggestionBuilder,
   });
 
   @override
-  State<SearchListBar> createState() => _SearchListBarState();
+  State<SearchListBar<T>> createState() => _SearchListBarState<T>();
 }
 
-class _SearchListBarState extends State<SearchListBar> {
+class _SearchListBarState<T> extends State<SearchListBar<T>> {
   late final TextEditingController _controller;
+  late final FocusNode _focusNode; // <--- Nuevo
+  bool _isFocused = false; // <--- Nuevo para trackear el estado
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.queryText);
+    _focusNode = FocusNode();
+
+    // Escuchamos los cambios de foco
+    _focusNode.addListener(_onFocusChange);
+  }
+
+  void _onFocusChange() {
+    setState(() {
+      _isFocused = _focusNode.hasFocus;
+    });
   }
 
   @override
   void dispose() {
+    _focusNode.removeListener(_onFocusChange);
+    _focusNode.dispose();
     _controller.dispose();
     super.dispose();
   }
 
   @override
-  void didUpdateWidget(covariant SearchListBar oldWidget) {
+  void didUpdateWidget(covariant SearchListBar<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
 
     if (oldWidget.queryText != widget.queryText &&
@@ -57,45 +73,49 @@ class _SearchListBarState extends State<SearchListBar> {
     widget.onChangeText(text);
   }
 
-  void _onTagSelected(Tag tag) {
+  void _onTagSelected(T tag) {
     widget.onTagSelected(tag);
     _controller.clear();
+    // Opcional: Quitar foco al seleccionar
+    // _focusNode.unfocus();
   }
 
   @override
   Widget build(BuildContext context) {
     final queryText = widget.queryText;
-    final tagsSuggestion = widget.tagsSuggestion;
+    final AsyncValue<List<T>> tagsSuggestion = widget.itemsSuggestion;
+
+    // Nueva lógica: Mostrar si hay texto O si el widget tiene el foco activo
+    final bool showSuggestions = queryText.isNotEmpty || _isFocused;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _SearchInput(
           controller: _controller,
+          focusNode: _focusNode, // <--- Pasamos el focusNode
           onChangeText: _onChangeText,
           iconLeftButton: widget.iconLeftBtn,
           sufixRightIconBtnCtrl: widget.addIconBtnCtrl,
         ),
         const SizedBox(height: 8),
-        if (queryText.isNotEmpty)
-          _TagsSuggestionList(
-            onTagSelected: _onTagSelected,
-            tagsAsync: tagsSuggestion,
-          ),
+        if (showSuggestions)
+          widget.suggestionBuilder,
       ],
     );
   }
-
-  //Style
 }
 
 class _SearchInput extends ConsumerWidget {
   final TextEditingController controller;
+  final FocusNode focusNode; // <--- Nuevo
   final Widget? iconLeftButton;
   final void Function(String text)? sufixRightIconBtnCtrl;
   final void Function(String value) onChangeText;
 
   const _SearchInput({
     required this.controller,
+    required this.focusNode, // <--- Requerido
     required this.onChangeText,
     this.iconLeftButton,
     required this.sufixRightIconBtnCtrl,
@@ -108,8 +128,9 @@ class _SearchInput extends ConsumerWidget {
       valueListenable: controller,
       builder: (_, value, _) {
         return TextField(
-          cursorColor: theme.appBarTheme.backgroundColor,
           controller: controller,
+          focusNode: focusNode, // <--- Vinculación clave
+          cursorColor: theme.appBarTheme.backgroundColor,
           decoration: InputDecoration(
             fillColor: theme.inputDecorationTheme.fillColor,
             focusedBorder: OutlineInputBorder(
@@ -137,12 +158,10 @@ class _SearchInput extends ConsumerWidget {
   Widget _sufixIcon(ThemeData theme, TextEditingValue value) {
     final iconColor = theme.hintColor;
     return Row(
-      mainAxisSize:
-          MainAxisSize.min, // <--- CRUCIAL: Esto evita que el Row se expanda
+      mainAxisSize: MainAxisSize.min,
       children: [
         IconButton(
-          visualDensity:
-              VisualDensity.compact, // Reduce el padding interno del botón
+          visualDensity: VisualDensity.compact,
           icon: Icon(Icons.clear, color: iconColor),
           onPressed: () {
             controller.clear();
@@ -151,8 +170,7 @@ class _SearchInput extends ConsumerWidget {
         ),
         if (sufixRightIconBtnCtrl != null)
           IconButton(
-            visualDensity:
-                VisualDensity.compact, // Reduce el padding interno del botón
+            visualDensity: VisualDensity.compact,
             icon: Icon(Icons.add, color: iconColor),
             onPressed: () {
               sufixRightIconBtnCtrl!(value.text);
@@ -160,69 +178,18 @@ class _SearchInput extends ConsumerWidget {
               onChangeText('');
             },
           ),
-        const SizedBox(width: 8), // Un pequeño margen al final
+        const SizedBox(width: 8),
       ],
     );
   }
 }
+abstract class SuggestionListBuilder<T> extends StatelessWidget {
+  final AsyncValue<List<T>> itemsSuggestion;
+  final void Function(T item) onItemSelected;
 
-class _TagsSuggestionList extends StatelessWidget {
-  final void Function(Tag tag) onTagSelected;
-  final AsyncValue<List<Tag>> tagsAsync;
-  const _TagsSuggestionList({
-    required this.tagsAsync,
-    required this.onTagSelected,
+  const SuggestionListBuilder({
+    super.key,
+    required this.itemsSuggestion,
+    required this.onItemSelected,
   });
-
-  @override
-  Widget build(BuildContext context) {
-    return tagsAsync.when(
-      data: _whenData,
-      loading: _loading,
-      error: (e, _) {
-        debugPrint('_TagsSuggestionList.build Error: $e');
-        return const Text('Error: Tags');
-      },
-    );
-  }
-
-  Widget _whenData(List<Tag> tags) {
-    if (tags.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(8),
-        child: EmptyTagsText(),
-      );
-    }
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxHeight: 240),
-      child: Builder(builder: (context) => _listTags(tags, context)),
-    );
-  }
-
-  Widget _listTags(List<Tag> tags, BuildContext context) {
-    final theme = Theme.of(context);
-    return ListView(
-      shrinkWrap: true,
-      physics: const BouncingScrollPhysics(),
-      children: [
-        for (final tag in tags)
-          ListTile(
-            title: Text(
-              tag.name,
-              style: TextStyle(color: theme.textTheme.labelSmall?.color),
-            ),
-            onTap: () {
-              onTagSelected(tag);
-            },
-          ),
-      ],
-    );
-  }
-
-  Widget _loading() {
-    return const Padding(
-      padding: EdgeInsets.all(8),
-      child: CircularProgressIndicator(),
-    );
-  }
 }

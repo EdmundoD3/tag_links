@@ -70,16 +70,20 @@ class TagsDao {
     return Tag.fromMap(result.first);
   }
 
-  Future<List<Tag>> getAll({required PaginatedByUsage paginated}) async {
-    final result = await _db.query(
-      _tableName,
-      orderBy: paginated.orderSql,
-      limit: paginated.limit,
-      offset: paginated.offset,
-    );
+Future<List<Tag>> getAll({required PaginatedByUsage paginated}) async {
+  // Ordenamos: 
+  // 1. isFavorite DESC (1 antes que 0)
+  // 2. updatedAt DESC (más recientes primero)
+  const String customOrder = 'isFavorite DESC, usageCount DESC, updatedAt DESC';
 
-    return result.map(Tag.fromMap).toList();
-  }
+  final result = await _db.query(
+    _tableName,
+    orderBy: customOrder, // Reemplazamos el del paginated para esta lógica específica
+    limit: paginated.limit,
+    offset: paginated.offset,
+  );
+  return result.map(Tag.fromMap).toList();
+}
 
   Future<List<Tag>> getByName(
     String name, {

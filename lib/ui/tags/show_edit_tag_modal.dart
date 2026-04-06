@@ -3,7 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/models/tag.dart';
 
-Future<Tag?> showEditTagModal(
+class EditedTag {
+  final Tag tag;
+  final bool isDeleted;
+
+  EditedTag({required this.tag, required this.isDeleted});
+}
+
+Future<EditedTag?> showEditTagModal(
   BuildContext context,
   WidgetRef ref,
   Tag tag,
@@ -11,7 +18,7 @@ Future<Tag?> showEditTagModal(
   final nameCtrl = TextEditingController(text: tag.name);
   bool isFavorite = tag.isFavorite;
 
-  return showModalBottomSheet<Tag>(
+  return showModalBottomSheet<EditedTag>(
     context: context,
     isScrollControlled: true,
     builder: (context) {
@@ -27,68 +34,91 @@ Future<Tag?> showEditTagModal(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  ref.tr(TKeys.tags.edit, fallback: 'Editar tag'),
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    // 1. El título a la izquierda
+                    Expanded(
+                      child: Text(
+                        ref.tr(TKeys.tags.edit, fallback: 'Editar tag'),
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ),
 
+                    // 2. El corazón a la derecha
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      icon: Icon(
+                        isFavorite ? Icons.favorite : Icons.favorite_border,
+                        color: isFavorite ? Colors.red : Colors.grey,
+                      ),
+                      onPressed: () {
+                        setState(() => isFavorite = !isFavorite);
+                      },
+                      tooltip: ref.tr(
+                        TKeys.ui.favorite,
+                        fallback: 'Marcar como favorito',
+                      ),
+                    ),
+                  ],
+                ),
                 TextField(
                   controller: nameCtrl,
                   autofocus: true,
                   decoration: InputDecoration(
-                    labelText: ref.tr(TKeys.tags.nameField, fallback: 'Nombre del tag'),
+                    labelText: ref.tr(
+                      TKeys.tags.nameField,
+                      fallback: 'Nombre del tag',
+                    ),
                   ),
                 ),
 
-                const SizedBox(height: 12),
-
-                SwitchListTile(
-                  title: Text(ref.tr(TKeys.ui.favorite, fallback: 'Marcar como favorito')),
-                  value: isFavorite,
-                  onChanged: (value) {
-                    setState(() => isFavorite = value);
-                  },
-                  secondary: Icon(
-                    isFavorite ? Icons.favorite : Icons.favorite_border,
-                    color: isFavorite ? Colors.red : null,
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
+                // Botones de acción (Guardar / Cancelar)
                 Row(
                   children: [
                     TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(ref.tr(TKeys.actions.cancel, fallback: 'Cancelar')),
+                      onPressed: () =>
+                          Navigator.pop(context), // Retorna null (Cancelar)
+                      child: Text(
+                        ref.tr(TKeys.actions.cancel, fallback: 'Cancelar'),
+                      ),
                     ),
                     const Spacer(),
                     FilledButton(
                       onPressed: () {
+                        // Retornamos el objeto con isDeleted en false
                         Navigator.pop(
                           context,
-                          tag.copyWith(
-                            name: nameCtrl.text.trim(),
-                            isFavorite: isFavorite,
+                          EditedTag(
+                            isDeleted: false,
+                            tag: tag.copyWith(
+                              name: nameCtrl.text.trim(),
+                              isFavorite: isFavorite,
+                            ),
                           ),
                         );
                       },
-                      child: Text(ref.tr(TKeys.actions.save, fallback: 'Guardar')),
+                      child: Text(
+                        ref.tr(TKeys.actions.save, fallback: 'Guardar'),
+                      ),
                     ),
                   ],
                 ),
 
                 const Divider(),
 
+                // Botón de Eliminar
                 TextButton.icon(
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.red,
-                  ),
+                  style: TextButton.styleFrom(foregroundColor: Colors.red),
                   icon: const Icon(Icons.delete),
-                  label: Text(ref.tr(TKeys.actions.delete, fallback: 'Eliminar')),
+                  label: Text(
+                    ref.tr(TKeys.actions.delete, fallback: 'Eliminar'),
+                  ),
                   onPressed: () {
-                    Navigator.pop(context, null); // señal de delete
+                    // Retornamos el objeto con isDeleted en true
+                    Navigator.pop(
+                      context,
+                      EditedTag(tag: tag, isDeleted: true),
+                    );
                   },
                 ),
               ],

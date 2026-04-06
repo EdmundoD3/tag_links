@@ -23,6 +23,12 @@ class TranslatesAlerts {
   final String moveFolverIsDeepError = 'alertMoveFolderErrorIsDeepFolder';
   final String moveFolverIsSameFolderError = 'alertMoveFolderErrorIsSameFolder';
 
+  // --- Etiquetas ---
+  final String deleteTagTitle = 'alertDeleteTagTitle';
+  final String deleteTagPermanent = 'alertDeleteTagPermanent';
+  final String deleteTagSuccess = 'alertDeleteTagSuccess';
+  final String deleteTagError = 'alertDeleteTagError';
+
   // --- Banners / Acciones ---
   final String pendingNote = 'bannerPendingNote';
   final String notMove = 'bannerNotMove';
@@ -91,6 +97,25 @@ class TranslatesAlerts {
       AppLang.es: 'Tienes una carpeta pendiente de mover',
       AppLang.en: 'You have a folder pending to move',
     },
+
+    // Tags 
+    'alertDeleteTagTitle': {
+      AppLang.es: 'Eliminar etiqueta',
+      AppLang.en: 'Delete tag',
+    },
+    'alertDeleteTagPermanent': {
+      AppLang.es: '¿Estás seguro de eliminar permanentemente esta etiqueta? Se quitará de todas las notas.',
+      AppLang.en: 'Are you sure you want to permanently delete this tag? It will be removed from all notes.',
+    },
+    'alertDeleteTagSuccess': {
+      AppLang.es: 'Etiqueta eliminada para siempre',
+      AppLang.en: 'Tag deleted permanently',
+    },
+    'alertDeleteTagError': {
+      AppLang.es: 'Error al intentar borrar la etiqueta',
+      AppLang.en: 'Error deleting tag',
+    },
+
     // Banners
     'bannerPendingNote': {
       AppLang.es: 'Tienes una nota pendiente de almacenar',
@@ -127,5 +152,7 @@ class TranslatesAlerts {
       AppLang.es: 'Falta el título. ¿Quieres descartarla?',
       AppLang.en: 'Missing title. Do you want to discard it?',
     },
+
+
   };
 }

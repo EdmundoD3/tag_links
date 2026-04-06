@@ -6,6 +6,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:tag_links/core/google/auth_provider.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/sync/sync_notifier_provider.dart';
+import 'package:tag_links/ui/alerts/confirm_dialog.dart';
 
 class AccountSyncTile extends ConsumerWidget {
   const AccountSyncTile({super.key});
@@ -89,14 +90,20 @@ class _UserInfoTile extends ConsumerWidget {
             : null,
         child: user.photoUrl == null ? const Icon(Icons.person) : null,
       ),
-      title: Text(
-        user.displayName ?? "User",
-      ), //User como placeholder esta bien y simple, se entiende en todos los idiomas
+      title: Text(user.displayName ?? "User"),
       subtitle: Text(user.email),
       trailing: IconButton(
         icon: const Icon(Icons.logout, color: Colors.redAccent),
-        onPressed: onLogout,
         tooltip: ref.tr(TKeys.auth.logOut),
+        onPressed: () async {
+          // 🎯 Llamamos al diálogo de confirmación
+          final confirm = await ConfirmDialog.logout(context, ref);
+          
+          // Si el usuario aceptó (true), ejecutamos el logout
+          if (confirm == true) {
+            onLogout();
+          }
+        },
       ),
     );
   }

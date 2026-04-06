@@ -14,21 +14,28 @@ class BodyForm extends StatelessWidget {
   });
 
   @override
-Widget build(BuildContext context) {
-  return Scaffold(
-    appBar: appBar,
-    // 1. El cuerpo solo contiene el formulario y la lista
-    body: Form(
-      key: formKey,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(8, 8, 8, 16),
-        children: children, // Quitamos el SmartBannerAd de aquí
+  Widget build(BuildContext context) {
+    // Envolvemos todo el Scaffold para que al tocar cualquier parte 
+    // del formulario que no sea un Input, se cierre el teclado/sugerencias.
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        appBar: appBar,
+        // El cuerpo contiene el formulario y la lista
+        body: Form(
+          key: formKey,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(8, 8, 8, 16),
+            // Al ser un ListView, el GestureDetector de arriba detectará 
+            // los toques en los espacios vacíos entre widgets.
+            children: children, 
+          ),
+        ),
+        // El anuncio fijo al final
+        bottomNavigationBar: const SafeArea(
+          child: SmartBannerAd(),
+        ),
       ),
-    ),
-    // 2. Colocamos el anuncio aquí para que esté fijo al final
-    bottomNavigationBar: const SafeArea(
-      child: SmartBannerAd(),
-    ),
-  );
-}
+    );
+  }
 }

@@ -12,6 +12,8 @@ class TranslatesAuth {
   final String skipForNow = 'skipNow';
   final String sessionExpired = 'sessionExpired';
   final String reconnectGoogle = 'reconnectGoogle';
+  final String confirmLogoutMessage = 'confirmLogoutMessage';
+
 
   static const Map<String, Map<AppLang, String>> translations = {
     'loginWithGoogle': {
@@ -47,6 +49,10 @@ class TranslatesAuth {
           'Tu conexión con Google Drive se ha perdido. Vuelve a iniciar sesión para sincronizar tus cambios.',
       AppLang.en:
           'Your Google Drive connection has been lost. Log in again to synchronize your changes.',
+    },
+    'confirmLogoutMessage':{
+      AppLang.es: '¿Estás seguro de que quieres cerrar sesión?',
+      AppLang.en: 'Are you sure you want to log out?',
     },
   };
 }
