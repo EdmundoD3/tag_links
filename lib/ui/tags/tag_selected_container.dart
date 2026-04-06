@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/repository/tags_repository.dart';
-import 'package:tag_links/state/folders_provider.dart';
-import 'package:tag_links/state/notes_provider.dart';
 import 'package:tag_links/state/tags_provider.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
 import 'package:tag_links/ui/tags/show_create_tag_modal.dart';
