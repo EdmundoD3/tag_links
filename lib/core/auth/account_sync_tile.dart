@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:tag_links/core/google/auth_provider.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
+import 'package:tag_links/sync/sync_notifier_provider.dart';
 
 class AccountSyncTile extends ConsumerWidget {
   const AccountSyncTile({super.key});
@@ -37,7 +40,22 @@ class _GoogleLoginButton extends ConsumerWidget {
     return ElevatedButton.icon(
       onPressed: isLoading
           ? null
-          : () => ref.read(authProvider.notifier).login(),
+          : () async {
+              // 1. Ejecutamos el login
+              await ref.read(authProvider.notifier).login();
+
+              // 2. Verificamos si el login fue exitoso
+              final auth = ref.read(authProvider);
+              if (auth.isAuthenticated) {
+                debugPrint(
+                  "🎯 Login exitoso: Disparando sincronización inicial.",
+                );
+
+                // Disparamos el sync.
+                // Usamos synchronize() para que respete el cooldown si ya hubiera uno.
+                unawaited(ref.read(syncProvider.notifier).synchronize());
+              }
+            },
       icon: isLoading
           ? const SizedBox(
               width: 20,

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/core/google/auth_provider.dart';
 import 'package:tag_links/sync/sync_notifier_provider.dart';
 
 class AppLifecycleObserver extends ConsumerStatefulWidget {
@@ -27,15 +28,23 @@ class _AppLifecycleObserverState extends ConsumerState<AppLifecycleObserver>
     super.dispose();
   }
 
-  @override
+@override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // IMPORTANTE: 'resumed' es cuando el usuario vuelve a ver la app
     if (state == AppLifecycleState.resumed) {
-      debugPrint('⚡ App Resumed: Disparando sincronización de refresco.');
+      debugPrint('⚡ App Resumed: Preparando sincronización...');
 
-      // Accedemos al notifier para sincronizar
-      // Usamos el delay de "App Start" o uno corto de seguridad
-      unawaited(ref.read(syncProvider.notifier).synchronize());
+      // 1. Evitamos disparar inmediatamente para dejar que la UI respire
+      Future.delayed(const Duration(seconds: 1), () {
+        // 2. Verificamos que el usuario siga en la app y esté autenticado
+        final auth = ref.read(authProvider);
+        
+        if (auth.isAuthenticated) {
+          debugPrint('🚀 Ejecutando sync tras delay de estabilidad.');
+          // Usamos synchronize (que tiene la lógica de cooldown) 
+          // en lugar de forceSynchronize
+          unawaited(ref.read(syncProvider.notifier).synchronize());
+        }
+      });
     }
   }
 

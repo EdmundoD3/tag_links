@@ -21,8 +21,8 @@ class ScaffoldLoading extends StatelessWidget {
               Expanded(
                 child: ListView.separated(
                   itemCount: 6,
-                  separatorBuilder: (_, __) => const SizedBox(height: 15),
-                  itemBuilder: (_, __) => Row(
+                  separatorBuilder: (_, _) => const SizedBox(height: 15),
+                  itemBuilder: (_, _) => Row(
                     children: [
                       const ShimmerBox(width: 50, height: 50, borderRadius: BorderRadius.all(Radius.circular(12))),
                       const SizedBox(width: 15),

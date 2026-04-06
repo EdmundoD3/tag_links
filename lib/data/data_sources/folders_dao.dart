@@ -11,18 +11,19 @@ import 'package:tag_links/utils/paginated_utils.dart';
 class FoldersDao {
   final Database _db;
   final FolderTagsDao _folderTagsDao;
-  final DeletedFoldersDao _deletedFoldersDao;
+  final DeletedDao _deletedDao;
   final LocalSyncQueueDao _syncDao;
 
   FoldersDao({
     required Database db,
     required FolderTagsDao folderTagsDao,
-    required DeletedFoldersDao deletedFoldersDao,
     required LocalSyncQueueDao syncDao,
+    required DeletedDao deletedDao,
   }) : _db = db,
        _folderTagsDao = folderTagsDao,
-       _deletedFoldersDao = deletedFoldersDao,
-       _syncDao = syncDao;
+       _syncDao = syncDao,_deletedDao =deletedDao;
+
+
 
   /// BY LAST UPDATE
 
@@ -121,7 +122,7 @@ class FoldersDao {
 
   // UPSERT
   // No uses ConflictAlgorithm.replace porque tengo Foreign Keys con ON DELETE CASCADE. El REPLACE dispara un borrado físico de la fila y destruye la integridad referencial de mis subcarpetas y notas. Solo acepta cambios que usen UPDATE o INSERT ... ON CONFLICT DO UPDATE (UPSERT).
-Future<void> upsert(Folder folder) async {
+  Future<void> upsert(Folder folder) async {
     try {
       await _db.transaction((txn) async {
         String? validatedParentId = folder.parentId;
@@ -138,7 +139,7 @@ Future<void> upsert(Folder folder) async {
           if (parentRow.isNotEmpty) {
             // Si el padre ya tiene un padre, impedimos nivel 3 moviendo a raíz
             if (parentRow.first['parentId'] != null) {
-              validatedParentId = null; 
+              validatedParentId = null;
               debugPrint('Validación: Nivel 3 bloqueado para ${folder.title}.');
             }
           } else {
@@ -180,26 +181,28 @@ Future<void> upsert(Folder folder) async {
           whereArgs: [folder.id],
         );
 
-        final currentTagIds = currentTagRows.map((e) => e['tagId'] as String).toSet();
+        final currentTagIds = currentTagRows
+            .map((e) => e['tagId'] as String)
+            .toSet();
         final newTagIds = folder.tags.map((t) => t.id).toSet();
 
         for (final tagId in newTagIds.difference(currentTagIds)) {
-          await _folderTagsDao.upsert(folderId: folder.id, tagId: tagId, executor: txn);
+          await _folderTagsDao.upsert(
+            folderId: folder.id,
+            tagId: tagId,
+            executor: txn,
+          );
         }
         for (final tagId in currentTagIds.difference(newTagIds)) {
-          await _folderTagsDao.delete(folderId: folder.id, tagId: tagId, executor: txn);
+          await _folderTagsDao.delete(
+            folderId: folder.id,
+            tagId: tagId,
+            executor: txn,
+          );
         }
 
         // 🚀 4. NOTIFICAR AL BUCKET: Marcar como Dirty (syncStatus = 2)
-        await txn.update(
-          'files',
-          {
-            'syncStatus': 2, 
-            'lastUpdate': folder.updatedAt,
-          },
-          where: 'id = ?',
-          whereArgs: [folder.fileId],
-        );
+        await _syncDao.markAsDirty(folder.fileId, executor: txn);
       });
     } catch (e) {
       debugPrint('FoldersDao.upsert ERROR: $e');
@@ -239,15 +242,25 @@ Future<void> upsert(Folder folder) async {
         WHERE excluded.updatedAt >= updatedAt
         ''',
           [
-            folder.id, folder.parentId, folder.fileId, folder.title,
-            folder.description, folder.image, folder.color,
-            folder.createdAt, folder.updatedAt,
+            folder.id,
+            folder.parentId,
+            folder.fileId,
+            folder.title,
+            folder.description,
+            folder.image,
+            folder.color,
+            folder.createdAt,
+            folder.updatedAt,
             folder.isFavorite ? 1 : 0,
           ],
         );
 
         // B. Sincronizar etiquetas (Limpieza rápida en batch)
-        batch.delete('folder_tags', where: 'folderId = ?', whereArgs: [folder.id]);
+        batch.delete(
+          'folder_tags',
+          where: 'folderId = ?',
+          whereArgs: [folder.id],
+        );
         for (final tag in folder.tags) {
           batch.insert('folder_tags', {
             'folderId': folder.id,
@@ -261,58 +274,78 @@ Future<void> upsert(Folder folder) async {
     });
   }
 
-/// DELETE RECURSIVO
+  /// DELETE RECURSIVO
+/// DELETE RECURSIVO DE CARPETAS
+/// DELETE RECURSIVO DE CARPETAS (Optimizado para Sincronización)
   Future<void> delete(String id) async {
-    await _db.transaction((txn) async {
-      // 1. Obtener todos los hijos recursivamente (incluyendo el ID actual)
-      // Asegúrate de que esta función use el 'executor' (txn) para ser atómica
-      final idsToDelete = await getAllDescendantIds(id, executor: txn);
-      if (idsToDelete.isEmpty) return;
+    try {
+      await _db.transaction((txn) async {
+        // 1. Obtener todos los IDs de carpetas descendientes (incluyendo la actual)
+        // Usamos el txn para que la lectura sea parte de la misma foto del estado
+        final idsToDelete = await getAllDescendantIds(id, executor: txn);
+        if (idsToDelete.isEmpty) return;
 
-      final placeholders = List.filled(idsToDelete.length, '?').join(',');
+        final placeholders = List.filled(idsToDelete.length, '?').join(',');
+        final idsList = idsToDelete.toList();
 
-      // 2. Antes de borrar, obtenemos los datos necesarios: 
-      // - driveFileId: Para saber si hay que avisarle a Drive (DeletedDao)
-      // - fileId: Para saber qué buckets quedaron "sucios" localmente
-      final List<Map<String, dynamic>> affectedData = await txn.query(
-        'folders',
-        columns: ['id', 'driveFileId', 'fileId'],
-        where: 'id IN ($placeholders)',
-        whereArgs: idsToDelete.toList(),
-      );
+        // 2. CAPTURA PRE-BORRADO: Obtenemos datos de las carpetas
+        final List<Map<String, dynamic>> affectedFolders = await txn.query(
+          'folders',
+          columns: ['id', 'fileId'],
+          where: 'id IN ($placeholders)',
+          whereArgs: idsList,
+        );
 
-      final Set<String> bucketsToDirty = {};
+        // 3. CAPTURA PRE-BORRADO: Obtenemos datos de las notas que morirán por CASCADE
+        // Hacemos esto antes del delete físico para no perder los fileId
+        final List<Map<String, dynamic>> affectedNotes = await txn.query(
+          'notes',
+          columns: ['id', 'fileId'],
+          where: 'folderId IN ($placeholders)',
+          whereArgs: idsList,
+        );
 
-      // 3. Procesar datos para sincronización
-      for (final row in affectedData) {
-        final folderId = row['id'] as String;
-        final driveId = row['driveFileId']; // Puede ser null si nunca se subió
-        final bucketId = row['fileId'] as String;
+        final Set<String> bucketsToDirty = {};
 
-        // Guardamos el bucket para marcarlo como sucio después
-        bucketsToDirty.add(bucketId);
-
-        // Si el servidor ya conocía esta carpeta, registramos el borrado
-        if (driveId != null) {
-          await _deletedFoldersDao.saveId(folderId, executor: txn);
+        // 4. REGISTRO DE CARPETAS: Marcamos para borrar en Drive y ensuciamos sus buckets
+        for (final row in affectedFolders) {
+          final fId = row['id'] as String;
+          final bId = row['fileId'] as String;
+          
+          bucketsToDirty.add(bId);
+          // Usamos el saveId con el executor obligatorio
+          await _deletedDao.saveId(fId, DeletedType.folder, executor: txn);
         }
-      }
 
-      // 4. Borrado físico local
-      // El ON DELETE CASCADE de tu base de datos se encargará de limpiar 
-      // las tablas dependientes (como folder_tags o notes si así lo configuraste)
-      await txn.delete(
-        'folders',
-        where: 'id IN ($placeholders)',
-        whereArgs: idsToDelete.toList(),
-      );
+        // 5. REGISTRO DE NOTAS: Muy importante para evitar notas "zombies"
+        for (final row in affectedNotes) {
+          final nId = row['id'] as String;
+          final bId = row['fileId'] as String;
+          
+          bucketsToDirty.add(bId);
+          // También registramos el borrado de cada nota individual
+          await _deletedDao.saveId(nId, DeletedType.note, executor: txn);
+        }
 
-      // 5. "Manchar" todos los buckets involucrados
-      // Importante: markAsDirty debe aceptar Transaction? executor
-      for (final bId in bucketsToDirty) {
-        await _syncDao.markAsDirty(bId, executor: txn);
-      }
-    });
+        // 6. BORRADO FÍSICO: Aquí el ON DELETE CASCADE hace su magia localmente
+        await txn.delete(
+          'folders',
+          where: 'id IN ($placeholders)',
+          whereArgs: idsList,
+        );
+
+        // 7. SINCRONIZACIÓN: Marcamos todos los buckets afectados como sucios
+        // Esto incluye tanto los de carpetas como los de notas
+        for (final bId in bucketsToDirty) {
+          await _syncDao.markAsDirty(bId, executor: txn);
+        }
+        
+        debugPrint("FoldersDao.delete: Sincronización preparada para ${bucketsToDirty.length} buckets.");
+      });
+    } catch (e) {
+      debugPrint('FoldersDao.delete ERROR: $e');
+      rethrow;
+    }
   }
 
   /// GET BY ID
@@ -437,7 +470,7 @@ Future<void> upsert(Folder folder) async {
     });
   }
 
-/// MAP FOLDER + TAGS
+  /// MAP FOLDER + TAGS
   Future<Folder> _mapFolderWithTags(
     Database db,
     Map<String, dynamic> map,
@@ -449,7 +482,8 @@ Future<void> upsert(Folder folder) async {
     return Folder(
       id: map['id'] as String,
       parentId: map['parentId'] as String?,
-      fileId: map['fileId'] as String, // Crucial para la sincronización por buckets
+      fileId:
+          map['fileId'] as String, // Crucial para la sincronización por buckets
       title: map['title'] as String? ?? 'Carpeta sin título',
       description: map['description'] as String?,
       image: map['image'] as String?,

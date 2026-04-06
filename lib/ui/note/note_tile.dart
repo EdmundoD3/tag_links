@@ -222,7 +222,7 @@ class _NoteTileCard extends StatelessWidget {
         right: 10,
         child: IconButton(
           onPressed: () => onShowMenu(null),
-          icon: const Icon(Icons.more_vert, size: 20),
+          icon: Icon(Icons.more_vert, color: Colors.black54, size: 20),
           splashRadius: 20,
         ),
       ),

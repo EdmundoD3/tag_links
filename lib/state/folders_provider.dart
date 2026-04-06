@@ -140,11 +140,16 @@ class FoldersNotifier extends AsyncNotifier<List<Folder>> {
   }
 
   Future<void> deleteFolder(Folder folder) async {
-    // 1. Borrar de la base de datos (¡Este faltaba!)
-    debugPrint('FoldersNotifier.deleteFolder: ${folder.toMap().toString()}');
-    await _repo.delete(folder);
-    // 3. Quitar de la UI
-    removeFolder(folder.id);
+    try {
+      debugPrint('FoldersNotifier.deleteFolder: ${folder.toMap().toString()}');
+      await _repo.delete(folder);
+      // 3. Quitar de la UI
+      removeFolder(folder.id);
+    } catch (e) {
+      debugPrint(
+        'FoldersNotifier.deleteFolder: Error al borrar folder: ${folder.toMap()} \n Error: $e',
+      );
+    }
   }
 
   Future<void> toggleFavorite(Folder folder) async {

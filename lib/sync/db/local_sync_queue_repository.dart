@@ -29,13 +29,6 @@ class LocalSyncQueueRepository {
 
   // --- LÓGICA DE SINCRONIZACIÓN (PUSH/PULL) ---
 
-  /// PULL: Compara la config remota con la local para saber qué archivos JSON descargar
-  Future<List<LocalSyncQueue>> getPendingDownloads(
-    ConfigInfo remoteConfig,
-  ) async {
-    return _dao.getPendingDownloads(remoteConfig);
-  }
-
   /// Marca los archivos sucios para poder enviarlos al servidor
   Future<void> markAsDirty(String id) {
     return _dao.markAsDirty(id);
@@ -67,11 +60,6 @@ class LocalSyncQueueRepository {
       );
       rethrow;
     }
-  }
-
-  /// Recalcula el conteo de notas/carpetas/tags para cada bucket
-  Future<void> refreshAllCounts() async {
-    return _dao.refreshAllCounts();
   }
 
   // --- INTEGRACIÓN CON CONFIG.JSON ---

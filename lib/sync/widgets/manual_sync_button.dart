@@ -9,31 +9,57 @@ class ManualSyncButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final syncState = ref.watch(syncProvider);
-
-    // Dentro del build del ManualSyncButton
     final authState = ref.watch(authProvider);
 
+    // Extraemos el estado de los datos de forma segura
+    final state = syncState.value ?? SyncState();
+
     return IconButton(
-      // Si no está logueado, le ponemos un color grisáceo o un icono tachado
-      icon: !authState.isAuthenticated
-          ? const Icon(Icons.cloud_off, color: Colors.grey)
-          : syncState.maybeWhen(
-              data: (s) => s.status == SyncStatus.syncing
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.sync),
-              orElse: () => const Icon(Icons.sync),
-            ),
-      onPressed: !authState.isAuthenticated
-          ? () {
-              // _mostrarAvisoLogin(context); // Un mensaje que diga "¡Loguéate!"
-            }
-          : (syncState.value?.status == SyncStatus.syncing
-                ? null
-                : () => ref.read(syncProvider.notifier).forceSynchronize()),
+      tooltip: _getTooltip(state, authState.isAuthenticated),
+      icon: _buildIcon(context, state, authState.isAuthenticated),
+      onPressed: !authState.isAuthenticated || state.status == SyncStatus.syncing
+          ? null // Deshabilitado si no hay auth o si ya está sincronizando
+          : () => ref.read(syncProvider.notifier).forceSynchronize(),
     );
+  }
+
+  Widget _buildIcon(BuildContext context, SyncState state, bool isAuth) {
+    if (!isAuth) {
+      return const Icon(Icons.cloud_off, color: Colors.grey);
+    }
+    final theme = Theme.of(context);
+
+    switch (state.status) {
+      case SyncStatus.syncing:
+        return const SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.5,
+            // Usamos el color del tema para que se vea integrado
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.blueAccent),
+          ),
+        );
+      
+      case SyncStatus.error:
+        // Un rojo suave o naranja para indicar que algo falló sin ser alarmista
+        return const Icon(Icons.sync_problem, color: Colors.orangeAccent);
+      
+      case SyncStatus.success:
+        // Verde temporal para indicar que terminó bien
+        return const Icon(Icons.cloud_done, color: Colors.green);
+      
+      case SyncStatus.idle:
+      default:
+        // El estado normal. Podrías ponerle un color azul si quieres que resalte
+        return Icon(Icons.sync_outlined, color:theme.iconTheme.color);
+    }
+  }
+
+  String _getTooltip(SyncState state, bool isAuth) {
+    if (!isAuth) return "Inicia sesión para sincronizar";
+    if (state.status == SyncStatus.error) return "Error: ${state.lastError ?? 'Desconocido'}";
+    if (state.status == SyncStatus.syncing) return "Sincronizando con Drive...";
+    return "Sincronizar ahora";
   }
 }

@@ -9,8 +9,8 @@ class ShimmerFoldersList extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: 8,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (_, __) => Row(
+      separatorBuilder: (_, _) => const SizedBox(height: 12),
+      itemBuilder: (_, _) => Row(
         children: [
           const ShimmerBox(width: 40, height: 40, borderRadius: BorderRadius.all(Radius.circular(8))),
           const SizedBox(width: 16),

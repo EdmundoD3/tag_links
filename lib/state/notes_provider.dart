@@ -173,7 +173,6 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
   Future<void> deleteNote(Note noteForDelete) async {
     final current = state.asData?.value;
     if (current == null) return;
-    debugPrint('Deleting note: ${noteForDelete.toMap()}');
     state = AsyncValue.data(
       current.where((note) => note.id != noteForDelete.id).toList(),
     );

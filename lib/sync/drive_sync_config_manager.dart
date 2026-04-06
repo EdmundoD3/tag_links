@@ -58,12 +58,12 @@ class DriveSyncConfigManager {
       }
 
       // 3. Recreación/Inicialización (Aquí entra tu lógica de inyectar metadata local)
-      print("🔍 Reconstruyendo configuración desde estado local...");
+      debugPrint("🔍 DriveSyncConfigManager: Reconstruyendo configuración desde estado local...");
       final newData = await _createInitialRemoteConfig(myId);
       await localIdManager.saveDriveFileId(newData.fileId);
       return newData;
     } catch (e) {
-      debugPrint("❌ Fallo crítico en ConfigManager: $e");
+      debugPrint("❌ DriveSyncConfigManager.getOrInitializeRemoteConfig: Fallo crítico en ConfigManager: $e");
       return null;
     }
   }
@@ -113,7 +113,7 @@ class DriveSyncConfigManager {
       uploadMedia: media,
     );
 
-    print("✅ Configuración inicial creada exitosamente.");
+    print("✅ DriveSyncConfigManager.createInitialRemoteConfig: Configuración inicial creada exitosamente.");
     return RemoteConfigData(createdFile.id!, config);
   }
 
@@ -144,7 +144,7 @@ class DriveSyncConfigManager {
       }
       return null;
     } catch (e) {
-      debugPrint("❌ Error descargando $fileId: $e");
+      debugPrint("❌ DriveSyncConfigManager.downloadConfig: Error descargando $fileId: $e"); // antes ❌ Error descargando 
       // Si es un 404, retornamos null para que el llamador intente recrear
       return null;
     }
@@ -157,7 +157,7 @@ class DriveSyncConfigManager {
       final media = drive.Media(Stream.value(content), content.length);
 
       await _driveApi.files.update(drive.File(), fileId, uploadMedia: media);
-      print("📱 Drive: Configuración actualizada.");
+      debugPrint("📱 DriveSyncConfigManager.updateRemoteConfig: Configuración actualizada.");
     } catch (e) {
       debugPrint(
         "DriveSyncConfigManager.updateRemoteConfig: Error actualizando $fileId: $e",
@@ -166,17 +166,15 @@ class DriveSyncConfigManager {
   }
 }
 
-// Provider de Riverpod
 final syncConfigProvider = Provider<DriveSyncConfigManager?>((ref) {
-  final auth = ref.watch(authProvider);
-  if (auth.driveApi == null) return null;
-
-  // Usar watch es mejor para mantener la reactividad en el grafo de dependencias
-  final localSyncQueueRepository = ref.watch(localSyncQueueRepositoryProvider);
+  // 🎯 Solo re-ejecuta si el driveApi CAMBIA (ej: tras una reparación)
+  final driveApi = ref.watch(authProvider.select((s) => s.driveApi));
+  
+  if (driveApi == null) return null;
 
   return DriveSyncConfigManager(
-    auth.driveApi!,
+    driveApi,
     localIdManager: ref.watch(localIdManagerProvider),
-    syncQueueRepo: localSyncQueueRepository,
+    syncQueueRepo: ref.watch(localSyncQueueRepositoryProvider),
   );
 });

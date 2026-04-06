@@ -183,6 +183,7 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
           final discard = await ConfirmDialog.discardForm(context, ref);
 
           if (discard == true && context.mounted) {
+            _notesProvider.deleteNote(note); //si descarta se elimina
             Navigator.pop(context);
           }
           return;

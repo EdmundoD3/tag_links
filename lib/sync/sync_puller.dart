@@ -58,8 +58,9 @@ Future<PullResult> processRemoteDeletes(
   List<ArchiveItem> deleteFiles,
   int lastPulledAt,
 ) async {
+  final enshureLastPulledAt = lastPulledAt - const Duration(minutes: 15).inMilliseconds;
   final porEliminar = deleteFiles.where(
-    (item) => item.lastUpdate > lastPulledAt,
+    (item) => item.lastUpdate > enshureLastPulledAt,
   );
 
   // Si no hay archivos de borrado nuevos, terminamos rápido
@@ -82,7 +83,7 @@ Future<PullResult> processRemoteDeletes(
 
       if (remoteFiles.isNotEmpty) {
         final dFile = remoteFiles.first;
-        final filtered = dFile.filterForDelete(lastPulledAt: lastPulledAt);
+        final filtered = dFile.filterForDelete(lastPulledAt: enshureLastPulledAt);
 
         if (!filtered.isEmpty) {
           deleteNotesIds.addAll(filtered.notes.map((e) => e.id));

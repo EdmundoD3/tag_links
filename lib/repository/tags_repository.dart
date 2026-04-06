@@ -4,20 +4,20 @@ import 'package:tag_links/data/data_sources/deleted_dao.dart';
 import 'package:tag_links/data/data_sources/tags_dao.dart';
 import 'package:tag_links/data/database.dart';
 import 'package:tag_links/models/tag.dart';
+import 'package:tag_links/sync/db/local_sync_queue_dao.dart';
 import 'package:tag_links/sync/db/local_sync_queue_repository.dart';
+import 'package:tag_links/sync/models/tags_file.dart';
 import 'package:tag_links/utils/paginated_utils.dart';
 
 class TagsRepository {
   final TagsDao _tagsDao;
-  final DeletedTagsDao _deletedDao;
   final LocalSyncQueueRepository _syncRepo;
 
   TagsRepository({
     required Database db,
-    required DeletedTagsDao deletedTagsDao,
+    required DeletedDao deletedTagsDao,
     required LocalSyncQueueRepository syncRepo,
-  }) : _tagsDao = TagsDao(db),
-       _deletedDao = deletedTagsDao,
+  }) : _tagsDao = TagsDao(db, deletedTagsDao, LocalSyncQueueDao(db)),
        _syncRepo = syncRepo;
 
   Future<Tag?> upsert(Tag tag) async {
@@ -35,7 +35,6 @@ class TagsRepository {
   Future<void> delete(Tag tag) async {
     await _syncRepo.markAsDirty(tag.fileId);
     // Si ya existía en Drive, registramos el ID para la próxima sincronización
-    await _deletedDao.saveId(tag.id);
     _tagsDao.delete(tag.id);
   }
 
@@ -53,33 +52,45 @@ class TagsRepository {
   Future<Tag?> getByExactlyName(String name) => _tagsDao.getByExactlyName(name);
 
   // --- SYNC section ---
-  Future<List<Tag>> getByFileId(String fileId) => _tagsDao.getByFileId(fileId);
+Future<List<Tag>> getByFileId(String fileId) => _tagsDao.getByFileId(fileId);
 
+/// Genera el Wrapper de etiquetas listo para la sincronización.
+Future<TagsFile> getFileWrapper({
+  required String fileId,
+  String? driveFileId,
+  required DateTime now,
+}) async {
+  final items = await getByFileId(fileId);
+
+  return TagsFile(
+    id: fileId,
+    fileId: driveFileId ?? '',
+    tags: items,
+    createdAt: now,
+    updatedAt: now,
+  );
+}
   Future<void> upsertAll(List<Tag> tags) async {
-    final dirtysIds = await _deletedDao.extractDirtyIds(
-      tags.map((e) => e.id).toList(),
-    );
-    final cleanTags = tags.where((e) => !dirtysIds.contains(e.id)).toList();
-
-    return _tagsDao.upsertAll(cleanTags);
+    return _tagsDao.upsertAll(tags);
   }
 
   Future<void> serverDeleteByIds(List<String> ids) async {
-    await _deletedDao.deleteIds(ids);
     return _tagsDao.serverDeleteByIds(ids);
   }
 
-  Future<List<DeletedData>> getDeletedBatch({int limit = 500}) =>
-      _deletedDao.getBatch(limit: limit);
+  // Obtener los registros borrados para subirlos a la nube
+  Future<List<DeletedData>> getDeletedBatch(String fileId) => 
+      _tagsDao.getBatchByFileId(fileId);
 
-  Future<void> clearDeletedTags(List<String> ids) => _deletedDao.deleteIds(ids);
+  Future<void> clearDeletedTags(List<String> ids) => _tagsDao.clearDeletedTags(ids);
 }
 
 final tagsRepositoryProvider = Provider<TagsRepository>((ref) {
   final db = ref.read(databaseProvider);
+  final syncRepo = ref.read(localSyncQueueRepositoryProvider);
   return TagsRepository(
     db: db,
-    deletedTagsDao: DeletedTagsDao(db: db),
-    syncRepo: ref.read(localSyncQueueRepositoryProvider),
+    deletedTagsDao: ref.read(deletedDaoProvider),
+    syncRepo: syncRepo,
   );
 });

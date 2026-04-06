@@ -1,12 +1,16 @@
 import 'package:flutter/rendering.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:tag_links/data/data_sources/deleted_dao.dart';
 import 'package:tag_links/models/tag.dart';
+import 'package:tag_links/sync/db/local_sync_queue_dao.dart';
 import 'package:tag_links/utils/paginated_utils.dart';
 
 class TagsDao {
   final String _tableName = 'tags';
   final Database _db;
-  TagsDao(this._db);
+  final DeletedDao _deletedDao;
+  final LocalSyncQueueDao _syncDao;
+  TagsDao(this._db, this._deletedDao, this._syncDao);
 
   Future<Tag?> insertIfNotExist(Tag tag) async {
     try {
@@ -36,16 +40,22 @@ class TagsDao {
   }
 
   Future<void> update(Tag tag) async {
-    await _db.update(
-      _tableName,
-      tag.toMap(),
-      where: 'id = ?',
-      whereArgs: [tag.id],
-    );
+    await _db.transaction((txn) async {
+      await txn.update(
+        _tableName,
+        tag.toMap(),
+        where: 'id = ?',
+        whereArgs: [tag.id],
+      );
+      await _syncDao.markAsDirty(tag.fileId, executor: txn);
+    });
   }
 
   Future<void> delete(String id) async {
-    await _db.delete(_tableName, where: 'id = ?', whereArgs: [id]);
+    _db.transaction((tx) async {
+      await tx.delete(_tableName, where: 'id = ?', whereArgs: [id]);
+      await _deletedDao.saveId(id, DeletedType.tag, executor: tx);
+    });
   }
 
   Future<Tag?> getById(String id) async {
@@ -146,38 +156,58 @@ class TagsDao {
   }
 
   Future<void> upsertAll(List<Tag> tags) async {
+    if (tags.isEmpty) return;
+
     try {
-      _db.transaction((txn) async {
+      // Usamos await para que la función espere a que la transacción termine
+      await _db.transaction((txn) async {
+        // 1. Obtenemos los IDs que el usuario borró localmente y aún no sube a Drive
+        // Usamos el 'txn' para que la lectura sea exacta en este microsegundo
+        final List<String> incomingIds = tags.map((e) => e.id).toList();
+        final Set<String> dirtyDeletedIds = await _deletedDao
+            .extractDirtyIdsByType(incomingIds, DeletedType.tag, executor: txn);
+
         final batch = txn.batch();
+
         for (final tag in tags) {
+          // 2. Filtro de exclusión: Si está en la papelera local, lo ignoramos
+          if (dirtyDeletedIds.contains(tag.id)) {
+            debugPrint("🚫 Ignorando Tag resucitado: ${tag.name}");
+            continue;
+          }
+
+          // 3. Procesamos el Batch
           _upsertAllBatch(tag, batch);
         }
+
         await batch.commit(noResult: true);
       });
     } catch (e) {
-      debugPrint('TagsDao.upsert error: ${e.toString()}');
+      debugPrint('TagsDao.upsertAll error: ${e.toString()}');
+      rethrow; // Es mejor relanzar para que el SyncManager sepa que falló
     }
   }
 
   void _upsertAllBatch(Tag tag, Batch batch) {
-    // Quité el async porque batch no lo requiere
+    // Aseguramos que el objeto sea válido para inserción
     final tagToUpdate = tag.ensureForInsert();
+
     batch.rawInsert(
       '''
-      INSERT INTO tags (id, name, fileId, isFavorite, usageCount, updatedAt)
-      VALUES (?, ?, ?, ?, ?, ?) -- Agregamos fileId
-      ON CONFLICT(id) DO UPDATE SET
-        name = excluded.name,
-        fileId = excluded.fileId,
-        isFavorite = excluded.isFavorite,
-        usageCount = excluded.usageCount,
-        updatedAt = excluded.updatedAt
-      WHERE excluded.updatedAt > updatedAt 
-      ''',
+    INSERT INTO tags (id, name, fileId, isFavorite, usageCount, updatedAt)
+    VALUES (?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      name = excluded.name,
+      fileId = excluded.fileId,
+      isFavorite = excluded.isFavorite,
+      usageCount = excluded.usageCount,
+      updatedAt = excluded.updatedAt
+    WHERE excluded.updatedAt > updatedAt 
+    ''',
       [
         tagToUpdate.id,
         tagToUpdate.name,
-        tagToUpdate.fileId, // <--- Faltaba este
+        tagToUpdate.fileId,
         tagToUpdate.isFavorite ? 1 : 0,
         tagToUpdate.usageCount,
         tagToUpdate.updatedAt,
@@ -187,7 +217,7 @@ class TagsDao {
 
   Future<void> serverDeleteByIds(List<String> ids) async {
     if (ids.isEmpty) return;
-
+    await _deletedDao.deleteIds(ids);
     final placeholders = List.filled(ids.length, '?').join(',');
 
     try {
@@ -197,4 +227,7 @@ class TagsDao {
     }
   }
 
+  Future<List<DeletedData>> getBatchByFileId(String fileId) =>
+      _deletedDao.getBatchByFileIdAndType(fileId, DeletedType.tag);
+  Future<void> clearDeletedTags(List<String> ids) => _deletedDao.deleteIds(ids);
 }

@@ -14,12 +14,12 @@ import 'package:tag_links/utils/paginated_utils.dart';
 //DAO = Data Access Object
 class NotesDao {
   final FetchersNotesDao _fetch;
-  NotesDao(Database db)
+  NotesDao(Database db, DeletedDao deletedDao)
     : _fetch = FetchersNotesDao(
         db: db,
         linkDao: LinkPreviewDao(db),
         tagsNotesDao: TagsNotesDao(db),
-        deletedNotesDao: DeletedNotesDao(db: db),
+        deletedDao: deletedDao,
         synDao: LocalSyncQueueDao(db),
       );
   /* ----------------------------- PUBLIC API ----------------------------- */
@@ -57,8 +57,8 @@ class NotesDao {
     return _hydrate(rows);
   }
 
-  Future<void> delete(String noteId) async {
-    await _fetch.delete(noteId);
+  Future<void> delete(Note note) {
+    return _fetch.delete(note);
   }
 
   Future<void> upsert(Note note) async {
@@ -198,18 +198,18 @@ class FetchersNotesDao {
   final Database _db;
   final LinkPreviewDao _linkDao;
   final TagsNotesDao _tagsNotesDao;
-  final DeletedNotesDao _deletedNotesDao;
+  final DeletedDao _deletedDao;
   final LocalSyncQueueDao _syncDao;
   FetchersNotesDao({
     required Database db,
     required LinkPreviewDao linkDao,
     required TagsNotesDao tagsNotesDao,
-    required DeletedNotesDao deletedNotesDao,
+    required DeletedDao deletedDao,
     required LocalSyncQueueDao synDao,
   }) : _db = db,
        _linkDao = linkDao,
        _tagsNotesDao = tagsNotesDao,
-       _deletedNotesDao = deletedNotesDao, 
+       _deletedDao = deletedDao,
        _syncDao = synDao;
 
   Future<bool> hasAnyData() async {
@@ -555,32 +555,37 @@ class FetchersNotesDao {
       }
 
       // 🚀 NOTIFICAR AL BUCKET: Cambio local detectado
-      await txn.update(
-        'files',
-        {
-          'syncStatus': 2, // 2 = Dirty (necesita subir)
-          'lastUpdate': note.updatedAt,
-        },
-        where: 'id = ?',
-        whereArgs: [note.fileId],
-      );
+      await _syncDao.markAsDirty(note.fileId, executor: txn);
     });
   }
 
-  Future<void> upsertAll(List<Note> notes) async {
-    if (notes.isEmpty) return;
+Future<void> upsertAll(List<Note> notes) async {
+  if (notes.isEmpty) return;
 
-    await _db.transaction((txn) async {
-      final batch = txn.batch();
+  await _db.transaction((txn) async {
+    // 🛡️ PASO 1: Obtener IDs borrados LOCALMENTE que aún no se suben a Drive
+    // Lo hacemos DENTRO de la transacción para que nada cambie mientras operamos.
+    final List<String> incomingIds = notes.map((e) => e.id).toList();
+    final Set<String> dirtyDeletedIds = await _deletedDao.extractDirtyIdsByType(
+      incomingIds, DeletedType.note,
+      executor: txn // IMPORTANTE: Pasa el executor
+    );
 
-      for (final note in notes) {
-        batch.rawInsert(
-          '''
+    final batch = txn.batch();
+
+    for (final note in notes) {
+      // 🛡️ PASO 2: Si el ID está en la papelera local, IGNORAMOS lo que viene de Drive
+      if (dirtyDeletedIds.contains(note.id)) {
+        debugPrint("🚫 Ignorando nota resucitada (está en deletes locales): ${note.id}");
+        continue; 
+      }
+
+      batch.rawInsert('''
         INSERT INTO notes (
           id, folderId, fileId, title, content, color, 
           createdAt, updatedAt, isFavorite
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) -- 9 argumentos
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
           folderId = excluded.folderId,
           fileId = excluded.fileId,
@@ -590,72 +595,62 @@ class FetchersNotesDao {
           updatedAt = excluded.updatedAt,
           isFavorite = excluded.isFavorite
         WHERE excluded.updatedAt > updatedAt 
-      ''',
-          [
-            note.id,
-            note.folderId,
-            note.fileId,
-            note.title,
-            note.content,
-            note.color,
-            note.createdAt,
-            note.updatedAt,
-            note.isFavorite ? 1 : 0,
-          ],
-        );
+      ''', [
+        note.id,
+        note.folderId,
+        note.fileId,
+        note.title,
+        note.content,
+        note.color,
+        note.createdAt,
+        note.updatedAt,
+        note.isFavorite ? 1 : 0,
+      ]);
 
-        // Tags y Links en Batch
-        _tagsNotesDao.deleteBatch(batch, noteId: note.id);
-        for (final tag in note.tags) {
-          _tagsNotesDao.upsertBatch(batch, noteId: note.id, tagId: tag.id);
-        }
-
-        if (note.link != null) {
-          _linkDao.upsertBatch(batch, note.link!);
-        } else {
-          _linkDao.deleteBatch(batch, note.id);
-        }
+      // Tags y Links (Solo si la nota no fue filtrada)
+      _tagsNotesDao.deleteBatch(batch, noteId: note.id);
+      for (final tag in note.tags) {
+        _tagsNotesDao.upsertBatch(batch, noteId: note.id, tagId: tag.id);
       }
 
+      if (note.link != null) {
+        _linkDao.upsertBatch(batch, note.link!);
+      } else {
+        _linkDao.deleteBatch(batch, note.id);
+      }
+    }
       // Al ser upsertAll (PULL), NO marcamos el archivo como sucio
       // porque los datos ya vienen sincronizados de Drive.
-      await batch.commit(noResult: true);
-    });
-  }
+    await batch.commit(noResult: true);
+  });
+}
 
   /* ----------------------------------------------------------------------
    * DELETE
    * -------------------------------------------------------------------- */
 
-Future<void> delete(String id) async {
+Future<void> delete(Note note) async { // Recibimos el objeto completo
+  try {
     await _db.transaction((txn) async {
-      // 1. Antes de borrar, obtenemos el driveFileId y el fileId (Bucket)
-      final result = await txn.query(
-        'notes',
-        columns: ['driveFileId', 'fileId'], 
-        where: 'id = ?',
-        whereArgs: [id],
-      );
+      final String id = note.id;
+      final String bucketId = note.fileId; // 🎯 Ya lo tenemos, no hay que buscarlo
 
-      if (result.isNotEmpty) {
-        final driveId = result.first['driveFileId'];
-        final bucketId = result.first['fileId'] as String;
+      // 1. Registramos el borrado en la tabla de "deletes"
+      // (Esto marcará el bucket de borrados como sucio internamente)
+      await _deletedDao.saveId(id,DeletedType.note, executor: txn);
 
-        // 2. Si el servidor la conoce (driveFileId != null), registramos el borrado
-        // Esto le avisará al servidor que debe eliminarla de su índice global
-        if (driveId != null) {
-          await _deletedNotesDao.saveId(id, executor: txn);
-        }
+      // 2. ¡IMPORTANTE! Marcamos el bucket original de la nota como sucio
+      // Ahora el Pusher generará un JSON de notas SIN esta nota.
+      await _syncDao.markAsDirty(bucketId, executor: txn);
 
-        // 3. ¡IMPORTANTE! "Manchamos" el bucket local
-        // Esto obliga al SyncPusher a generar un nuevo JSON que ya NO incluya esta nota
-        await _syncDao.markAsDirty(bucketId, executor: txn);
-      }
-
-      // 4. Borrado físico de la base de datos local
+      // 3. Borrado físico local
       await txn.delete('notes', where: 'id = ?', whereArgs: [id]);
     });
+  } catch (e) {
+    debugPrint('NotesDao.delete ERROR: $e');
+    rethrow;
   }
+}
 
   Future<void> serverDeleteByIds(List<String> ids) async {
     if (ids.isEmpty) return;
@@ -673,6 +668,7 @@ Future<void> delete(String id) async {
       });
     } catch (e) {
       debugPrint('NotesDao.serverDeleteByIds ERROR: $e');
+      rethrow;
     }
   }
 

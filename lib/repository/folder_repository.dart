@@ -9,16 +9,21 @@ import 'package:tag_links/models/folder_preference.dart';
 import 'package:tag_links/models/search_query.dart';
 import 'package:tag_links/sync/db/local_sync_queue_dao.dart';
 import 'package:tag_links/sync/db/local_sync_queue_repository.dart';
+import 'package:tag_links/sync/models/folders_file.dart';
 import 'package:tag_links/utils/paginated_utils.dart';
 
 class FolderRepository {
   final FoldersDao _dao;
-  final DeletedFoldersDao _deletedDao;
+  final DeletedDao _deletedDao;
   final FolderPreferencesDao _preferencesDao;
   final LocalSyncQueueRepository _syncRepo;
 
-
-  FolderRepository(this._dao, this._preferencesDao, this._deletedDao, this._syncRepo);
+  FolderRepository(
+    this._dao,
+    this._preferencesDao,
+    this._deletedDao,
+    this._syncRepo,
+  );
 
   Future<List<Folder>> searchByQuery(
     SearchQuery query, {
@@ -28,11 +33,13 @@ class FolderRepository {
   }
 
   Future<void> upsertAll(List<Folder> folders) async {
-    final dirtysIds = await _deletedDao.extractDirtyIds(
-      folders.map((e) => e.id).toList(),
+    final dirtysIds = await _deletedDao.extractDirtyIdsByType(
+      folders.map((e) => e.id).toList(),DeletedType.folder,
     );
-    final cleanNotes = folders.where((e) => !dirtysIds.contains(e.id)).toList();
-    return _dao.upsertAll(cleanNotes);
+    final cleanFolders = folders
+        .where((e) => !dirtysIds.contains(e.id))
+        .toList();
+    return _dao.upsertAll(cleanFolders);
   }
 
   Future<void> create(Folder folder) async {
@@ -42,7 +49,6 @@ class FolderRepository {
   }
 
   Future<void> upsert(Folder folder) async {
-
     final folderToUpdate = folder.ensureForInsert();
     await _syncRepo.markAsDirty(folder.fileId);
     return _dao.upsert(folderToUpdate);
@@ -98,16 +104,34 @@ class FolderRepository {
     bool toRoot = true,
   }) async {
     await _syncRepo.markAsDirty(folder.fileId);
-    return _dao.moveAndFlatten(folder, newParentId, toRoot: true);}
+    return _dao.moveAndFlatten(folder, newParentId, toRoot: true);
+  }
 
   Future<bool> hasChildren(String folderId) async {
     return _dao.hasChildren(folderId);
   }
 
   // ----------------------- SYNC section ------------------------- //
-  Future<List<Folder>> getByFileId(String fileId) async {
-    return _dao.getByFileId(fileId);
-  }
+Future<List<Folder>> getByFileId(String fileId) async {
+  return _dao.getByFileId(fileId);
+}
+
+/// Genera el Wrapper de carpetas listo para la sincronización.
+Future<FoldersFile> getFileWrapper({
+  required String fileId,
+  String? driveFileId,
+  required DateTime now,
+}) async {
+  final items = await getByFileId(fileId);
+
+  return FoldersFile(
+    id: fileId,
+    fileId: driveFileId ?? '',
+    folders: items,
+    createdAt: now,
+    updatedAt: now,
+  );
+}
 
   Future<void> clearDeletedNotes(List<String> ids) {
     return _deletedDao.deleteIds(ids);
@@ -123,21 +147,22 @@ class FolderRepository {
     return _deletedDao.deleteIds(ids);
   }
 
-  Future<List<DeletedData>> getDeletedBatch({int limit = 500}) =>
-      _deletedDao.getBatch(limit: limit);
+  // Obtener los registros borrados para subirlos a la nube
+  Future<List<DeletedData>> getDeletedBatch(String fileId) => 
+      _deletedDao.getBatchByFileIdAndType(fileId,DeletedType.folder);
 }
 
 final folderRepositoryProvider = Provider<FolderRepository>((ref) {
   final db = ref.read(databaseProvider);
+  final deletedDao = ref.read(deletedDaoProvider);
   final foldersDao = FoldersDao(
     db: db,
     folderTagsDao: FolderTagsDao(db),
-    deletedFoldersDao: DeletedFoldersDao(db: db),
     syncDao: LocalSyncQueueDao(db),
+    deletedDao: deletedDao,
   );
-  final deleteDao = DeletedFoldersDao(db: db);
   final preferencesDao = FolderPreferencesDao(db: db);
   final syncRepo = ref.read(localSyncQueueRepositoryProvider);
 
-  return FolderRepository(foldersDao, preferencesDao, deleteDao, syncRepo);
+  return FolderRepository(foldersDao, preferencesDao, deletedDao, syncRepo);
 });
