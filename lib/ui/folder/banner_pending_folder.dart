@@ -48,7 +48,7 @@ class BannerPendingFolder extends ConsumerWidget {
 
         if (isSameFolder) {
           return BannerPending(
-            title: t(ref, 'alertMoveFolderErrorIsSameFolder'),
+            title: t(ref, 'alertMoveFolderErrorIsSameFolder', fallback: 'Error al mover carpeta. Es la misma carpeta.'),
             actions: [_discard(context, ref)],
           );
         }
@@ -57,7 +57,7 @@ class BannerPendingFolder extends ConsumerWidget {
         );
 
         return BannerPending(
-          title: t(ref, 'alertMovePendingFolder'),
+          title: t(ref, 'alertMovePendingFolder', fallback: 'Tienes una carpeta pendiente de mover'),
           actions: [
             // Solo mostramos el botón si no es una zona prohibida
             if (!isForbidden)
@@ -92,7 +92,7 @@ class BannerPendingFolder extends ConsumerWidget {
                         .move(folder: folder, toParentId: toParent?.id);
                   }
                 },
-                title: t(ref, 'store'),
+                title: t(ref, 'store', fallback: 'Almacenar'),
               ),
             _discard(context, ref),
           ],
@@ -116,8 +116,8 @@ class BannerPendingFolder extends ConsumerWidget {
         // 1. Mostramos el diálogo PRIMERO.
         final confirm = await showConfirmDialog(
           context,
-          title: t(ref, 'bannerNotMove'),
-          message: t(ref, 'discardAction'),
+          title: t(ref, 'bannerNotMove', fallback: 'No mover'),
+          message: t(ref, 'discardAction', fallback: 'Descartar acción'),
           ref: ref,
         );
 
@@ -134,7 +134,7 @@ class BannerPendingFolder extends ConsumerWidget {
           }
         }
       },
-      title: t(ref, 'discard'),
+      title: t(ref, 'discard', fallback: 'Descartar'),
     );
   }
 }

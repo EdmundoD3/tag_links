@@ -49,9 +49,21 @@ final Map<String, Map<AppLang, String>> alertTranslations = {
     AppLang.es: '¿Estás seguro de mover la carpeta?',
     AppLang.en: 'Are you sure you want to move the carpeta?',
   },
+  'alertMoveFolderTitle':{
+    AppLang.es: 'Cambiar carpeta',
+    AppLang.en: 'Move folder'
+  },
   'alertMovePendingFolder': {
     AppLang.es: 'Tienes una carpeta pendiente de mover',
     AppLang.en: 'You have a folder pending to move',
+  },
+  'alertMoveFolderErrorIsSameFolder': {
+    AppLang.es: 'Error al mover carpeta. Es la misma carpeta.',
+    AppLang.en: 'Error moving folder. It\'s the same folder.',
+  },
+  'alertMoveFolderErrorIsDeepFolder':{
+    AppLang.es: 'No puedes almacenar carpetas aquí, elije otra carpeta.',
+    AppLang.en: 'You cannot store folders here, please choose another folder.',
   },
   //banners
   'bannerPendingNote': {
@@ -62,5 +74,22 @@ final Map<String, Map<AppLang, String>> alertTranslations = {
   'discardAction': {
     AppLang.es: '¿Estás seguro de descartar la acción?',
     AppLang.en: 'Are you sure you want to discard the action?',
+  },
+  //Form
+  'alertDiscardFormTitle':{
+    AppLang.es: 'Descartar cambios',
+    AppLang.en: 'Discard changes',
+  },
+  'alertDiscardFormTitle':{
+    AppLang.es: 'Falta el título. ¿Quieres descartarla?',
+    AppLang.en: 'The title is missing. Do you want to discard it?',
+  },
+  'limitReached':{
+    AppLang.es: 'Límite de niveles',
+    AppLang.en: 'Level limit',
+  },
+  'flattenMessage':{
+    AppLang.es: 'Esta carpeta tiene otras carpetas. Se moverán al inicio.',
+    AppLang.en: 'This folder contains other folders. They will be moved to the beginning.',
   },
 };

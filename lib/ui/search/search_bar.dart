@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:googleapis/dataproc/v1.dart';
 import 'package:tag_links/core/locate/app_lang.dart';
 import 'package:tag_links/models/tag.dart';
 
@@ -165,7 +166,7 @@ class _SearchInput extends ConsumerWidget {
   }
 }
 
-class _TagsSuggestionList extends StatelessWidget {
+class _TagsSuggestionList extends ConsumerWidget {
   final void Function(Tag tag) onTagSelected;
   final AsyncValue<List<Tag>> tagsAsync;
   const _TagsSuggestionList({
@@ -174,19 +175,19 @@ class _TagsSuggestionList extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return tagsAsync.when(
-      data: _whenData,
+      data: (tags) => _whenData(tags, ref),
       loading: _loading,
       error: (e, _) => Text('Error: $e'),
     );
   }
 
-  Widget _whenData(List<Tag> tags) {
+  Widget _whenData(List<Tag> tags, WidgetRef ref) {
     if (tags.isEmpty) {
-      return const Padding(
+      return  Padding(
         padding: EdgeInsets.all(8),
-        child: Text('No se encontraron tags'),
+        child: Text(t(ref, 'noTagsFound', fallback: 'No se encontraron tags')),
       );
     }
     return ConstrainedBox(

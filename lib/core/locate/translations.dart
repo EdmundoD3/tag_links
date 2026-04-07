@@ -24,5 +24,5 @@ final Map<String, Map<AppLang, String>> translations = {
   // pendientes
   'readLess': {AppLang.es: 'ver menos...', AppLang.en: 'show less...'},
   'readMore': {AppLang.es: 'ver más...', AppLang.en: 'show more...'},
-  
+  'noTagsFound': {AppLang.es: 'No se en encontraron tags', AppLang.en: 'No tags found'},
 };

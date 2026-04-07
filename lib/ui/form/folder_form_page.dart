@@ -130,7 +130,7 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
         label: t(ref, 'formFolderTitle', fallback: 'Nombre de la carpeta'),
         validatorMsg: t(
           ref,
-          'formFolderTitleRequired',
+          'bannerPendingNote',
           fallback: 'El título es obligatorio',
         ),
         onChange: () => _saveDebouncer.run(_scheduleAutoSave),
