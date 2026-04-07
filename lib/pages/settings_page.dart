@@ -3,11 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/ads/ads_service_provider.dart';
 import 'package:tag_links/core/ads/show_ad_management_menu.dart';
 import 'package:tag_links/core/app_purchases/premium_sales_sheet.dart';
+import 'package:tag_links/core/auth/account_sync_tile.dart';
 import 'package:tag_links/core/coffe/invitame_un_caffe.dart';
 import 'package:tag_links/core/locate/lang_selector.dart';
-import 'package:tag_links/core/locate/app_lang.dart';
 import 'package:tag_links/core/ads/ads_disable_provider.dart';
+import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/core/theme/theme_selector_widget.dart';
+import 'package:tag_links/sync/widgets/sync_info.dart';
 
 class SupportProjectPage extends ConsumerWidget {
   const SupportProjectPage({super.key});
@@ -16,17 +18,24 @@ class SupportProjectPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Escuchamos el estado (null al inicio, luego el valor de SharedPreferences)
     final adsActive = ref.watch(isAdsActiveProvider);
-
     final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          t(ref, 'settingsTitle', fallback: 'Configuración'),
+          ref.tr(TKeys.pages.settingsTitle, fallback: 'Configuración'),
           style: TextStyle(color: theme.appBarTheme.foregroundColor),
         ),
       ),
       floatingActionButton: null,
-      body: SafeArea(child: Column(children: _buildBody(context, ref, adsActive))),
+      body: SafeArea(
+        // Agregamos SingleChildScrollView para evitar el error de Overflow
+        child: SingleChildScrollView(
+          child: Column(
+            children: _buildBody(context, ref, adsActive),
+          ),
+        ),
+      ),
     );
   }
 
@@ -35,23 +44,19 @@ class SupportProjectPage extends ConsumerWidget {
     WidgetRef ref,
     bool? adsActive,
   ) {
-    // 1. Mientras el estado es null, mostramos la opción de "Quitar Publicidad"
-    //    o un loader si prefieres esperar a que SharedPreferences responda.
-    //    En este caso, asumimos que si es null, es porque nunca ha decidido.
-
     final theme = Theme.of(context);
+    
     return [
       ThemeSelector(),
       LangSelector(),
 
-      // 2. Si ya decidió (es true o false), liberamos las opciones de apoyo
+      // Si ya decidió (es true o false), liberamos las opciones de apoyo
       if (adsActive != null) ...[
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: Text(
-            t(
-              ref,
-              'supportProject',
+            ref.tr(
+              TKeys.ads.supportTitle,
               fallback: '¿Cómo quieres apoyar el proyecto?',
             ),
             style: TextStyle(
@@ -59,7 +64,7 @@ class SupportProjectPage extends ConsumerWidget {
               fontWeight: FontWeight.bold,
               color: theme.textTheme.titleLarge?.color,
             ),
-            textAlign: TextAlign.center
+            textAlign: TextAlign.center,
           ),
         ),
         PremiumSalesSheet(showEmpty: null),
@@ -77,13 +82,12 @@ class SupportProjectPage extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.video_library, color: Colors.orange),
             title: Text(
-              t(ref, 'viewLargeAd', fallback: 'Ver un anuncio grande'),
+              ref.tr(TKeys.ads.viewLargeAd, fallback: 'Ver un anuncio grande'),
               style: TextStyle(color: theme.textTheme.bodyMedium?.color),
             ),
             subtitle: Text(
-              t(
-                ref,
-                'disableAdsForOneDay',
+              ref.tr(
+                TKeys.ads.disabledForOneDay,
                 fallback: 'Se desactivará por un día la publicidad',
               ),
               style: TextStyle(color: theme.hintColor),
@@ -92,11 +96,9 @@ class SupportProjectPage extends ConsumerWidget {
               context,
               ref,
               showRewardedAd: () async {
-                // Usamos el servicio que ya tienes
                 return await ref.read(adServiceProvider).showRewardedAd();
               },
               processPurchase: () async {
-                // 3. Mostramos el modal de compra que creamos antes
                 showModalBottomSheet(
                   context: context,
                   isScrollControlled: true,
@@ -112,17 +114,25 @@ class SupportProjectPage extends ConsumerWidget {
           indent: 10,
           endIndent: 10,
         ),
+        
+        // ------------- Account and Sync info ----------------
+        AccountSyncTile(),
+        BuildSyncInfo(),
 
         const SizedBox(height: 20),
         Center(
           child: Text(
-            t(ref, 'thanksForUsingApp', fallback: '¡Gracias por usar la App!'),
+            ref.tr(
+              TKeys.ads.thanksForUsing,
+              fallback: '¡Gracias por usar la App!',
+            ),
             style: TextStyle(
               color: theme.textTheme.titleMedium?.color,
               fontStyle: FontStyle.italic,
             ),
           ),
         ),
+        const SizedBox(height: 20),
       ],
     ];
   }

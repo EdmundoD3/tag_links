@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/core/locate/app_lang.dart';
+import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/state/pending_folder_provider.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
@@ -26,9 +26,7 @@ class BannerPendingFolder extends ConsumerWidget {
 
     if (_isSubFolder) {
       return BannerPending(
-        title: t(
-          ref,
-          'alertMoveFolderErrorIsDeepFolder',
+        title: ref.tr(TKeys.alerts.moveFolverIsDeepError,
           fallback: "No puedes almacenar carpetas aquí, elije otra carpeta",
         ),
         actions: [_discard(context, ref)],
@@ -48,7 +46,7 @@ class BannerPendingFolder extends ConsumerWidget {
 
         if (isSameFolder) {
           return BannerPending(
-            title: t(ref, 'alertMoveFolderErrorIsSameFolder', fallback: 'Error al mover carpeta. Es la misma carpeta.'),
+            title: ref.tr(TKeys.alerts.moveFolverIsSameFolderError),
             actions: [_discard(context, ref)],
           );
         }
@@ -57,7 +55,7 @@ class BannerPendingFolder extends ConsumerWidget {
         );
 
         return BannerPending(
-          title: t(ref, 'alertMovePendingFolder', fallback: 'Tienes una carpeta pendiente de mover'),
+          title: ref.tr(TKeys.alerts.movePendingFolder),
           actions: [
             // Solo mostramos el botón si no es una zona prohibida
             if (!isForbidden)
@@ -92,7 +90,7 @@ class BannerPendingFolder extends ConsumerWidget {
                         .move(folder: folder, toParentId: toParent?.id);
                   }
                 },
-                title: t(ref, 'store', fallback: 'Almacenar'),
+                title: ref.tr(TKeys.actions.store),
               ),
             _discard(context, ref),
           ],
@@ -105,7 +103,7 @@ class BannerPendingFolder extends ConsumerWidget {
       },
       error: (err, stack) {
         debugPrint("❌ Error en provider: $err");
-        return Text("Error: $err");
+        return Text("Error: banner");
       },
     );
   }
@@ -116,8 +114,8 @@ class BannerPendingFolder extends ConsumerWidget {
         // 1. Mostramos el diálogo PRIMERO.
         final confirm = await showConfirmDialog(
           context,
-          title: t(ref, 'bannerNotMove', fallback: 'No mover'),
-          message: t(ref, 'discardAction', fallback: 'Descartar acción'),
+          title: ref.tr(TKeys.alerts.notMove),
+          message: ref.tr(TKeys.alerts.discardAction),
           ref: ref,
         );
 
@@ -134,7 +132,7 @@ class BannerPendingFolder extends ConsumerWidget {
           }
         }
       },
-      title: t(ref, 'discard', fallback: 'Descartar'),
+      title: ref.tr(TKeys.actions.discard),
     );
   }
 }

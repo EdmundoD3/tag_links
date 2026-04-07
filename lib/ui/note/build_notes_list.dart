@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/core/locate/app_lang.dart';
+import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/models/note.dart';
 import 'package:tag_links/state/pending_note_provider.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
+import 'package:tag_links/ui/is_loading_indicators/shimmer_note_list.dart';
 import 'package:tag_links/ui/menu/menu_container.dart';
 import 'package:tag_links/ui/note/note_tile.dart';
 import 'package:tag_links/ui/utils/empty_indicator.dart';
 
 class BuildNotesList extends ConsumerWidget {
   final bool isLoadingMore;
-  final Future<void> Function(Note id) onDeleteNote;
+  final Future<void> Function(Note note) onDeleteNote;
   final AsyncValue<List<Note>> notesAsync;
   final ScrollController scrollController;
   final List<ActionMenuItem>? actionsItems;
@@ -34,7 +35,7 @@ class BuildNotesList extends ConsumerWidget {
       data: (notes) {
         if (notes.isEmpty) {
           return EmptyIndicator(
-            title: t(ref, 'emptyNotes', fallback: 'No hay notas'),
+            title: ref.tr(TKeys.ui.emptyNotes, fallback: 'No hay notas'),
           );
         }
 
@@ -56,7 +57,7 @@ class BuildNotesList extends ConsumerWidget {
               // Cambiamos GlobalKey por ValueKey si es posible
               key: ValueKey(note.id),
               note: note,
-              onDeleteNote: (n) async => await onDeleteNote(n),
+              onDeleteNote: () => onDeleteNote(note),
               onMove: (n) async {
                 final isConfirm = await ConfirmDialog.moveNote(context, ref);
                 if (isConfirm == true) {
@@ -68,7 +69,7 @@ class BuildNotesList extends ConsumerWidget {
                 if (goFolder != null)
                   ActionMenuItem(
                     icon: Icons.drive_folder_upload,
-                    label: t(ref, 'goToFolder', fallback: 'Ir a la carpeta'),
+                    label: ref.tr(TKeys.ui.goToFolder, fallback: 'Ir a la carpeta'),
                     onTap: () => goFolder!(note),
                   ),
               ],
@@ -76,7 +77,7 @@ class BuildNotesList extends ConsumerWidget {
           },
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const ShimmerNotesList(),
       error: (err, _) => Center(child: Text('Error: $err')),
     );
   }

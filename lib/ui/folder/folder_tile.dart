@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/core/locate/app_lang.dart';
+import 'package:tag_links/core/locate/t_keys.dart';
+import 'package:tag_links/core/locate/time/format_time.dart';
 import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/ui/container/tile_container.dart';
@@ -14,7 +15,7 @@ class FolderTile extends ConsumerStatefulWidget {
   final Folder folder;
   final void Function() goFolder;
   final void Function() onDeleteFolder;
-  final void Function(Folder folder) onMove;
+  final void Function() onMove;
 
   const FolderTile({
     super.key,
@@ -53,7 +54,10 @@ class _FolderTileState extends ConsumerState<FolderTile> {
           color: Theme.of(context).hintColor,
         ),
       ),
-      child: _FolderCard(folder: widget.folder),
+      child: _FolderCard(
+        folder: widget.folder,
+        updatedAt: ref.fmt(widget.folder.updatedAt),
+      ),
     );
   }
 
@@ -74,18 +78,18 @@ class _FolderTileState extends ConsumerState<FolderTile> {
       items: [
         ActionMenuItem(
           icon: Icons.edit,
-          label: t(ref, 'edit', fallback: 'Editar'),
+          label: ref.tr(TKeys.actions.edit, fallback: 'Editar'),
           onTap: () => _editFolder(context),
         ),
         ActionMenuItem(
           icon: Icons.delete,
-          label: t(ref, 'delete', fallback: 'Eliminar'),
+          label: ref.tr(TKeys.actions.delete, fallback: 'Eliminar'),
           onTap: () => widget.onDeleteFolder(),
         ),
         ActionMenuItem(
           icon: Icons.move_down_rounded,
-          label: t(ref, 'moveDown', fallback: 'Mover'),
-          onTap: () => widget.onMove(widget.folder),
+          label: ref.tr(TKeys.actions.move, fallback: 'Mover'),
+          onTap: () => widget.onMove(),
         ),
         ...widget.actionsItems,
       ],
@@ -109,7 +113,9 @@ class _FolderTileState extends ConsumerState<FolderTile> {
 // pero dejaremos el Card por tu diseño de sombras.
 class _FolderCard extends StatelessWidget {
   final Folder folder;
-  const _FolderCard({required this.folder});
+  final String updatedAt;
+
+  const _FolderCard({required this.folder, required this.updatedAt});
 
   @override
   Widget build(BuildContext context) {
@@ -159,21 +165,17 @@ class _FolderCard extends StatelessWidget {
           child: _miniTags(theme: theme, tags: folder.tags),
         ),
         const SizedBox(width: 8),
-        _dateWidget(theme: theme, date: folder.updatedAt),
+        _dateWidget(theme: theme, date: updatedAt),
       ],
     );
   }
 
-  Widget _dateWidget({required ThemeData theme, required DateTime date}) {
+  Widget _dateWidget({required ThemeData theme, required String date}) {
     return Text(
-      _formatDate(date),
+      date,
       style: theme.textTheme.labelSmall?.copyWith(color: theme.hintColor),
       textAlign: TextAlign.right,
     );
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} | ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 
   Widget _miniTags({required ThemeData theme, List<Tag> tags = const []}) {

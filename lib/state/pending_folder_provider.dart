@@ -69,8 +69,7 @@ class FolderMoveService {
 
     final moved = folder.copyWith(
       parentId: toParentId,
-      updatedAt: DateTime.now(),
-      syncAt: null, // Aseguramos que el sync lo detecte
+      updatedAt: DateTime.now().millisecondsSinceEpoch,
     );
 
     await _repo.upsert(moved);
@@ -99,8 +98,7 @@ class FolderMoveService {
     // 2. UI: Actualizar la carpeta principal
     final moved = folder.copyWith(
       parentId: toParentId, 
-      updatedAt: DateTime.now(),
-      syncAt: null,
+      updatedAt: DateTime.now().millisecondsSinceEpoch,
     );
     
     _updateUi(

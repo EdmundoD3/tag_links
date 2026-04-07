@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/core/locate/app_lang.dart';
+import 'package:tag_links/core/locate/t_keys.dart';
 
 final String _donationUrl ="";
 class InvitameUnCaffe extends ConsumerWidget {
@@ -14,11 +14,11 @@ class InvitameUnCaffe extends ConsumerWidget {
     return ListTile(
       leading: const Icon(Icons.coffee, color: Color(0xFFBB9457)),
       title: Text(
-        t(ref, 'buyMeCoffee', fallback: 'Invítame un café'),
+        ref.tr(TKeys.ads.buyCoffee, fallback: 'Invítame un café'),
         style: TextStyle(color: theme.textTheme.bodyMedium?.color),
       ),
       subtitle: Text(
-        t(ref, 'buyMeCoffeeDescription', fallback: 'Si te gusta la app, invítame un café para apoyar el proyecto'),
+        ref.tr(TKeys.ads.buyCoffeeDesc, fallback: 'Si te gusta la app, invítame un café para apoyar el proyecto'),
         style: TextStyle(color: theme.hintColor),
       ),
       onTap: _launchDonationUrl,

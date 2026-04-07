@@ -1,109 +1,141 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:tag_links/data/database.dart';
+import 'package:tag_links/sync/db/local_sync_queue_dao.dart';
+import 'package:tag_links/sync/models/local_sync_queue.dart';
 
-class DeletedTables {
-  static final deletedFoldersTable = DeletedFoldersDao.table;
-  static final deletedNotesTable = DeletedNotesDao.table;
-  static final deletedTagsTable = DeletedTagsDao.table; // <--- Agregado
+final deletedDaoProvider = Provider<DeletedDao>((ref) {
+  final db = ref.read(databaseProvider);
+  return DeletedDao(db);
+});
+
+class DeletedDao {
+  final Database _db;
+  final LocalSyncQueueDao _syncDao;
+  final String _tableName = 'deletes';
+
+  DeletedDao(this._db) : _syncDao = LocalSyncQueueDao(_db);
+
+  /// Guarda el borrado usando el Enum para garantizar integridad
+  Future<void> saveId(
+    String id,
+    DeletedType type, {
+    required DatabaseExecutor executor,
+  }) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+
+    final exist = await executor.query(
+      _tableName,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    if (exist.isNotEmpty) return;
+
+    final bucketId = await _syncDao.getOrCreateAvailableFileId(
+      TypeQueue.deletes,
+      executor: executor,
+    );
+
+    await executor.insert(_tableName, {
+      'id': id,
+      'type': type.name, // 🎯 Guardamos el string del enum
+      'fileId': bucketId,
+      'deletedAt': now,
+    });
+
+    await _syncDao.markAsDirty(bucketId, executor: executor);
+  }
+
+  /// Busqueda filtrada por Bucket y Tipo
+  Future<List<DeletedData>> getBatchByFileIdAndType(
+    String fileId,
+    DeletedType type,
+  ) async {
+    final result = await _db.query(
+      _tableName,
+      where: 'fileId = ? AND type = ?',
+      whereArgs: [fileId, type.name], // 🎯 Filtro seguro
+      orderBy: 'deletedAt ASC',
+    );
+    return result.map(DeletedData.fromRaw).toList();
+  }
+
+  /// Extraer IDs sucios filtrando por tipo
+  Future<Set<String>> extractDirtyIdsByType(
+    List<String> ids,
+    DeletedType type,
+    {DatabaseExecutor? executor,}
+  ) async {
+    if (ids.isEmpty) return {};
+    final db = executor ?? _db;
+    final placeholders = List.filled(ids.length, '?').join(',');
+    final result = await db.query(
+      _tableName,
+      columns: ['id'],
+      where: 'type = ? AND id IN ($placeholders)',
+      whereArgs: [type.name, ...ids], // 🎯 Comparación robusta
+    );
+
+    return result.map((e) => e['id'] as String).toSet();
+  }
+
+    Future<void> deleteIds(List<String> ids) async {
+    if (ids.isEmpty) return;
+    final placeholders = List.filled(ids.length, '?').join(',');
+    await _db.delete(
+      _tableName,
+      where: 'id IN ($placeholders)',
+      whereArgs: ids,
+    );
+  }
 }
 
-class DeletedTagsDao {
-  final _DeletedDao _dao;
-  
-  DeletedTagsDao({required Database db})
-    : _dao = _DeletedDao(tableName: 'deleted_tags', db: db);
-
-  // Genera el SQL para la tabla de tags borrados
-  static String get table => _DeletedDao.getTable('deleted_tags');
-
-  Future<void> saveId(String id, {Transaction? executor}) => 
-      _dao.saveId(id, executor: executor);
-
-  Future<List<DeletedData>> getBatch({int limit = 500}) => 
-      _dao.getBatch(limit: limit);
-
-  Future<void> deleteIds(List<String> ids) => 
-      _dao.deleteIds(ids);
-}
-
-class DeletedFoldersDao {
-  final _DeletedDao _dao;
-  DeletedFoldersDao({required Database db})
-    : _dao = _DeletedDao(tableName: DeletedFoldersDao.table, db: db);
-
-  static String get table => _DeletedDao.getTable('deleted_folders');
-
-  Future<void> saveId(String id, {Transaction? executor}) => _dao.saveId(id,executor: executor);
-
-  Future<List<DeletedData>> Function({int limit}) get getBatch => _dao.getBatch;
-  Future<void> Function(List<String> ids) get deleteIds => _dao.deleteIds;
-}
-
-class DeletedNotesDao {
-  final _DeletedDao _dao;
-  DeletedNotesDao({required Database db})
-    : _dao = _DeletedDao(tableName: DeletedNotesDao.table, db: db);
-
-  static String get table => _DeletedDao.getTable('deleted_notes');
-
-  Future<void> saveId(String id, {Transaction? executor}) => _dao.saveId(id,executor: executor);
-
-  Future<List<DeletedData>> Function({int limit}) get getBatch => _dao.getBatch;
-  Future<void> Function(List<String> ids) get deleteIds => _dao.deleteIds;
-}
-
-// -----------------
 class DeletedData {
   final String id;
   final int deletedAt;
+  final String fileId;
 
-  DeletedData({required this.id, required this.deletedAt});
-  Map<String, Object> toMap() => {'id': id, 'deletedAt': deletedAt};
+  DeletedData({
+    required this.id,
+    required this.deletedAt,
+    required this.fileId,
+  });
+  Map<String, Object> toMap() => {
+    'id': id,
+    'deletedAt': deletedAt,
+    'fileId': fileId,
+  };
   factory DeletedData.fromRaw(Map<String, Object?> raw) {
     return DeletedData(
       id: raw['id'] as String,
       deletedAt: raw['deletedAt'] as int,
+      fileId: raw['fileId'] as String,
     );
   }
 }
 
-class _DeletedDao {
-  final String tableName;
-  final Database _db;
-// Fix: Asignación correcta en el constructor
-  _DeletedDao({required this.tableName, required Database db}) : _db = db;
+enum DeletedType {
+  note,
+  folder,
+  tag;
 
-  static String getTable(String tableName) => '''
-    CREATE TABLE IF NOT EXISTS $tableName (
-      id TEXT PRIMARY KEY,
-      deletedAt INTEGER NOT NULL
+  // Para guardar en la DB de forma consistente
+  String get name => toString().split('.').last;
+
+  static DeletedType fromString(String value) {
+    return DeletedType.values.firstWhere(
+      (e) => e.name == value,
+      orElse: () => DeletedType.note,
     );
-  ''';
-
-  Future<void> saveId(String id, {Transaction? executor}) async {
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final db = executor ?? _db; 
-
-    await db.insert(
-      tableName,
-      {'id': id, 'deletedAt': now},
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-  }
-
-  Future<List<DeletedData>> getBatch({int limit = 500}) async {
-    final result = await _db.query(
-      tableName,
-      limit: limit,
-      orderBy: 'deletedAt ASC',
-    );
-
-    return result.map(DeletedData.fromRaw).toList();
-  }
-
-  Future<void> deleteIds(List<String> ids) async {
-    if (ids.isEmpty) return;
-
-    final placeholders = List.filled(ids.length, '?').join(',');
-    await _db.delete(tableName, where: 'id IN ($placeholders)', whereArgs: ids);
   }
 }
+
+final deletedTable = '''
+CREATE TABLE IF NOT EXISTS deletes (
+    id TEXT PRIMARY KEY,       -- El ID del objeto borrado
+    type TEXT NOT NULL,        -- 'note', 'folder', o 'tag'
+    fileId TEXT NOT NULL,      -- A qué bucket de Drive pertenece
+    deletedAt INTEGER NOT NULL,
+    FOREIGN KEY (fileId) REFERENCES files (id) ON DELETE CASCADE
+);
+''';

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/core/locate/app_lang.dart';
+import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/state/tags_provider.dart';
 import 'package:tag_links/sync/db/local_sync_queue_repository.dart';
@@ -34,7 +34,7 @@ Future<Tag?> showCreateTagModal({
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              t(ref, 'createTag', fallback: 'Crear tag'),
+              ref.tr(TKeys.tags.create, fallback: 'Crear tag'),
               style: theme.textTheme.titleLarge?.copyWith(fontSize: 18),
             ),
             const SizedBox(height: 12),
@@ -47,7 +47,10 @@ Future<Tag?> showCreateTagModal({
               decoration: InputDecoration(
                 filled: true,
                 fillColor: theme.inputDecorationTheme.fillColor?.withAlpha(60),
-                labelText: t(ref, 'tagName', fallback: 'Nombre del tag'),
+                labelText: ref.tr(
+                  TKeys.tags.nameField,
+                  fallback: 'Nombre del tag',
+                ),
                 alignLabelWithHint: true,
                 border: OutlineInputBorder(),
                 labelStyle: TextStyle(color: theme.textTheme.bodyMedium?.color),
@@ -66,15 +69,18 @@ Future<Tag?> showCreateTagModal({
             Align(
               alignment: Alignment.centerRight,
               child: FilledButton(
-                onPressed: () async =>
-                    await _submit(context: context, controller: controller, ref: ref),
+                onPressed: () async => await _submit(
+                  context: context,
+                  controller: controller,
+                  ref: ref,
+                ),
                 style: FilledButton.styleFrom(
                   backgroundColor:
                       theme.scaffoldBackgroundColor, // Color de fondo
                   foregroundColor:
                       theme.textTheme.titleLarge?.color, // Color del texto
                 ),
-                child: Text(t(ref, 'createTag', fallback: 'Crear tag')),
+                child: Text(ref.tr(TKeys.tags.create, fallback: 'Crear tag')),
               ),
             ),
           ],
@@ -98,10 +104,15 @@ Future<void> _submit({
   try {
     final notifier = ref.read(tagsProvider.notifier);
     final fileId = await ref
-            .read(localSyncQueueRepositoryProvider)
-            .getOrCreateAvailableFileId(TypeQueue.tags);
+        .read(localSyncQueueRepositoryProvider)
+        .getOrCreateAvailableFileId(TypeQueue.tags);
     // 3. Si no existe, crear el nuevo
-    final Tag newTag = Tag(id: const Uuid().v4(), name: name,fileId: fileId);
+    final Tag newTag = Tag(
+      id: const Uuid().v4(),
+      name: name,
+      fileId: fileId,
+      updatedAt: DateTime.now().millisecondsSinceEpoch,
+    );
 
     // Guardamos DESPUÉS (en segundo plano)
     final savedTag = await notifier.addTag(newTag);

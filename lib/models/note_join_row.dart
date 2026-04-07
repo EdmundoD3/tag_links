@@ -1,5 +1,5 @@
-
 class NoteJoinRow {
+  // --- Datos de la Nota ---
   final String noteId;
   final String? folderId;
   final String fileId;
@@ -8,12 +8,17 @@ class NoteJoinRow {
   final String? color;
   final int createdAt;
   final int updatedAt;
-  final int? syncAt;
   final bool isFavorite;
 
+  // --- Datos del Tag (Nuevos campos agregados) ---
   final String? tagId;
   final String? tagName;
+  final String? tagFileId;
+  final bool? tagIsFavorite;
+  final int? tagUpdatedAt;
+  final int? tagUsageCount;
 
+  // --- Datos del Link Preview ---
   final String? linkId;
   final String? linkUrl;
   final String? linkTitle;
@@ -22,40 +27,51 @@ class NoteJoinRow {
   final String? linkSiteName;
 
   NoteJoinRow.fromMap(Map<String, Object?> map)
-    : noteId = map['note_id'] as String,
-      folderId = map['folder_id'] as String?,
-      fileId = map['fileId'] as String,
-      title = map['title'] as String,
-      content = map['content'] as String?,
-      color = map['color'] as String?,
-      createdAt = map['createdAt'] as int,
-      updatedAt = map['updatedAt'] as int,
-      syncAt = map['syncAt'] as int?,
-      isFavorite = map['isFavorite'] == 1,
-      tagId = map['tag_id'] as String?,
-      tagName = map['tag_name'] as String?,
-      linkId = map['link_id'] as String?,
-      linkUrl = map['link_url'] as String?,
-      linkTitle = map['link_title'] as String?,
-      linkDescription = map['link_description'] as String?,
-      linkImage = map['link_image'] as String?,
-      linkSiteName = map['link_siteName'] as String?;
+      : // Mapeo de Nota
+        noteId = map['note_id'] as String,
+        folderId = map['note_folder_id'] as String?,
+        fileId = map['note_fileId'] as String,
+        title = map['note_title'] as String,
+        content = map['note_content'] as String?,
+        color = map['note_color'] as String?,
+        createdAt = map['note_createdAt'] as int,
+        updatedAt = map['note_updatedAt'] as int,
+        isFavorite = map['note_isFavorite'] == 1,
+        
+        // Mapeo de Tag (Coincidiendo con tus nuevos alias t.xxx)
+        tagId = map['tag_id'] as String?,
+        tagName = map['tag_name'] as String?,
+        tagFileId = map['tag_fileId'] as String?,
+        tagIsFavorite = map['tag_isFavorite'] == null ? null : map['tag_isFavorite'] == 1,
+        tagUpdatedAt = map['tag_updatedAt'] as int?,
+        tagUsageCount = map['tag_usageCount'] as int?,
+
+        // Mapeo de Link
+        linkId = map['link_id'] as String?,
+        linkUrl = map['link_url'] as String?,
+        linkTitle = map['link_title'] as String?,
+        linkDescription = map['link_description'] as String?,
+        linkImage = map['link_image'] as String?,
+        linkSiteName = map['link_siteName'] as String?;
 
   static const String selectQuery = '''
     SELECT
       n.id AS note_id,
-      n.folderId AS folder_id,
-      n.title,
-      n.content,
-      n.color,
-      n.createdAt,
-      n.updatedAt,
-      n.syncAt,
-      n.fileId,
-      n.isFavorite,
+      n.folderId AS note_folder_id,
+      n.fileId AS note_fileId,
+      n.title AS note_title,
+      n.content AS note_content,
+      n.color AS note_color,
+      n.createdAt AS note_createdAt,
+      n.updatedAt AS note_updatedAt,
+      n.isFavorite AS note_isFavorite,
 
       t.id AS tag_id,
       t.name AS tag_name,
+      t.fileId AS tag_fileId,
+      t.isFavorite AS tag_isFavorite,
+      t.updatedAt AS tag_updatedAt,
+      t.usageCount AS tag_usageCount,
 
       lp.id AS link_id,
       lp.url AS link_url,
@@ -63,6 +79,7 @@ class NoteJoinRow {
       lp.description AS link_description,
       lp.image AS link_image,
       lp.siteName AS link_siteName
+      
     FROM notes n
     LEFT JOIN note_tags nt ON nt.noteId = n.id
     LEFT JOIN tags t ON t.id = nt.tagId

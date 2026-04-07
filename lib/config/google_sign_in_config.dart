@@ -1,3 +1,7 @@
+class GoogleSignInAppConfig {
+    static final clientId = "793153150656-he9pfud1hhvptnc7kg4boos371gdo66n.apps.googleusercontent.com";
+}
+
 // 1. El Certificado SHA-1 (La "Llave" Real)
 // https://console.cloud.google.com/
 // Debug: Debes registrar el SHA-1 de tu máquina local (donde programas) para que el login funcione mientras desarrollas.

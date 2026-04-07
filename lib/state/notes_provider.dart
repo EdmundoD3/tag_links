@@ -15,7 +15,8 @@ final notesViewProvider = Provider<AsyncValue<List<Note>>>((ref) {
   final pagination = ref.watch(notePaginationProvider);
 
   final hasSearch =
-      searchQuery.text.isNotEmpty || searchQuery.includeTags.isNotEmpty ||
+      searchQuery.text.isNotEmpty ||
+      searchQuery.includeTags.isNotEmpty ||
       searchQuery.isFavorite;
 
   if (!hasSearch) {
@@ -32,7 +33,11 @@ final noteSearchProvider =
     ) {
       final repo = ref.watch(notesRepositoryProvider);
 
-      return repo.searchByQuery(params.$1, paginated: params.$2, folderFilter: FolderFilter.all);
+      return repo.searchByQuery(
+        params.$1,
+        paginated: params.$2,
+        folderFilter: FolderFilter.all,
+      );
     });
 
 final notePaginationProvider =
@@ -168,7 +173,6 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
   Future<void> deleteNote(Note noteForDelete) async {
     final current = state.asData?.value;
     if (current == null) return;
-
     state = AsyncValue.data(
       current.where((note) => note.id != noteForDelete.id).toList(),
     );
@@ -178,45 +182,52 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
       // unawaited(ref.read(syncNotifierProvider.notifier).performSync());
     } catch (e) {
       // ❌ rollback si falla
+      debugPrint(
+        'NotesNotifier.deleteNote: Error al borrar nota: ${noteForDelete.toMap()} \n Error: $e',
+      );
       state = AsyncValue.data(current);
       rethrow;
     }
   }
 
-// Fuera de la clase o como variable privada
-final Set<String> _processingUrls = {};
+  // Fuera de la clase o como variable privada
+  final Set<String> _processingUrls = {};
 
-Future<void> _enrichLinks(List<LinkPreview> links) async {
-  final service = LinkPreviewService();
-  
-  // Filtramos las que ya se están procesando para no repetir peticiones
-  final toProcess = links.where((l) => !_processingUrls.contains(l.url)).toList();
-  _processingUrls.addAll(toProcess.map((l) => l.url));
+  Future<void> _enrichLinks(List<LinkPreview> links) async {
+    final service = LinkPreviewService();
 
-  try {
-    for (final link in toProcess) {
-       final updated = await service.enrich(link);
-       if (updated != null && updated.hasMetadata) {
-         await _repoLinkPreview.replace(updated);
-         // En lugar de invalidateSelf, actualiza solo la nota en el state actual
-         _updateLocalNoteWithMetadata(updated);
-       }
-    }
-  } finally {
-    // Opcional: limpiar después de un tiempo o dejarlo para evitar re-procesar
-  }
-}
+    // Filtramos las que ya se están procesando para no repetir peticiones
+    final toProcess = links
+        .where((l) => !_processingUrls.contains(l.url))
+        .toList();
+    _processingUrls.addAll(toProcess.map((l) => l.url));
 
-void _updateLocalNoteWithMetadata(LinkPreview enrichedLink) {
-  state.whenData((notes) {
-    state = AsyncData(notes.map((n) {
-      if (n.link?.url == enrichedLink.url) {
-        return n.copyWith(link: enrichedLink,folderId: n.folderId);
+    try {
+      for (final link in toProcess) {
+        final updated = await service.enrich(link);
+        if (updated != null && updated.hasMetadata) {
+          await _repoLinkPreview.replace(updated);
+          // En lugar de invalidateSelf, actualiza solo la nota en el state actual
+          _updateLocalNoteWithMetadata(updated);
+        }
       }
-      return n;
-    }).toList());
-  });
-}
+    } finally {
+      // Opcional: limpiar después de un tiempo o dejarlo para evitar re-procesar
+    }
+  }
+
+  void _updateLocalNoteWithMetadata(LinkPreview enrichedLink) {
+    state.whenData((notes) {
+      state = AsyncData(
+        notes.map((n) {
+          if (n.link?.url == enrichedLink.url) {
+            return n.copyWith(link: enrichedLink, folderId: n.folderId);
+          }
+          return n;
+        }).toList(),
+      );
+    });
+  }
 }
 
 class NotePaginationNotifier extends Notifier<PaginatedByDate> {

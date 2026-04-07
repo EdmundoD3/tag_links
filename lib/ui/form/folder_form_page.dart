@@ -1,11 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/ads/ads_service_provider.dart';
 import 'package:tag_links/core/ads/interstitial_ads_provider.dart';
+import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/state/folders_provider.dart';
 import 'package:tag_links/state/pending_folder_provider.dart';
+import 'package:tag_links/sync/sync_notifier_provider.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
 import 'package:tag_links/ui/form/app_bar_form.dart';
 import 'package:tag_links/ui/form/body_form.dart';
@@ -14,14 +18,18 @@ import 'package:tag_links/ui/form/move_to_folder_button.dart';
 import 'package:tag_links/ui/tags/tags_selector_menu.dart';
 import 'package:tag_links/ui/form/title_form_controller.dart';
 import 'package:tag_links/utils/debouncer.dart';
-import 'package:tag_links/core/locate/app_lang.dart';
 
 class FolderFormPage extends ConsumerStatefulWidget {
   final Folder? folder; //null significa que es nuevo
   final String? parentFolderId; // null significa que es root
   final String fileId;
 
-  const FolderFormPage({super.key,required this.fileId ,this.folder, this.parentFolderId});
+  const FolderFormPage({
+    super.key,
+    required this.fileId,
+    this.folder,
+    this.parentFolderId,
+  });
 
   bool get isEdit => folder != null;
 
@@ -49,7 +57,11 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
 
     _folder =
         widget.folder ??
-        Folder.empty(hasId: true, parentId: widget.parentFolderId, fileId: widget.fileId);
+        Folder.empty(
+          hasId: true,
+          parentId: widget.parentFolderId,
+          fileId: widget.fileId,
+        );
     _tags = widget.folder?.tags ?? [];
 
     _titleCtrl = TextEditingController(text: widget.folder?.title ?? '');
@@ -59,7 +71,7 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
 
     _autoSave = FormAutoSaveController<Folder>(
       onSave: (folder) async {
-        _didAutoSaveAtLeastOnce = true; 
+        _didAutoSaveAtLeastOnce = true;
         if (widget.isEdit) {
           await ref.read(_provider.notifier).updateFolder(folder);
         } else {
@@ -91,13 +103,13 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
 
         if (!_isFolderValid(folder)) {
           final discard = await ConfirmDialog.discardForm(context, ref);
-          
+
           // 🔥 El borrado debe ocurrir SOLO si el usuario aceptó salir (discard == true)
           if (discard == true) {
             if (widget.folder == null && _didAutoSaveAtLeastOnce) {
-              await ref.read(_provider.notifier).deleteFolder(_folder.id);
+              await ref.read(_provider.notifier).deleteFolder(_folder);
             }
-            
+
             if (context.mounted) Navigator.pop(context);
           }
           // Si discard es false o null, no hacemos nada y el usuario se queda en la página
@@ -113,8 +125,8 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
   PreferredSizeWidget _appBar() {
     return AppBarForm(
       title: widget.isEdit
-          ? t(ref, 'editFolder', fallback: 'Editar carpeta')
-          : t(ref, 'newFolder', fallback: 'Nueva carpeta'),
+          ? ref.tr(TKeys.forms.editFolder, fallback: 'Editar carpeta')
+          : ref.tr(TKeys.forms.newFolder, fallback: 'Nueva carpeta'),
       titleListenable: _titleCtrl,
       isFavorite: _isFavorite,
       onFavoriteToogle: _isFavoriteToogle,
@@ -127,10 +139,9 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
     return [
       TitleFormController(
         titleCtrl: _titleCtrl,
-        label: t(ref, 'formFolderTitle', fallback: 'Nombre de la carpeta'),
-        validatorMsg: t(
-          ref,
-          'bannerPendingNote',
+        label: ref.tr(TKeys.forms.folderName, fallback: 'Nombre de la carpeta'),
+        validatorMsg: ref.tr(
+          TKeys.forms.folderNameRequired,
           fallback: 'El título es obligatorio',
         ),
         onChange: () => _saveDebouncer.run(_scheduleAutoSave),
@@ -148,7 +159,7 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
 
       MoveToFolderButton(
         onChangeFolder: _onChangeFolder,
-        title: t(ref, 'moveToFolder', fallback: 'Mover'),
+        title: ref.tr(TKeys.forms.moveToFolder, fallback: 'Mover'),
       ),
     ];
   }
@@ -190,7 +201,7 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
   }
 
   Folder _captureFolder() {
-    final now = DateTime.now();
+    final now = DateTime.now().millisecondsSinceEpoch;
 
     final folder = Folder(
       id: _folder.id,
@@ -201,10 +212,9 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
       tags: _tags,
       image: _folder.image,
       // se usa la fecha donde se almaceno en caso de ser folder nuevo
-      createdAt: widget.folder != null? _folder.createdAt : now,
+      createdAt: widget.folder != null ? _folder.createdAt : now,
       updatedAt: now,
       isFavorite: _isFavorite,
-      syncAt: _folder.syncAt,
     );
 
     _folder = folder;
@@ -221,6 +231,9 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
 
     try {
       await _autoSave.flush(folder);
+
+        unawaited(ref.read(syncProvider.notifier).synchronize());
+      
 
       final adService = ref.read(adServiceProvider);
       final tocaIntersticial = ref.read(showInterstitialAdsProvider);

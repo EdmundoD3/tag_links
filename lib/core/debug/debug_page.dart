@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/ads/interstitial_ads_provider.dart';
+import 'package:tag_links/core/auth/skiped_auth_provider.dart';
 import 'package:tag_links/core/locate/lang_selector.dart';
 import 'package:tag_links/core/ads/ads_disable_provider.dart';
 import 'package:tag_links/models/folder.dart';
@@ -44,10 +45,10 @@ class DebugPage extends ConsumerWidget {
             content: "Contenido de la nota de prueba",
             link: null,
             tags: [],
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
+            createdAt: DateTime.now().millisecondsSinceEpoch,
+            updatedAt: DateTime.now().millisecondsSinceEpoch,
           ),
-          onDeleteNote: (Note nothing) {
+          onDeleteNote: () {
             debugPrint("onDeleteNote: nothing");
           },
           onMove: (Note nothing) {
@@ -60,14 +61,14 @@ class DebugPage extends ConsumerWidget {
             fileId: "",
             title: "Carpeta de prueba",
             tags: [],
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now()
+            createdAt: DateTime.now().millisecondsSinceEpoch,
+            updatedAt: DateTime.now().millisecondsSinceEpoch
           ),
           actionsItems: [],
           onDeleteFolder: () {
             
           },
-          onMove: (Folder nothing) {
+          onMove: () {
             debugPrint("onMove: nothing");
           },
           goFolder: (){},
@@ -85,7 +86,7 @@ class DebugPage extends ConsumerWidget {
         size: 40,
       ),
       title: Text(
-        "Limpiar cache de anuncios",
+        "Limpiar cache",
         style: TextStyle(
           fontWeight: FontWeight.bold,
           color: theme.textTheme.bodyMedium?.color,
@@ -102,5 +103,6 @@ class DebugPage extends ConsumerWidget {
   void _cleanCache(WidgetRef ref) {
     ref.read(adsDisabledUntilProvider.notifier).reset();
     ref.read(interstitialAdsProvider.notifier).reset();
+    ref.read(skipedAuthProvider.notifier).clear();
   }
 }

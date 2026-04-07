@@ -1,37 +1,29 @@
+import 'package:tag_links/sync/models/sync_item_wrapper.dart';
 import 'package:uuid/uuid.dart';
 
-class Tag {
-  final String id;
+class Tag extends BaseSyncModel {
   final String name;
-  final String fileId;
   final bool isFavorite;
   final int usageCount;
-  final DateTime? updatedAt;
-  final DateTime? syncAt;
 
   Tag({
-    required this.id,
+    required super.id,
+    required super.fileId,
+    required super.updatedAt,
     required this.name,
-    required this.fileId,
     this.isFavorite = false,
     this.usageCount = 0,
-    this.updatedAt,
-    this.syncAt,
   });
 
-  static Tag fromMap(Map<String, dynamic> map) {
+static Tag fromMap(Map<String, dynamic> map) {
     return Tag(
-      id: map['id'],
-      name: map['name'],
-      fileId: map['fileId'],
-      isFavorite: (map['isFavorite'] ?? 0) == 1,
+      id: map['id']?.toString() ?? const Uuid().v4(),
+      name: map['name']?.toString() ?? 'Sin nombre',
+      fileId: map['fileId']?.toString() ?? '',
+      isFavorite: (map['isFavorite'] == 1 || map['isFavorite'] == true),
       usageCount: map['usageCount'] ?? 0,
-      updatedAt: map['updatedAt'] != null
-          ? DateTime.fromMillisecondsSinceEpoch(map['updatedAt'])
-          : DateTime.now(),
-      syncAt: map['syncAt'] == null
-          ? null
-          : DateTime.fromMillisecondsSinceEpoch(map['syncAt']),
+      // IMPORTANTE: Asegurar que sea int
+      updatedAt: map['updatedAt'] ?? DateTime.now().millisecondsSinceEpoch,
     );
   }
 
@@ -42,8 +34,7 @@ class Tag {
       'fileId': fileId,
       'isFavorite': isFavorite ? 1 : 0,
       'usageCount': usageCount,
-      'updatedAt': updatedAt?.millisecondsSinceEpoch,
-      'syncAt': syncAt?.millisecondsSinceEpoch,
+      'updatedAt': updatedAt,
     };
   }
 
@@ -52,8 +43,7 @@ class Tag {
     String? name,
     bool? isFavorite,
     int? usageCount,
-    DateTime? updatedAt,
-    DateTime? syncAt,
+    int? updatedAt,
   }) {
     return Tag(
       id: id ?? this.id,
@@ -62,27 +52,25 @@ class Tag {
       isFavorite: isFavorite ?? this.isFavorite,
       usageCount: usageCount ?? this.usageCount,
       updatedAt: updatedAt ?? this.updatedAt,
-      syncAt: syncAt ?? this.syncAt,
     );
   }
 
-  Tag ensureForInsert() {
-    if (id.isEmpty || id == "") {
-      return copyWith(id: const Uuid().v4(), updatedAt: DateTime.now());
-    }
-    return copyWith(updatedAt: DateTime.now());
+Tag ensureForInsert() {
+    return copyWith(
+      id: id.isEmpty ? const Uuid().v4() : id,
+      // Si por alguna razón no hay fecha, la ponemos ahora
+      updatedAt: updatedAt == 0 ? DateTime.now().millisecondsSinceEpoch : updatedAt,
+    );
   }
 }
 
-String tagTable = '''
+String tagTable =
+    '''
           CREATE TABLE tags (
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL UNIQUE,
-            fileId TEXT NOT NULL,
             isFavorite INTEGER NOT NULL DEFAULT 0 CHECK (isFavorite IN (0,1)),
             usageCount INTEGER NOT NULL DEFAULT 0,
-            updatedAt INTEGER NOT NULL,
-            syncAt INTEGER,
-            FOREIGN KEY (fileId) REFERENCES files(id) ON DELETE CASCADE
+            $itemsBaseColumns
           );
 ''';

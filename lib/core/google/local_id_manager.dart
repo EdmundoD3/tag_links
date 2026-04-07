@@ -1,11 +1,10 @@
-import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tag_links/data/shared_prefs_provider.dart';
 import 'package:uuid/uuid.dart';
 
 final localIdManagerProvider = Provider<LocalIdManager>((ref) {
-  final prefs = ref.watch(sharedPrefsProvider);
+  final prefs = ref.read(sharedPrefsProvider);
   return LocalIdManager(prefs);
 });
 

@@ -43,7 +43,7 @@ class NoteMoveService {
     // 1. Crear el objeto con el cambio de carpeta
     final moved = note.copyWith(
       folderId: toFolderId,
-      updatedAt: DateTime.now(),
+      updatedAt: DateTime.now().millisecondsSinceEpoch,
     );
     if (fromFolderId == toFolderId) return;
 
@@ -66,7 +66,7 @@ class NoteMoveService {
   Future<void> save({required Note note, required String? toFolderId}) async {
     final newNote = note.copyWith(
       folderId: toFolderId,
-      updatedAt: DateTime.now(),
+      updatedAt: DateTime.now().millisecondsSinceEpoch,
     );
     // 2. Persistencia real en la DB primero
     // Usamos el repositorio directamente para asegurar que el cambio esté en disco

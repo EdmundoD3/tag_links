@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:tag_links/config/name_of_app.dart';
 import 'package:tag_links/core/app_purchases/premium_provider.dart';
 import 'package:tag_links/core/app_purchases/products_provider.dart';
+import 'package:tag_links/core/locate/t_keys.dart';
 
 class PremiumSalesSheet extends ConsumerWidget {
   final Widget? showEmpty;
@@ -14,12 +16,14 @@ class PremiumSalesSheet extends ConsumerWidget {
     // significa que la compra tuvo éxito. Cerramos el modal automáticamente.
     ref.listen<bool>(premiumStatusProvider, (previous, next) {
       if (next == true && context.mounted) {
-        Navigator.pop(context); // Cerramos el modal con éxito
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('¡Gracias por tu compra! Ya eres Premium.'),
-          ),
+        final thanksText = ref.tr(
+          TKeys.premium.thanks,
+          fallback: '¡Gracias por tu compra! Ya eres Premium.',
         );
+        Navigator.pop(context); // Cerramos el modal con éxito
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(thanksText)));
       }
     });
 
@@ -33,7 +37,19 @@ class PremiumSalesSheet extends ConsumerWidget {
       error: (err, stack) => showEmpty ?? const SizedBox.shrink(),
       data: (products) {
         if (products.isEmpty) return showEmpty ?? const SizedBox.shrink();
-
+        final titlePremium = ref.tr(
+          TKeys.premium.title,
+          fallback: '${NameOfApp.upperCase} Premium',
+        );
+        //el unico beneficio de ser premium es no tener anuncios, por ahora
+        final benefitText = ref.tr(
+          TKeys.premium.benefit,
+          fallback: 'Sin anuncios.',
+        );
+        final maybeLater = ref.tr(
+          TKeys.premium.maybeLater,
+          fallback: 'Quizás más tarde',
+        );
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
           child: Column(
@@ -41,16 +57,13 @@ class PremiumSalesSheet extends ConsumerWidget {
             children: [
               const Icon(Icons.stars, size: 50, color: Colors.amber),
               const SizedBox(height: 12),
-              const Text(
-                'Tag Links Premium',
+              Text(
+                titlePremium,
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
-              const Padding(
+              Padding(
                 padding: EdgeInsets.symmetric(vertical: 8.0),
-                child: Text(
-                  'Sincronización ilimitada y sin anuncios.',
-                  textAlign: TextAlign.center,
-                ),
+                child: Text(benefitText, textAlign: TextAlign.center),
               ),
               const SizedBox(height: 16),
               ...products.map(
@@ -59,7 +72,7 @@ class PremiumSalesSheet extends ConsumerWidget {
               const SizedBox(height: 12),
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Quizás más tarde'),
+                child: Text(maybeLater),
               ),
             ],
           ),

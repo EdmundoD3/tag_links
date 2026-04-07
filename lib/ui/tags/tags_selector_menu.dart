@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/state/tags_provider.dart';
 import 'package:tag_links/ui/search/search_bar.dart';
+import 'package:tag_links/ui/search/tags_suggestion_list.dart';
 import 'package:tag_links/ui/tags/show_create_tag_modal.dart';
 import 'package:tag_links/ui/tags/tag_selected_container.dart';
 
@@ -23,16 +24,18 @@ class TagsSelectorMenu extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final queryText = ref.watch(tagSearchTextProvider);
-    final tagsSuggestion = queryText.trim().isEmpty
-        ? const AsyncValue.data(<Tag>[])
-        : ref.watch(tagsProvider);
+    final tagsSuggestion = ref.watch(
+      tagsProvider,
+    ); // <--- Deja que el provider decida
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SearchListBar(
+        SearchListBar<Tag>(
+          // <--- Especificamos el tipo genérico
           queryText: queryText,
-          tagsSuggestion: tagsSuggestion,
+          itemsSuggestion:
+              tagsSuggestion, // <--- Renombrado para coincidir con la versión genérica
           onChangeText: (text) {
             ref.read(tagSearchTextProvider.notifier).state = text;
           },
@@ -40,8 +43,16 @@ class TagsSelectorMenu extends ConsumerWidget {
             onTagSelected(tag);
             ref.read(tagSearchTextProvider.notifier).state = '';
           },
+          // --- NUEVO: Implementación del contrato ---
+          suggestionBuilder: TagsSuggestionList(
+            itemsSuggestion: tagsSuggestion,
+            onItemSelected: (Tag tag) {
+              onTagSelected(tag);
+              ref.read(tagSearchTextProvider.notifier).state = '';
+            },
+          ),
           addIconBtnCtrl: (tagName) async {
-             onClearSave?.call();
+            onClearSave?.call();
             final newTag = await showCreateTagModal(
               context: context,
               ref: ref,
@@ -50,6 +61,7 @@ class TagsSelectorMenu extends ConsumerWidget {
             if (newTag != null) onTagSelected(newTag);
           },
         ),
+        // -------- container -------------
         TagsSelectedContainer(
           tags: tags,
           onDeleted: onDeletedTag,

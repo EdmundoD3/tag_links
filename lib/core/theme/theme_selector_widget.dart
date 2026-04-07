@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/core/theme/theme_provider.dart';
 import 'package:tag_links/core/theme/app_theme.dart';
-import 'package:tag_links/core/locate/app_lang.dart';
 
 class ThemeSelector extends ConsumerWidget {
   const ThemeSelector({super.key});
@@ -18,7 +18,7 @@ class ThemeSelector extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
-            t(ref, 'settingsTheme', fallback: 'Tema'),
+            ref.tr(TKeys.pages.theme, fallback: 'Tema'),
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,

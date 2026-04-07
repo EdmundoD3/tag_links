@@ -1,0 +1,22 @@
+// lib/core/locate/modules/tags_translate.dart
+import '../app_lang.dart';
+
+class TranslatesTags {
+  const TranslatesTags();
+
+  final String title = 'tagsTitle';
+  final String nameField = 'tagName';
+  final String create = 'createTag';
+  final String delete = 'deleteTag';
+  final String edit = 'editTag';
+  final String label = 'tags';
+
+  static const Map<String, Map<AppLang, String>> translations = {
+    'tagsTitle': {AppLang.es: 'Etiquetas', AppLang.en: 'Tags'},
+    'tagName': {AppLang.es: 'Nombre del tag', AppLang.en: 'Tag name'},
+    'createTag': {AppLang.es: 'Nuevo tag', AppLang.en: 'New tag'},
+    'deleteTag': {AppLang.es: 'Eliminar tag', AppLang.en: 'Delete tag'},
+    'editTag': {AppLang.es: 'Editar tag', AppLang.en: 'Edit tag'},
+    'tags': {AppLang.es: 'Etiquetas', AppLang.en: 'Tags'},
+  };
+}

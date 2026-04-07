@@ -14,7 +14,6 @@ class Trailing {
     this.right,
     this.bottom,
   });
-
 }
 
 class BouncingButton extends StatefulWidget {
@@ -34,8 +33,6 @@ class BouncingButton extends StatefulWidget {
   State<BouncingButton> createState() => _BouncingButtonState();
 }
 
-// ... Clase Trailing se mantiene igual ...
-
 class _BouncingButtonState extends State<BouncingButton> {
   bool _isPressed = false;
 
@@ -49,7 +46,7 @@ class _BouncingButtonState extends State<BouncingButton> {
           onPointerUp: (_) => setState(() => _isPressed = false),
           onPointerCancel: (_) => setState(() => _isPressed = false),
           child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
+            behavior: HitTestBehavior.deferToChild,
             onTap: widget.onTap,
             onLongPressStart: (details) {
               setState(() => _isPressed = false);
@@ -85,10 +82,10 @@ class _BouncingButtonState extends State<BouncingButton> {
             right: widget.trailing!.right,
             child: GestureDetector(
               // Esto atrapa el toque y evita que llegue al GestureDetector padre
-              onTap: () {}, 
+              onTap: () {},
               child: Listener(
                 // Esto detiene la propagación del evento de puntero al Listener padre
-                onPointerDown: (event) {}, 
+                onPointerDown: (event) {},
                 behavior: HitTestBehavior.opaque,
                 child: widget.trailing!.child, // <-- CAMBIO AQUÍ
               ),

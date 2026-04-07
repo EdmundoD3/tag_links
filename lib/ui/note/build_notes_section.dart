@@ -43,7 +43,7 @@ class _NotesSectionState extends ConsumerState<NotesSection> {
       notesAsync: notes,
       scrollController: _scrollController,
       isLoadingMore: notifier.isLoadingMore,
-      onDeleteNote: (id) => notifier.deleteNote(id),
+      onDeleteNote: (note) => notifier.deleteNote(note),
       getKey: _getKey,
     );
   }

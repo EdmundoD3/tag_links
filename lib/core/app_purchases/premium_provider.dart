@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:tag_links/core/app_purchases/in_app_purchase_manager.dart';
 import 'package:tag_links/core/app_purchases/premium_local_data_source_provider.dart';
-import 'package:tag_links/core/google/drive_sync_config_manager.dart';
+import 'package:tag_links/sync/drive_sync_config_manager.dart';
 
 /// Provider que expone simplemente si el usuario es Premium o no.
 final premiumStatusProvider = NotifierProvider<PremiumNotifier, bool>(

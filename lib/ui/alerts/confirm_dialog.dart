@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/core/locate/app_lang.dart';
+import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/ui/alerts/feedback_alert_confirm.dart';
 
 class ConfirmDialog {
@@ -12,14 +12,19 @@ class ConfirmDialog {
     return _deleteAction(
       context,
       onDelete,
-      title: t(ref, 'alertDeleteNoteTitle', fallback: 'Eliminar nota'),
-      message: t(
-        ref,
-        'alertDeleteNote',
+      title: ref.tr(TKeys.alerts.deleteNoteTitle, fallback: 'Eliminar nota'),
+      message: ref.tr(
+        TKeys.alerts.deleteNote,
         fallback: '¿Estás seguro de eliminar la nota?',
       ),
-      succesText: t(ref, 'alertDeleteNoteSucces', fallback: 'Nota eliminada'),
-      errorText: t(ref, 'alertDeleteNoteError', fallback: 'Error al eliminar'),
+      succesText: ref.tr(
+        TKeys.alerts.deleteNoteSuccess,
+        fallback: 'Nota eliminada',
+      ),
+      errorText: ref.tr(
+        TKeys.alerts.deleteNoteError,
+        fallback: 'Error al eliminar',
+      ),
       ref: ref,
     );
   }
@@ -32,21 +37,47 @@ class ConfirmDialog {
     return _deleteAction(
       context,
       onDelete,
-      title: t(ref, 'alertDeleteFolderTitle', fallback: 'Eliminar carpeta'),
-      message: t(
-        ref,
-        'alertDeleteFolder',
+      title: ref.tr(
+        TKeys.alerts.deleteFolderTitle,
+        fallback: 'Eliminar carpeta',
+      ),
+      message: ref.tr(
+        TKeys.alerts.deleteFolder,
         fallback: '¿Estás seguro de eliminar la carpeta?',
       ),
-      succesText: t(
-        ref,
-        'alertDeleteFolderSucces',
+      succesText: ref.tr(
+        TKeys.alerts.deleteFolderSuccess,
         fallback: 'Carpeta eliminada',
       ),
-      errorText: t(
-        ref,
-        'alertDeleteFolderError',
+      errorText: ref.tr(
+        TKeys.alerts.deleteFolderError,
         fallback: 'Error al eliminar',
+      ),
+      ref: ref,
+    );
+  }
+
+  static Future<void> deleteTag(
+    BuildContext context,
+    WidgetRef ref,
+    Future<void> Function() onDelete,
+  ) {
+    return _deleteAction(
+      context,
+      onDelete,
+      title: ref.tr(TKeys.alerts.deleteTagTitle, fallback: 'Eliminar etiqueta'),
+      // Mensaje específico para advertir la permanencia
+      message: ref.tr(
+        TKeys.alerts.deleteTagPermanent,
+        fallback: '¿Estás seguro de eliminar permanentemente esta etiqueta? Se quitará de todas las notas.',
+      ),
+      succesText: ref.tr(
+        TKeys.alerts.deleteTagSuccess,
+        fallback: 'Etiqueta eliminada para siempre',
+      ),
+      errorText: ref.tr(
+        TKeys.alerts.deleteTagError,
+        fallback: 'Error al intentar borrar la etiqueta',
       ),
       ref: ref,
     );
@@ -55,10 +86,9 @@ class ConfirmDialog {
   static Future<bool?> moveFolder(BuildContext context, WidgetRef ref) {
     return showConfirmDialog(
       context,
-      title: t(ref, 'alertMoveFolderTitle', fallback: 'Cambiar carpeta'),
-      message: t(
-        ref,
-        'alertMoveFolder',
+      title: ref.tr(TKeys.alerts.moveFolderTitle, fallback: 'Cambiar carpeta'),
+      message: ref.tr(
+        TKeys.alerts.moveFolder,
         fallback: '¿Estás seguro de mover la carpeta?',
       ),
       ref: ref,
@@ -68,10 +98,9 @@ class ConfirmDialog {
   static Future<bool?> moveNote(BuildContext context, WidgetRef ref) async {
     return showConfirmDialog(
       context,
-      title: t(ref, 'alertMoveNoteTitle', fallback: 'Cambiar carpeta'),
-      message: t(
-        ref,
-        'alertMoveNote',
+      title: ref.tr(TKeys.alerts.moveNoteTitle, fallback: 'Cambiar carpeta'),
+      message: ref.tr(
+        TKeys.alerts.moveNote,
         fallback: '¿Estás seguro de mover la nota?',
       ),
       ref: ref,
@@ -81,29 +110,39 @@ class ConfirmDialog {
   static Future<bool?> discardForm(BuildContext context, WidgetRef ref) async {
     return showConfirmDialog(
       context,
-      title: t(ref, 'alertDiscardFormTitle', fallback: 'Descatar cambios'),
-      message: t(
-        ref,
-        'alertDiscardFormTitle',
+      title: ref.tr(TKeys.alerts.discard, fallback: 'Descatar cambios'),
+      message: ref.tr(
+        TKeys.alerts.discardFormTitle,
         fallback: 'Falta el título. ¿Quieres descartarla?',
       ),
       ref: ref,
     );
   }
 
-  static Future<bool?> moveFormLimitReached(BuildContext context, WidgetRef ref) async {
+  static Future<bool?> moveFormLimitReached(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
     return showConfirmDialog(
       context,
       ref: ref,
-      title: t(ref, 'limitReached', fallback: 'Límite de niveles'),
-      message: t(
-        ref,
-        'flattenMessage',
-        fallback:
-            "Esta carpeta tiene hijos. Se moverán a la raíz.",
+      title: ref.tr(TKeys.alerts.limitReached, fallback: 'Límite de niveles'),
+      message:ref.tr(TKeys.alerts.limitReachedMessage,
+        fallback: "Esta carpeta tiene hijos. Se moverán a la raíz.",
       ),
     );
   }
+  static Future<bool?> logout(BuildContext context, WidgetRef ref) async {
+  return showConfirmDialog(
+    context,
+    title: ref.tr(TKeys.auth.logOut, fallback: 'Cerrar sesión'),
+    message: ref.tr(
+      TKeys.auth.confirmLogoutMessage, // Asegúrate de tener esta llave o usa fallback
+      fallback: '¿Estás seguro de que quieres cerrar sesión?',
+    ),
+    ref: ref,
+  );
+}
 }
 
 Future<void> _deleteAction(
@@ -135,6 +174,7 @@ Future<void> _deleteAction(
       backgroundColor: Colors.deepOrangeAccent,
     );
   }
+  
 }
 
 Future<bool?> showConfirmDialog(
@@ -165,7 +205,7 @@ Future<bool?> showConfirmDialog(
             onPressed: () {
               Navigator.of(context).pop(false);
             },
-            child: Text(t(ref, 'cancel', fallback: 'Cancelar')),
+            child: Text(ref.tr(TKeys.actions.cancel, fallback: 'Cancelar')),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -178,7 +218,7 @@ Future<bool?> showConfirmDialog(
             onPressed: () {
               Navigator.of(context).pop(true);
             },
-            child: Text(t(ref, 'accept', fallback: 'Aceptar')),
+            child: Text(ref.tr(TKeys.actions.accept, fallback: 'Aceptar')),
           ),
         ],
       );

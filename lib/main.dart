@@ -3,22 +3,34 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:share_handler/share_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tag_links/config/google_sign_in_config.dart';
 import 'package:tag_links/core/ads/ads_disable_provider.dart';
 import 'package:tag_links/core/ads/ads_service_provider.dart';
 import 'package:tag_links/core/app_purchases/premium_provider.dart';
+import 'package:tag_links/core/auth/skiped_auth_provider.dart';
+import 'package:tag_links/core/auth/welcome_page.dart';
+import 'package:tag_links/core/google/auth_provider.dart';
+import 'package:tag_links/core/google/models/silent_login_result.dart';
 import 'package:tag_links/core/theme/theme_provider.dart';
 import 'package:tag_links/data/database.dart';
 import 'package:tag_links/pages/home_page.dart';
 import 'package:tag_links/data/shared_prefs_provider.dart';
 import 'package:tag_links/state/url_provider.dart';
 import 'package:tag_links/core/theme/app_theme.dart';
+import 'package:tag_links/sync/widgets/app_life_cycle_observer.dart';
 import 'package:tag_links/utils/handle_media_in_coming_url.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  await initializeDateFormatting();
+  await GoogleSignIn.instance.initialize(
+    // El ID de cliente web es necesario para Drive en Android
+    serverClientId: GoogleSignInAppConfig.clientId,
+  );
   // Cargamos ambos motores en paralelo para ganar velocidad
   final results = await Future.wait([
     AppDatabase().database,
@@ -33,7 +45,7 @@ void main() async {
       overrides: [
         // Inyectamos globalmente
         databaseProvider.overrideWithValue(db),
-        sharedPrefsProvider.overrideWithValue(prefs), 
+        sharedPrefsProvider.overrideWithValue(prefs),
       ],
       child: const MyApp(),
     ),
@@ -50,7 +62,7 @@ class MyApp extends ConsumerStatefulWidget {
 class _MyAppState extends ConsumerState<MyApp> {
   late final StreamSubscription _subHandleUrl;
 
-@override
+  @override
   void initState() {
     super.initState();
     MobileAds.instance.initialize();
@@ -64,7 +76,7 @@ class _MyAppState extends ConsumerState<MyApp> {
     _initAdsLogic();
   }
 
-void _initAdsLogic() {
+  void _initAdsLogic() {
     // 8 segundos es un buen margen para que el usuario se acomode
     Future.delayed(const Duration(seconds: 8), () {
       // IMPORTANTE: Usa el mismo provider que definimos (premiumStatusProvider)
@@ -78,7 +90,7 @@ void _initAdsLogic() {
       // Si no es premium, revisamos si tiene "Ads desactivados temporalmente"
       // (Por haber visto un video premiado, por ejemplo)
       final adsActive = ref.read(isAdsActiveProvider);
-      
+
       if (adsActive) {
         final ads = ref.read(adServiceProvider);
         ads.loadRewardedAd();
@@ -103,9 +115,36 @@ void _initAdsLogic() {
   Widget build(BuildContext context) {
     final palette = ref.watch(paletteProvider);
 
+    // 2. Envolvemos SIEMPRE en el MaterialApp
     return MaterialApp(
+      debugShowCheckedModeBanner: false, // Opcional: quita la banda roja
       theme: getPalette(palette: palette),
-      home: const HomePage(folder: null),
+      home: const AppLifecycleObserver(child: MainPageRouter()),
     );
+  }
+}
+
+class MainPageRouter extends ConsumerWidget {
+  const MainPageRouter({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final auth = ref.watch(authProvider);
+    final hasSkipped = ref.watch(skipedAuthProvider);
+
+    // 1. SOLO SI ES LA PRIMERA VEZ (Nunca ha decidido nada)
+    if (hasSkipped == null && !auth.isAuthenticated && !auth.isLoading) {
+      return const WelcomePage();
+    }
+
+    // 2. SOLO SI LA SESIÓN EXPIRÓ (Caso exclusivo que pediste)
+    if (auth.lastResult == SilentLoginResult.expired) {
+      return const WelcomePage(isExpired: true);
+    }
+
+    // 3. PARA TODO LO DEMÁS: HomePage
+    // Incluye: isAuthenticated, isLoading (mientras carga entra a Home),
+    // networkError, o simplemente si ya pasó el welcome antes.
+    return const HomePage(folder: null);
   }
 }
