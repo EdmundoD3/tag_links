@@ -39,7 +39,7 @@ class FormAutoSaveController<T> {
   Future<void> _process() async {
     try {
       while (_pending != null) {
-        final current = _pending!;
+        final T current = _pending!;
         _pending = null;
 
         try {

@@ -63,7 +63,7 @@ class _BouncingButtonState extends State<BouncingButton> {
                       borderRadius: BorderRadius.circular(5),
                       // Importante: El color debe estar ARRIBA del child
                       color: _isPressed
-                          ? Colors.black.withOpacity(0.05)
+                          ? Colors.black.withAlpha(13)
                           : Colors.transparent,
                     ),
                   ),

@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:googleapis/dataproc/v1.dart';
-import 'package:tag_links/core/locate/app_lang.dart';
-import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
 
 /// usar en el Scaffold onTap: () => FocusScope.of(context).unfocus(), si es que se usa este buscador
@@ -76,17 +73,9 @@ class _SearchListBarState<T> extends State<SearchListBar<T>> {
     widget.onChangeText(text);
   }
 
-  void _onTagSelected(T tag) {
-    widget.onTagSelected(tag);
-    _controller.clear();
-    // Opcional: Quitar foco al seleccionar
-    // _focusNode.unfocus();
-  }
-
   @override
   Widget build(BuildContext context) {
     final queryText = widget.queryText;
-    final AsyncValue<List<T>> tagsSuggestion = widget.itemsSuggestion;
 
     // Nueva lógica: Mostrar si hay texto O si el widget tiene el foco activo
     final bool showSuggestions = queryText.isNotEmpty || _isFocused;

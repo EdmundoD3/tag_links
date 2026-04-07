@@ -12,9 +12,6 @@ import 'package:tag_links/sync/models/archive_item.dart';
 import 'package:tag_links/sync/models/delete_file.dart';
 import 'package:tag_links/sync/models/sync_file_wrapper.dart';
 import 'package:tag_links/sync/models/local_sync_queue.dart';
-import 'package:tag_links/sync/models/notes_file.dart'; // Tus Wrappers
-import 'package:tag_links/sync/models/folders_file.dart';
-import 'package:tag_links/sync/models/tags_file.dart';
 
 class SyncPusher {
   final LocalSyncQueueRepository _syncQueueRepo;

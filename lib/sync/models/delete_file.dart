@@ -38,6 +38,7 @@ class DeleteFile extends SyncFileWrapper {
     );
   }
 
+  @override
   Map<String, dynamic> toMap() => {
     "id": id,
     "fileId": fileId,

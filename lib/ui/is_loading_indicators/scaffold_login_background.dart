@@ -13,7 +13,7 @@ class ScaffoldLoginBackground extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             // El logo de Tag Links o un icono representativo
-            Icon(Icons.link, size: 80, color: Theme.of(context).primaryColor.withOpacity(0.5)),
+            Icon(Icons.link, size: 80, color: Theme.of(context).primaryColor.withAlpha(127)),
             const SizedBox(height: 24),
             // Una barra de progreso lineal es más discreta que el círculo
             const SizedBox(

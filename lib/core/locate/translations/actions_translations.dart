@@ -13,6 +13,7 @@ class TranslatesActions {
   final String accept = 'accept';
   final String cancel = 'cancel';
   final String discard = 'discard';
+  final String notNow = 'notNow';
   final String store = 'store';
   final String editAndStore = 'editAndStore';
   final String move = 'moveDown';
@@ -29,6 +30,7 @@ class TranslatesActions {
     'accept': {AppLang.es: 'Aceptar', AppLang.en: 'Accept'},
     'cancel': {AppLang.es: 'Cancelar', AppLang.en: 'Cancel'},
     'discard': {AppLang.es: 'Descartar', AppLang.en: 'Discard'},
+    'notNow':{AppLang.es: "Ahora no", AppLang.en: 'Not now'},
     'store': {AppLang.es: 'Almacenar', AppLang.en: 'Store'},
     'editAndStore': {AppLang.es: 'Editar y almacenar', AppLang.en: 'Edit and store'},
     'moveDown': {AppLang.es: 'Mover', AppLang.en: 'Move'},

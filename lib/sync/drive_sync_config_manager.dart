@@ -79,7 +79,7 @@ class DriveSyncConfigManager {
 
     // Si el dispositivo actual no está registrado en el archivo remoto, lo añadimos
     if (!config.hasDevice(myId)) {
-      print("📱 Registrando nuevo dispositivo en el archivo de configuración.");
+      debugPrint("📱 Registrando nuevo dispositivo en el archivo de configuración.");
       config = config.upsertDevice(currentDevice);
       await updateRemoteConfig(fileId, config);
     }
@@ -113,7 +113,7 @@ class DriveSyncConfigManager {
       uploadMedia: media,
     );
 
-    print("✅ DriveSyncConfigManager.createInitialRemoteConfig: Configuración inicial creada exitosamente.");
+    debugPrint("✅ DriveSyncConfigManager.createInitialRemoteConfig: Configuración inicial creada exitosamente.");
     return RemoteConfigData(createdFile.id!, config);
   }
 

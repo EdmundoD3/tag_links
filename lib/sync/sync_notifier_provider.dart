@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/google/auth_provider.dart';
 import 'package:tag_links/sync/drive_sync_config_manager.dart';
 import 'package:tag_links/core/google/local_id_manager.dart';
-import 'package:tag_links/core/google/models/auth_exeptions.dart';
 import 'package:tag_links/state/folders_provider.dart';
 import 'package:tag_links/state/notes_provider.dart';
 import 'package:tag_links/sync/exceptions/sync_exceptions.dart';

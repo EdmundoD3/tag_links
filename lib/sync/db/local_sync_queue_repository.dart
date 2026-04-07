@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/data/database.dart';
 import 'package:tag_links/sync/db/local_sync_queue_dao.dart';
 import 'package:tag_links/sync/models/archive_info.dart';
-import 'package:tag_links/sync/models/config_info.dart';
 import 'package:tag_links/sync/models/local_sync_queue.dart';
 
 final localSyncQueueRepositoryProvider = Provider<LocalSyncQueueRepository>((

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/google/auth_provider.dart';
+import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/sync/sync_notifier_provider.dart';
 
 class ManualSyncButton extends ConsumerWidget {
@@ -15,15 +16,46 @@ class ManualSyncButton extends ConsumerWidget {
     final state = syncState.value ?? SyncState();
 
     return IconButton(
-      tooltip: _getTooltip(state, authState.isAuthenticated),
-      icon: _buildIcon(context, state, authState.isAuthenticated),
-      onPressed: !authState.isAuthenticated || state.status == SyncStatus.syncing
-          ? null // Deshabilitado si no hay auth o si ya está sincronizando
-          : () => ref.read(syncProvider.notifier).forceSynchronize(),
+      tooltip: _getTooltip(state, authState.isAuthenticated, ref),
+      icon: _buildIcon(
+        context,
+        state: state,
+        isAuth: authState.isAuthenticated,
+        fixIntent: () => ref.read(syncProvider.notifier).synchronize(),
+      ),
+      onPressed: () async {
+        // 1. Caso: No hay sesión iniciada
+        if (!authState.isAuthenticated) {
+          final bool? wantLogin = await _showLoginInvitation(context, ref);
+          if (wantLogin == true) {
+            await ref.read(authProvider.notifier).login();
+          }
+          return;
+        }
+
+        // 2. Caso: Sesión activa pero el último error indica que el token expiró
+        // Nota: Asegúrate de que tu SyncState tenga una forma de identificar el error de auth
+        if (state.status == SyncStatus.error && (state.lastError?.contains('401') ?? false)) {
+          // Intentamos re-autenticar (usualmente login() maneja el refresh si ya existe cuenta)
+          await ref.read(authProvider.notifier).login();
+          return;
+        }
+
+        // 3. Caso: Evitar doble sincronización
+        if (state.status == SyncStatus.syncing) return;
+
+        // 4. Caso: Todo OK, procedemos a sincronizar
+        ref.read(syncProvider.notifier).forceSynchronize();
+      },
     );
   }
 
-  Widget _buildIcon(BuildContext context, SyncState state, bool isAuth) {
+  Widget _buildIcon(
+    BuildContext context, {
+    required SyncState state,
+    required bool isAuth,
+    required VoidCallback fixIntent,
+  }) {
     if (!isAuth) {
       return const Icon(Icons.cloud_off, color: Colors.grey);
     }
@@ -36,30 +68,56 @@ class ManualSyncButton extends ConsumerWidget {
           height: 20,
           child: CircularProgressIndicator(
             strokeWidth: 2.5,
-            // Usamos el color del tema para que se vea integrado
             valueColor: AlwaysStoppedAnimation<Color>(Colors.blueAccent),
           ),
         );
-      
+
       case SyncStatus.error:
-        // Un rojo suave o naranja para indicar que algo falló sin ser alarmista
-        return const Icon(Icons.sync_problem, color: Colors.orangeAccent);
-      
+        return IconButton(
+          icon: const Icon(Icons.sync_problem),
+          onPressed: fixIntent,
+          color: Colors.orangeAccent,
+        );
+
       case SyncStatus.success:
-        // Verde temporal para indicar que terminó bien
         return const Icon(Icons.cloud_done, color: Colors.green);
-      
-      case SyncStatus.idle:
       default:
-        // El estado normal. Podrías ponerle un color azul si quieres que resalte
-        return Icon(Icons.sync_outlined, color:theme.iconTheme.color);
+        return Icon(Icons.sync_outlined, color: theme.iconTheme.color);
     }
   }
 
-  String _getTooltip(SyncState state, bool isAuth) {
-    if (!isAuth) return "Inicia sesión para sincronizar";
-    if (state.status == SyncStatus.error) return "Error: ${state.lastError ?? 'Desconocido'}";
-    if (state.status == SyncStatus.syncing) return "Sincronizando con Drive...";
-    return "Sincronizar ahora";
+  String _getTooltip(SyncState state, bool isAuth, WidgetRef ref) {
+    if (!isAuth) return ref.tr(TKeys.sync.loginSync, fallback: "Inicia sesión para sincronizar");
+    if (state.status == SyncStatus.error) {
+      debugPrint("Error: ${state.lastError}");
+      return ref.tr(TKeys.sync.errorSync, fallback: "Error al sincronizar");
+    }
+    if (state.status == SyncStatus.syncing) return ref.tr(TKeys.sync.driveSync, fallback: "Sincronizando con Drive...");
+    return ref.tr(TKeys.sync.syncNow, fallback: "Sincronizar ahora");
+  }
+
+  Future<bool?> _showLoginInvitation(BuildContext context, WidgetRef ref) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          ref.tr(TKeys.sync.backUpTitle, fallback: "Respaldo en la nube"),
+        ),
+        content: Text(
+          ref.tr(TKeys.sync.backUpMessage,
+              fallback: "Para mantener tus notas seguras y sincronizadas en todos tus dispositivos, necesitas iniciar sesión con Google Drive."),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(ref.tr(TKeys.actions.notNow, fallback: "Ahora no")),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(ref.tr(TKeys.auth.loginWithGoogle, fallback: "Iniciar sesión")),
+          ),
+        ],
+      ),
+    );
   }
 }

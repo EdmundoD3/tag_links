@@ -6,6 +6,7 @@ class ShimmerNotesList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: 5, // Unas pocas notas bastan para llenar la pantalla
@@ -13,7 +14,7 @@ class ShimmerNotesList extends StatelessWidget {
       itemBuilder: (_, _) => Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.1)),
+          border: Border.all(color: theme.dividerColor.withAlpha(26)),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(

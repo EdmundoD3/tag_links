@@ -49,7 +49,10 @@ class _NoteTileState extends ConsumerState<NoteTile> {
       note: widget.note,
       updatedAt: ref.fmt(widget.note.updatedAt),
       //expandText
-      onTap: () => setState(() => _isNoteExpanded = !_isNoteExpanded),
+      onTap: () {
+        FocusScope.of(context).unfocus();
+        setState(() => _isNoteExpanded = !_isNoteExpanded);
+      },
       isExpanded: _isNoteExpanded,
       onLineCountCheck: (exceeds) {
         if (_showReadMore != exceeds) {
@@ -97,7 +100,8 @@ class _NoteTileState extends ConsumerState<NoteTile> {
                 TKeys.errors.notOpenLink,
                 fallback: 'No se encontró una app para abrir este enlace',
               ),
-              errorOpenLinkMsg: ref.tr(TKeys.errors.openLink,
+              errorOpenLinkMsg: ref.tr(
+                TKeys.errors.openLink,
                 fallback: 'URL no válida o mal formada',
               ),
             ),
@@ -319,8 +323,6 @@ class _NoteTileCard extends StatelessWidget {
       textAlign: TextAlign.right,
     );
   }
-
-
 
   Widget _miniTags({required ThemeData theme, List<Tag> tags = const []}) {
     String resultado = tags.map((tag) => '#${tag.name}').join(', ');

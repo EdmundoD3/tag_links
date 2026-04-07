@@ -107,7 +107,6 @@ class _MyAppState extends ConsumerState<MyApp> {
   @override
   void dispose() {
     _subHandleUrl.cancel();
-    // _subscription?.cancel(); // ELIMINAR (Ya lo hace el Notifier solo)
     super.dispose();
   }
 
@@ -142,7 +141,7 @@ class MainPageRouter extends ConsumerWidget {
       return const WelcomePage(isExpired: true);
     }
 
-    // 3. PARA TODO LO DEMÁS: HomePage
+    // 3. PARA todo lo demás: HomePage
     // Incluye: isAuthenticated, isLoading (mientras carga entra a Home),
     // networkError, o simplemente si ya pasó el welcome antes.
     return const HomePage(folder: null);
