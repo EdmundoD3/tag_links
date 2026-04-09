@@ -133,18 +133,8 @@ Future<FoldersFile> getFileWrapper({
   );
 }
 
-  Future<void> clearDeletedNotes(List<String> ids) {
-    return _deletedDao.deleteIds(ids);
-  }
-
   Future<void> serverDeleteByIds(List<String> ids) async {
-    await _deletedDao.deleteIds(ids);
     return _dao.serverDeleteByIds(ids);
-  }
-
-  // Cambiar nombre por claridad
-  Future<void> clearDeletedFolders(List<String> ids) {
-    return _deletedDao.deleteIds(ids);
   }
 
   // Obtener los registros borrados para subirlos a la nube

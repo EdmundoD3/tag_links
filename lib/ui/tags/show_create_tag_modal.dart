@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/config/limit_config.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/state/tags_provider.dart';
@@ -44,6 +45,7 @@ Future<Tag?> showCreateTagModal({
               autofocus: true,
               style: TextStyle(color: theme.textTheme.bodyMedium?.color),
               cursorColor: theme.scaffoldBackgroundColor,
+              maxLength: LimitAppConfig.tagMaxLength,
               decoration: InputDecoration(
                 filled: true,
                 fillColor: theme.inputDecorationTheme.fillColor?.withAlpha(60),
@@ -109,7 +111,7 @@ Future<void> _submit({
     // 3. Si no existe, crear el nuevo
     final Tag newTag = Tag(
       id: const Uuid().v4(),
-      name: name,
+      title: name,
       fileId: fileId,
       updatedAt: DateTime.now().millisecondsSinceEpoch,
     );

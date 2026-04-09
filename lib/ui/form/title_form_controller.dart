@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tag_links/config/limit_config.dart';
 import 'package:tag_links/models/note.dart';
 
 class TitleFormController extends StatelessWidget {
@@ -21,7 +22,7 @@ class TitleFormController extends StatelessWidget {
       cursorColor: theme.appBarTheme.backgroundColor,
       style: TextStyle(color: theme.textTheme.bodyMedium?.color),
       controller: titleCtrl,
-      maxLength: NoteConfig.titleMaxLength,
+      maxLength: LimitAppConfig.titleMaxLength,
       decoration: InputDecoration(
         filled: true,
         fillColor: theme.inputDecorationTheme.fillColor?.withAlpha(60),

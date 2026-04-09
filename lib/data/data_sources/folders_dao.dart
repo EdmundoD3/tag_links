@@ -21,9 +21,8 @@ class FoldersDao {
     required DeletedDao deletedDao,
   }) : _db = db,
        _folderTagsDao = folderTagsDao,
-       _syncDao = syncDao,_deletedDao =deletedDao;
-
-
+       _syncDao = syncDao,
+       _deletedDao = deletedDao;
 
   /// BY LAST UPDATE
 
@@ -274,14 +273,11 @@ class FoldersDao {
     });
   }
 
-  /// DELETE RECURSIVO
-/// DELETE RECURSIVO DE CARPETAS
-/// DELETE RECURSIVO DE CARPETAS (Optimizado para Sincronización)
+  /// DELETE RECURSIVO DE CARPETAS (Optimizado para Sincronización y Conteos)
   Future<void> delete(String id) async {
     try {
       await _db.transaction((txn) async {
         // 1. Obtener todos los IDs de carpetas descendientes (incluyendo la actual)
-        // Usamos el txn para que la lectura sea parte de la misma foto del estado
         final idsToDelete = await getAllDescendantIds(id, executor: txn);
         if (idsToDelete.isEmpty) return;
 
@@ -297,7 +293,6 @@ class FoldersDao {
         );
 
         // 3. CAPTURA PRE-BORRADO: Obtenemos datos de las notas que morirán por CASCADE
-        // Hacemos esto antes del delete físico para no perder los fileId
         final List<Map<String, dynamic>> affectedNotes = await txn.query(
           'notes',
           columns: ['id', 'fileId'],
@@ -305,42 +300,58 @@ class FoldersDao {
           whereArgs: idsList,
         );
 
+        // Mapas para acumular cuánto restar a cada bucket y un Set para ensuciarlos
+        final Map<String, int> countsToDecrement = {};
         final Set<String> bucketsToDirty = {};
 
-        // 4. REGISTRO DE CARPETAS: Marcamos para borrar en Drive y ensuciamos sus buckets
+        // 4. REGISTRO DE CARPETAS
         for (final row in affectedFolders) {
           final fId = row['id'] as String;
           final bId = row['fileId'] as String;
-          
+
           bucketsToDirty.add(bId);
-          // Usamos el saveId con el executor obligatorio
+          countsToDecrement[bId] = (countsToDecrement[bId] ?? 0) + 1;
+
           await _deletedDao.saveId(fId, DeletedType.folder, executor: txn);
         }
 
-        // 5. REGISTRO DE NOTAS: Muy importante para evitar notas "zombies"
+        // 5. REGISTRO DE NOTAS
         for (final row in affectedNotes) {
           final nId = row['id'] as String;
           final bId = row['fileId'] as String;
-          
+
           bucketsToDirty.add(bId);
-          // También registramos el borrado de cada nota individual
+          countsToDecrement[bId] = (countsToDecrement[bId] ?? 0) + 1;
+
           await _deletedDao.saveId(nId, DeletedType.note, executor: txn);
         }
 
-        // 6. BORRADO FÍSICO: Aquí el ON DELETE CASCADE hace su magia localmente
+        // 6. BORRADO FÍSICO: Aquí el ON DELETE CASCADE elimina notas y subcarpetas localmente
         await txn.delete(
           'folders',
           where: 'id IN ($placeholders)',
           whereArgs: idsList,
         );
 
-        // 7. SINCRONIZACIÓN: Marcamos todos los buckets afectados como sucios
-        // Esto incluye tanto los de carpetas como los de notas
+        // 7. ACTUALIZACIÓN MASIVA DE BUCKETS (Sincronización y Conteos)
         for (final bId in bucketsToDirty) {
+          // Marcamos como sucio para que el Pusher suba la nueva versión del bucket
           await _syncDao.markAsDirty(bId, executor: txn);
+
+          // Restamos el total acumulado (carpetas + notas) de este bucket específico
+          final totalADescontar = countsToDecrement[bId] ?? 0;
+          if (totalADescontar > 0) {
+            await _syncDao.decrementCountBy(
+              fileId: bId,
+              amount: totalADescontar,
+              executor: txn,
+            );
+          }
         }
-        
-        debugPrint("FoldersDao.delete: Sincronización preparada para ${bucketsToDirty.length} buckets.");
+
+        debugPrint(
+          "FoldersDao.delete: Recursión terminada. Buckets afectados: ${bucketsToDirty.length}",
+        );
       });
     } catch (e) {
       debugPrint('FoldersDao.delete ERROR: $e');
@@ -477,7 +488,6 @@ class FoldersDao {
   ) async {
     // 1. Obtenemos las etiquetas asociadas a esta carpeta
     final tags = await _getTagsByFolderId(db, map['id'] as String);
-
     // 2. Construimos el objeto Folder mapeando tipos de SQLite a Dart
     return Folder(
       id: map['id'] as String,
@@ -495,12 +505,10 @@ class FoldersDao {
     );
   }
 
-  /// GET TAGS BY FOLDER
-  Future<List<Tag>> _getTagsByFolderId(Database db, String folderId) async {
-    // Agregamos updatedAt al SELECT para que Tag.fromMap no falle
+Future<List<Tag>> _getTagsByFolderId(Database db, String folderId) async {
     final result = await db.rawQuery(
       '''
-      SELECT t.id, t.name, t.fileId, t.isFavorite, t.usageCount, t.updatedAt
+      SELECT t.*
       FROM tags t
       INNER JOIN folder_tags ft ON ft.tagId = t.id
       WHERE ft.folderId = ?

@@ -105,7 +105,7 @@ class _TagChip extends StatelessWidget {
       child: Chip(
         backgroundColor: theme.appBarTheme.backgroundColor,
         label: Text(
-          tag.name,
+          tag.title,
           style: TextStyle(color: theme.textTheme.titleLarge?.color),
         ),
         deleteIcon: const Icon(Icons.close),

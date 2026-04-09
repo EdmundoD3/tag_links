@@ -73,9 +73,7 @@ const Map<TokenType, TextRule> _styleRules = {
 
 class DecoratedText extends StatelessWidget {
   final String text;
-  final int? maxLines;
-  final TextOverflow overflow;
-  const DecoratedText({super.key, required this.text, this.maxLines, required this.overflow});
+  const DecoratedText({super.key, required this.text});
 
   @override
   Widget build(BuildContext context) {
@@ -87,8 +85,6 @@ class DecoratedText extends StatelessWidget {
     ).hasMatch(text);
 
     return RichText(
-      maxLines: maxLines, 
-      overflow: overflow,
       text: TextSpan(
         style: TextStyle(
           color: theme.textTheme.bodyMedium?.color,

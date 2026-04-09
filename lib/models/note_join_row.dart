@@ -10,9 +10,9 @@ class NoteJoinRow {
   final int updatedAt;
   final bool isFavorite;
 
-  // --- Datos del Tag (Nuevos campos agregados) ---
+  // --- Datos del Tag (Estandarizado a Title) ---
   final String? tagId;
-  final String? tagName;
+  final String? tagTitle; // ✅ Antes tagName
   final String? tagFileId;
   final bool? tagIsFavorite;
   final int? tagUpdatedAt;
@@ -38,9 +38,9 @@ class NoteJoinRow {
         updatedAt = map['note_updatedAt'] as int,
         isFavorite = map['note_isFavorite'] == 1,
         
-        // Mapeo de Tag (Coincidiendo con tus nuevos alias t.xxx)
+        // Mapeo de Tag (Coincidiendo con t.title)
         tagId = map['tag_id'] as String?,
-        tagName = map['tag_name'] as String?,
+        tagTitle = map['tag_title'] as String?, // ✅ Antes tag_name
         tagFileId = map['tag_fileId'] as String?,
         tagIsFavorite = map['tag_isFavorite'] == null ? null : map['tag_isFavorite'] == 1,
         tagUpdatedAt = map['tag_updatedAt'] as int?,
@@ -67,7 +67,7 @@ class NoteJoinRow {
       n.isFavorite AS note_isFavorite,
 
       t.id AS tag_id,
-      t.name AS tag_name,
+      t.title AS tag_title, -- ✅ Cambiado t.name por t.title
       t.fileId AS tag_fileId,
       t.isFavorite AS tag_isFavorite,
       t.updatedAt AS tag_updatedAt,

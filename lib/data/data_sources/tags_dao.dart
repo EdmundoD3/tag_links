@@ -10,31 +10,29 @@ class TagsDao {
   final Database _db;
   final DeletedDao _deletedDao;
   final LocalSyncQueueDao _syncDao;
+
   TagsDao(this._db, this._deletedDao, this._syncDao);
 
   Future<Tag?> insertIfNotExist(Tag tag) async {
     try {
-      // 1. Aseguramos que tenga un ID válido antes de intentar nada
       final tagToInsert = tag.ensureForInsert();
 
-      // 2. Intentamos el INSERT con IGNORE.
-      // Si el 'name' ya existe (UNIQUE), no hará nada y devolverá 0 o el ID existente.
+      // 🎯 1. Usamos 'title' en lugar de 'name'
       final idResult = await _db.insert(
         _tableName,
         tagToInsert.toMap(),
         conflictAlgorithm: ConflictAlgorithm.ignore,
       );
 
-      // 3. Si idResult es > 0, significa que se insertó correctamente.
       if (idResult > 0) {
+        _syncDao.markAsDirty(tag.fileId);
         return tagToInsert;
       }
 
-      // 4. Si no se insertó (porque ya existía el nombre), lo buscamos y lo devolvemos.
-      // Así garantizamos que la app siempre use el ID que ya está en la DB.
-      return await getByExactlyName(tag.name);
+      // 🎯 2. Cambiado a getByExactlyTitle
+      return await getByExactlyTitle(tag.title);
     } catch (e) {
-      debugPrint('TagsDao.upsert error: ${e.toString()}');
+      debugPrint('TagsDao.insertIfNotExist error: ${e.toString()}');
       return null;
     }
   }
@@ -47,14 +45,17 @@ class TagsDao {
         where: 'id = ?',
         whereArgs: [tag.id],
       );
+
       await _syncDao.markAsDirty(tag.fileId, executor: txn);
     });
   }
 
-  Future<void> delete(String id) async {
-    _db.transaction((tx) async {
-      await tx.delete(_tableName, where: 'id = ?', whereArgs: [id]);
-      await _deletedDao.saveId(id, DeletedType.tag, executor: tx);
+  Future<void> delete(Tag tag) async {
+    await _db.transaction((txn) async {
+      await txn.delete(_tableName, where: 'id = ?', whereArgs: [tag.id]);
+      await _deletedDao.saveId(tag.id, DeletedType.tag, executor: txn);
+      await _syncDao.markAsDirty(tag.fileId, executor: txn);
+      await _syncDao.decreceCount(fileId: tag.fileId, executor: txn);
     });
   }
 
@@ -70,58 +71,53 @@ class TagsDao {
     return Tag.fromMap(result.first);
   }
 
-Future<List<Tag>> getAll({required PaginatedByUsage paginated}) async {
-  // Ordenamos: 
-  // 1. isFavorite DESC (1 antes que 0)
-  // 2. updatedAt DESC (más recientes primero)
-  const String customOrder = 'isFavorite DESC, usageCount DESC, updatedAt DESC';
+  Future<List<Tag>> getAll({required PaginatedByUsage paginated}) async {
+    const String customOrder = 'isFavorite DESC, usageCount DESC, updatedAt DESC';
 
-  final result = await _db.query(
-    _tableName,
-    orderBy: customOrder, // Reemplazamos el del paginated para esta lógica específica
-    limit: paginated.limit,
-    offset: paginated.offset,
-  );
-  return result.map(Tag.fromMap).toList();
-}
+    final result = await _db.query(
+      _tableName,
+      orderBy: customOrder,
+      limit: paginated.limit,
+      offset: paginated.offset,
+    );
+    return result.map(Tag.fromMap).toList();
+  }
 
-  Future<List<Tag>> getByName(
-    String name, {
+  // 🎯 3. Cambiado a getByTitle
+  Future<List<Tag>> getByTitle(
+    String title, {
     required PaginatedByUsage paginated,
   }) async {
     final result = await _db.query(
       _tableName,
-      where: 'name LIKE ?',
-      whereArgs: ['%$name%'],
+      where: 'title LIKE ?', // 🎯 Columna title
+      whereArgs: ['%$title%'],
       orderBy: paginated.orderSql,
       limit: paginated.limit,
     );
     return result.map(Tag.fromMap).toList();
   }
 
-  Future<Tag?> getByExactlyName(String name) async {
+  // 🎯 4. Cambiado a getByExactlyTitle
+  Future<Tag?> getByExactlyTitle(String title) async {
     try {
-      // Asegúrate de que el nombre no vaya con espacios accidentales
-      final cleanName = name.trim();
+      final cleanTitle = title.trim();
 
       final result = await _db.query(
         _tableName,
-        where: 'name = ?',
-        whereArgs: [cleanName],
+        where: 'title = ?', // 🎯 Columna title
+        whereArgs: [cleanTitle],
         limit: 1,
       );
-
-      debugPrint("DAO: Query finalizada. Resultados: ${result.length}");
 
       if (result.isEmpty) return null;
       return Tag.fromMap(result.first);
     } catch (e) {
-      debugPrint("Error: TagsDao.getByExactlyName: $e");
+      debugPrint("Error: TagsDao.getByExactlyTitle: $e");
       return null;
     }
   }
 
-  // -------------- SYNC section --------------
   Future<List<Tag>> getByFileId(String fileId) async {
     final result = await _db.query(
       _tableName,
@@ -133,27 +129,29 @@ Future<List<Tag>> getAll({required PaginatedByUsage paginated}) async {
 
   Future<void> upsert(Tag tag) async {
     try {
-      final tagToUpdate = tag.ensureForInsert();
-      await _db.rawInsert(
-        '''
-      INSERT INTO tags (id, name, fileId, isFavorite, usageCount, updatedAt)
-      VALUES (?, ?, ?, ?, ?, ?) -- 6 columnas, 6 signos '?'
-      ON CONFLICT(id) DO UPDATE SET
-        name = excluded.name,
-        fileId = excluded.fileId,
-        isFavorite = excluded.isFavorite,
-        usageCount = excluded.usageCount,
-        updatedAt = excluded.updatedAt
-    ''',
-        [
-          tagToUpdate.id,
-          tagToUpdate.name,
-          tagToUpdate.fileId,
-          tagToUpdate.isFavorite ? 1 : 0,
-          tagToUpdate.usageCount,
-          tagToUpdate.updatedAt,
-        ],
-      );
+      await _db.transaction((txn) async {
+        await txn.rawInsert(
+          '''
+          INSERT INTO tags (id, title, fileId, isFavorite, usageCount, updatedAt)
+          VALUES (?, ?, ?, ?, ?, ?)
+          ON CONFLICT(id) DO UPDATE SET
+            title = excluded.title,
+            fileId = excluded.fileId,
+            isFavorite = excluded.isFavorite,
+            usageCount = excluded.usageCount,
+            updatedAt = excluded.updatedAt
+          ''',
+          [
+            tag.id,
+            tag.title,
+            tag.fileId,
+            tag.isFavorite ? 1 : 0,
+            tag.usageCount,
+            tag.updatedAt,
+          ],
+        );
+        await _syncDao.markAsDirty(tag.fileId, executor: txn);
+      });
     } catch (e) {
       debugPrint('TagsDao.upsert error: $e');
     }
@@ -163,10 +161,7 @@ Future<List<Tag>> getAll({required PaginatedByUsage paginated}) async {
     if (tags.isEmpty) return;
 
     try {
-      // Usamos await para que la función espere a que la transacción termine
       await _db.transaction((txn) async {
-        // 1. Obtenemos los IDs que el usuario borró localmente y aún no sube a Drive
-        // Usamos el 'txn' para que la lectura sea exacta en este microsegundo
         final List<String> incomingIds = tags.map((e) => e.id).toList();
         final Set<String> dirtyDeletedIds = await _deletedDao
             .extractDirtyIdsByType(incomingIds, DeletedType.tag, executor: txn);
@@ -174,13 +169,10 @@ Future<List<Tag>> getAll({required PaginatedByUsage paginated}) async {
         final batch = txn.batch();
 
         for (final tag in tags) {
-          // 2. Filtro de exclusión: Si está en la papelera local, lo ignoramos
           if (dirtyDeletedIds.contains(tag.id)) {
-            debugPrint("🚫 Ignorando Tag resucitado: ${tag.name}");
+            debugPrint("🚫 Ignorando Tag resucitado: ${tag.title}");
             continue;
           }
-
-          // 3. Procesamos el Batch
           _upsertAllBatch(tag, batch);
         }
 
@@ -188,20 +180,19 @@ Future<List<Tag>> getAll({required PaginatedByUsage paginated}) async {
       });
     } catch (e) {
       debugPrint('TagsDao.upsertAll error: ${e.toString()}');
-      rethrow; // Es mejor relanzar para que el SyncManager sepa que falló
+      rethrow;
     }
   }
 
   void _upsertAllBatch(Tag tag, Batch batch) {
-    // Aseguramos que el objeto sea válido para inserción
     final tagToUpdate = tag.ensureForInsert();
 
     batch.rawInsert(
       '''
-    INSERT INTO tags (id, name, fileId, isFavorite, usageCount, updatedAt)
+    INSERT INTO tags (id, title, fileId, isFavorite, usageCount, updatedAt)
     VALUES (?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
-      name = excluded.name,
+      title = excluded.title, -- 🎯 Antes 'name'
       fileId = excluded.fileId,
       isFavorite = excluded.isFavorite,
       usageCount = excluded.usageCount,
@@ -210,7 +201,7 @@ Future<List<Tag>> getAll({required PaginatedByUsage paginated}) async {
     ''',
       [
         tagToUpdate.id,
-        tagToUpdate.name,
+        tagToUpdate.title,
         tagToUpdate.fileId,
         tagToUpdate.isFavorite ? 1 : 0,
         tagToUpdate.usageCount,
@@ -221,11 +212,10 @@ Future<List<Tag>> getAll({required PaginatedByUsage paginated}) async {
 
   Future<void> serverDeleteByIds(List<String> ids) async {
     if (ids.isEmpty) return;
-    await _deletedDao.deleteIds(ids);
     final placeholders = List.filled(ids.length, '?').join(',');
 
     try {
-      await _db.delete('tags', where: 'id IN ($placeholders)', whereArgs: ids);
+      await _db.delete(_tableName, where: 'id IN ($placeholders)', whereArgs: ids);
     } catch (e) {
       debugPrint('TagsDao.serverDeleteByIds ERROR: $e');
     }
@@ -233,5 +223,4 @@ Future<List<Tag>> getAll({required PaginatedByUsage paginated}) async {
 
   Future<List<DeletedData>> getBatchByFileId(String fileId) =>
       _deletedDao.getBatchByFileIdAndType(fileId, DeletedType.tag);
-  Future<void> clearDeletedTags(List<String> ids) => _deletedDao.deleteIds(ids);
 }

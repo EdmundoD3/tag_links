@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:tag_links/config/limit_config.dart';
 import 'package:tag_links/models/link_preview.dart';
 import 'package:tag_links/models/note.dart';
 import 'package:tag_links/service/link_preview_service.dart';
@@ -100,8 +101,8 @@ class _LinkPreviewFormState extends State<LinkPreviewForm> {
         TextFormField(
           style: TextStyle(color: theme.textTheme.bodyMedium?.color),
           controller: _urlCtrl,
-          maxLength: NoteConfig.urlMaxLength,
-          maxLines: NoteConfig.urlMaxLine,
+          maxLength: LimitAppConfig.urlMaxLength,
+          maxLines: LimitAppConfig.urlMaxLine,
           decoration: InputDecoration(
             filled: true,
             fillColor: theme.inputDecorationTheme.fillColor?.withAlpha(60),

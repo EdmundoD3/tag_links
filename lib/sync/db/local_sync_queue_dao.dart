@@ -1,3 +1,4 @@
+import 'package:flutter/rendering.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:tag_links/sync/models/archive_info.dart';
 import 'package:tag_links/sync/models/archive_item.dart';
@@ -8,12 +9,6 @@ class LocalSyncQueueDao {
   final String _tableName = 'files';
   final Database _db;
   LocalSyncQueueDao(this._db);
-
-  // --- CONSTANTES DE ESTADO (Para evitar números mágicos) ---
-  static const int statusLocalOnly = 0; // Nuevo bucket, nunca subido
-  static const int statusSynced = 1; // En espejo con Drive
-  static const int statusDirty = 2; // Modificado localmente, necesita subir
-  static const int statusError = 3; // Falló la última sincronización
 
   // 1. OBTENCIÓN BÁSICA
   Future<LocalSyncQueue?> getById(String id) async {
@@ -101,13 +96,50 @@ class LocalSyncQueueDao {
     );
   }
 
+  Future<void> decreceCount({
+    required String fileId,
+    DatabaseExecutor? executor,
+  }) async {
+    try {
+      final db = executor ?? _db;
+
+      await db.rawUpdate(
+        '''
+          UPDATE $_tableName 
+          SET itemCount = MAX(0, itemCount - 1), 
+              syncStatus = ? 
+          WHERE id = ?
+        ''',
+        [SyncStatus.dirty, fileId], // Usamos la constante 2
+      );
+    } catch (e) {
+      debugPrint('LocalSyncQueueDao.decreceCount ERROR: $e');
+    }
+  }
+
+  Future<void> updateCount({
+    required String id,
+    required int count,
+    DatabaseExecutor? executor,
+  }) async {
+    final db = executor ?? _db;
+    await db.update(
+      _tableName,
+      {'itemCount': count},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
   Future<String> getOrCreateAvailableFileId(
     TypeQueue tableType, {
     DatabaseExecutor? executor,
   }) async {
     final db = executor ?? _db;
     final String tName = tableType.tableName;
-    final int limit = (tName == 'notes') ? 50 : 200;
+    final int limit = (tName == 'deletes')
+        ? 2000
+        : (tName == 'notes' ? 50 : 200);
 
     final List<Map<String, dynamic>> res = await db.rawQuery(
       '''
@@ -121,15 +153,15 @@ class LocalSyncQueueDao {
     );
 
     // ✅ CORRECCIÓN: Validar que exista Y que no esté lleno
+    // DENTRO DE getOrCreateAvailableFileId
     if (res.isNotEmpty) {
       final int realCount = res.first['realCount'] ?? 0;
+      final String id = res.first['id'] as String;
+
+      // ⚠️ ASEGÚRATE de que updateCount reciba el executor (db)
+      await updateCount(id: id, count: realCount, executor: db);
+
       if (realCount < limit) {
-        final String id = res.first['id'] as String;
-
-        // 🎯 CRUCIAL: Si recuperas un ID para meter algo nuevo,
-        // tienes que ensuciar el bucket AHORA.
-        await markAsDirty(id, executor: db);
-
         return id;
       }
     }
@@ -237,29 +269,65 @@ class LocalSyncQueueDao {
       'files',
       {
         'driveFileId': null,
-        'syncStatus': 0,
+        'syncStatus': SyncStatus.localOnly,
       }, // Al ser null, el Pusher lo recreará
       where: 'id = ?',
       whereArgs: [localId],
     );
   }
 
+  /// Limpia la referencia de Drive cuando un archivo da 404 (no encontrado).
+  /// Al poner driveFileId en null y el status en dirty, el Pusher lo recreará.
+  Future<void> markAsDeletedInDrive(String localId) async {
+    try {
+      await _db.update(
+        'files',
+        {
+          'driveFileId': null, // 🚩 Eliminamos el ID roto de Google Drive
+          'syncStatus':
+              SyncStatus.dirty, // 🚩 Marcamos como "pendiente de subir"
+          'lastUpdate': DateTime.now().millisecondsSinceEpoch,
+        },
+        where: 'id = ?',
+        whereArgs: [localId],
+      );
+      debugPrint(
+        "LocalSyncQueue: Bucket $localId reseteado para recreación en Drive.",
+      );
+    } catch (e) {
+      debugPrint("Error en markAsDeletedInDrive: $e");
+    }
+  }
+
   /// Recalcula el itemCount de todos los buckets basándose en la realidad de las tablas
   Future<void> recomputeAllItemCounts() async {
     await _db.transaction((txn) async {
       await txn.execute('''
-        UPDATE files 
-        SET itemCount = (
-          SELECT COUNT(*) FROM (
-            SELECT fileId FROM notes WHERE fileId = files.id
-            UNION ALL
-            SELECT fileId FROM folders WHERE fileId = files.id
-            UNION ALL
-            SELECT fileId FROM tags WHERE fileId = files.id
-            -- Si usas fileId en las de borrados, agrégalas aquí también
-          )
-        )
-      ''');
+      UPDATE files 
+      SET itemCount = CASE 
+        WHEN type = 'notes' THEN (SELECT COUNT(*) FROM notes WHERE fileId = files.id)
+        WHEN type = 'folders' THEN (SELECT COUNT(*) FROM folders WHERE fileId = files.id)
+        WHEN type = 'tags' THEN (SELECT COUNT(*) FROM tags WHERE fileId = files.id)
+        WHEN type = 'deletes' THEN (SELECT COUNT(*) FROM deletes WHERE fileId = files.id)
+        ELSE 0
+      END
+    ''');
     });
+  }
+
+  Future<void> decrementCountBy({
+    required String fileId,
+    required int amount,
+    DatabaseExecutor? executor,
+  }) async {
+    final db = executor ?? _db;
+    await db.rawUpdate(
+      '''
+    UPDATE files 
+    SET itemCount = MAX(0, itemCount - ?) 
+    WHERE id = ?
+  ''',
+      [amount, fileId],
+    );
   }
 }

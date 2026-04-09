@@ -33,18 +33,22 @@ class ManualSyncButton extends ConsumerWidget {
           return;
         }
 
-        // 2. Caso: Sesión activa pero el último error indica que el token expiró
-        // Nota: Asegúrate de que tu SyncState tenga una forma de identificar el error de auth
-        if (state.status == SyncStatus.error && (state.lastError?.contains('401') ?? false)) {
-          // Intentamos re-autenticar (usualmente login() maneja el refresh si ya existe cuenta)
+        // Detectar si el estado de sincronización falló por credenciales
+        final isAuthError =
+            state.status == SyncStatus.error &&
+            (state.lastError == "AUTH_401" ||
+                state.lastError == "Inicia sesión de nuevo");
+
+        if (isAuthError) {
+          // Intentamos login para refrescar el token
           await ref.read(authProvider.notifier).login();
+          // Una vez logueado, reintentamos la sincronización automáticamente
+          ref.read(syncProvider.notifier).forceSynchronize();
           return;
         }
 
-        // 3. Caso: Evitar doble sincronización
         if (state.status == SyncStatus.syncing) return;
 
-        // 4. Caso: Todo OK, procedemos a sincronizar
         ref.read(syncProvider.notifier).forceSynchronize();
       },
     );
@@ -87,12 +91,20 @@ class ManualSyncButton extends ConsumerWidget {
   }
 
   String _getTooltip(SyncState state, bool isAuth, WidgetRef ref) {
-    if (!isAuth) return ref.tr(TKeys.sync.loginSync, fallback: "Inicia sesión para sincronizar");
+    if (!isAuth)
+      return ref.tr(
+        TKeys.sync.loginSync,
+        fallback: "Inicia sesión para sincronizar",
+      );
     if (state.status == SyncStatus.error) {
       debugPrint("Error: ${state.lastError}");
       return ref.tr(TKeys.sync.errorSync, fallback: "Error al sincronizar");
     }
-    if (state.status == SyncStatus.syncing) return ref.tr(TKeys.sync.driveSync, fallback: "Sincronizando con Drive...");
+    if (state.status == SyncStatus.syncing)
+      return ref.tr(
+        TKeys.sync.driveSync,
+        fallback: "Sincronizando con Drive...",
+      );
     return ref.tr(TKeys.sync.syncNow, fallback: "Sincronizar ahora");
   }
 
@@ -104,8 +116,11 @@ class ManualSyncButton extends ConsumerWidget {
           ref.tr(TKeys.sync.backUpTitle, fallback: "Respaldo en la nube"),
         ),
         content: Text(
-          ref.tr(TKeys.sync.backUpMessage,
-              fallback: "Para mantener tus notas seguras y sincronizadas en todos tus dispositivos, necesitas iniciar sesión con Google Drive."),
+          ref.tr(
+            TKeys.sync.backUpMessage,
+            fallback:
+                "Para mantener tus notas seguras y sincronizadas en todos tus dispositivos, necesitas iniciar sesión con Google Drive.",
+          ),
         ),
         actions: [
           TextButton(
@@ -114,7 +129,9 @@ class ManualSyncButton extends ConsumerWidget {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(ref.tr(TKeys.auth.loginWithGoogle, fallback: "Iniciar sesión")),
+            child: Text(
+              ref.tr(TKeys.auth.loginWithGoogle, fallback: "Iniciar sesión"),
+            ),
           ),
         ],
       ),

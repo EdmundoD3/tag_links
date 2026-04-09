@@ -14,9 +14,18 @@ class DeletesRepository {
   Future<DeleteFile> getDeleteFileWrapper(LocalSyncQueue meta) async {
     // 1. Consultamos la tabla única pasando el tipo correspondiente
     // Esto es mucho más limpio que el Future.wait de 3 DAOs
-    final nDel = await _deletedDao.getBatchByFileIdAndType(meta.id, DeletedType.note);
-    final fDel = await _deletedDao.getBatchByFileIdAndType(meta.id, DeletedType.folder);
-    final tDel = await _deletedDao.getBatchByFileIdAndType(meta.id, DeletedType.tag);
+    final nDel = await _deletedDao.getBatchByFileIdAndType(
+      meta.id,
+      DeletedType.note,
+    );
+    final fDel = await _deletedDao.getBatchByFileIdAndType(
+      meta.id,
+      DeletedType.folder,
+    );
+    final tDel = await _deletedDao.getBatchByFileIdAndType(
+      meta.id,
+      DeletedType.tag,
+    );
 
     // 2. Construimos el DeleteFile listo para subir a Drive
     return DeleteFile(
@@ -36,18 +45,8 @@ class DeletesRepository {
     );
   }
 
-  /// Limpia los IDs confirmados de la tabla única
-  Future<void> confirmFullDeleteFileSucceeded(DeleteFile file) async {
-    final allIds = [
-      ...file.notes.map((e) => e.id),
-      ...file.folders.map((e) => e.id),
-      ...file.tags.map((e) => e.id),
-    ];
+  Future<void> cleanOldDeletes({int days = 15}) async => _deletedDao.cleanOldDeletes(days: days);
 
-    if (allIds.isNotEmpty) {
-      await _deletedDao.deleteIds(allIds);
-    }
-  }
 
   /// Mantenemos extractDirtyIds para los upserts de los otros repositorios
   /// pero ahora todos apuntan al mismo DAO pasando el String del tipo
@@ -63,6 +62,9 @@ class DeletesRepository {
     };
 
     return _deletedDao.extractDirtyIdsByType(ids, typeStr);
+  }
+  Future<void> upsertAllFromRemote(DeleteFile remoteFile) {
+    return _deletedDao.upsertAllFromRemote(remoteFile);
   }
 }
 

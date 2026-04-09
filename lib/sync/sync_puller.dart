@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/google/auth_provider.dart';
+import 'package:tag_links/repository/deletes_repository.dart';
 import 'package:tag_links/repository/folder_repository.dart';
 import 'package:tag_links/repository/notes_repository.dart';
 import 'package:tag_links/repository/tags_repository.dart';
@@ -24,6 +25,7 @@ class SyncPuller {
   final FolderRepository _folderRepo;
   final TagsRepository _tagsRepo;
   final LocalSyncQueueRepository _localSyncRepo;
+  final DeletesRepository _deletesRepo;
 
   SyncPuller({
     required LocalSyncQueueRepository syncQueueRepo,
@@ -32,12 +34,14 @@ class SyncPuller {
     required FolderRepository folderRepo,
     required TagsRepository tagsRepo,
     required LocalSyncQueueRepository localSyncRepo,
+    required DeletesRepository deletesRepo,
   }) : _localSyncRepo = localSyncRepo,
        _driveDataService = driveDataService,
        _syncQueueRepo = syncQueueRepo,
        _notesRepo = notesRepo,
        _folderRepo = folderRepo,
-       _tagsRepo = tagsRepo;
+       _tagsRepo = tagsRepo,
+       _deletesRepo = deletesRepo;
 
 Future<PullResult> processRemoteArchive({required ArchiveInfo remote}) async {
   try {
@@ -132,85 +136,105 @@ Future<PullResult> processRemoteDeletes(
 }
 
 Future<PullResult> processRemoteData(
-    ArchiveInfo remote,
-    int lastPulledAt,
-  ) async {
-    bool overallSuccess = true;
-    bool notesChanged = false;
-    bool foldersChanged = false;
-    bool tagsChanged = false;
+  ArchiveInfo remote,
+  int lastPulledAt,
+) async {
+  // 1. Aplicamos el margen de seguridad (15 min antes) para no perder nada por desfase de relojes
+  final ensureLastPulledAt = lastPulledAt - const Duration(minutes: 15).inMilliseconds;
+  
+  bool overallSuccess = true;
+  bool notesChanged = false;
+  bool foldersChanged = false;
+  bool tagsChanged = false;
 
-    final allCategories = [
-      {'items': remote.tags, 'type': TypeQueue.tags},
-      {'items': remote.folders, 'type': TypeQueue.folders},
-      {'items': remote.notes, 'type': TypeQueue.notes},
-    ];
+  final allCategories = [
+    {'items': remote.deletes, 'type': TypeQueue.deletes},
+    {'items': remote.tags, 'type': TypeQueue.tags},
+    {'items': remote.folders, 'type': TypeQueue.folders},
+    {'items': remote.notes, 'type': TypeQueue.notes},
+  ];
 
-    for (var cat in allCategories) {
-      final type = cat['type'] as TypeQueue;
-      // Solo descargamos si el lastUpdate de Drive es mayor a nuestra última sincronización exitosa
-      final itemsToDownload = (cat['items'] as List<ArchiveItem>).where(
-        (f) => f.lastUpdate > lastPulledAt,
-      );
+  for (var cat in allCategories) {
+    final type = cat['type'] as TypeQueue;
 
-      for (var file in itemsToDownload) {
-        try {
-          if (file.driveFileId == null) continue;
+    final itemsToDownload = (cat['items'] as List<ArchiveItem>).where(
+      (f) => f.lastUpdate > ensureLastPulledAt,
+    );
 
-          // 1. Descargamos y procesamos según tipo
-          if (type == TypeQueue.tags) {
-            final res = await _driveDataService.downloadArray<TagsFile>(
-              fileId: file.driveFileId!,
-              fromMap: TagsFile.fromMap,
-              fileName: file.fileName,
-            );
-            if (res.isNotEmpty) {
-              await _tagsRepo.upsertAll(res.first.tags);
-              tagsChanged = true;
-            }
-          } else if (type == TypeQueue.folders) {
-            final res = await _driveDataService.downloadArray<FoldersFile>(
-              fileId: file.driveFileId!,
-              fromMap: FoldersFile.fromMap,
-              fileName: file.fileName,
-            );
-            if (res.isNotEmpty) {
-              await _folderRepo.upsertAll(res.first.folders);
-              foldersChanged = true;
-            }
-          } else if (type == TypeQueue.notes) {
-            final res = await _driveDataService.downloadArray<NotesFile>(
-              fileId: file.driveFileId!,
-              fromMap: NotesFile.fromMap,
-              fileName: file.fileName,
-            );
-            if (res.isNotEmpty) {
-              await _notesRepo.upsertAll(res.first.notes);
-              notesChanged = true;
-            }
+    for (var file in itemsToDownload) {
+      try {
+        if (file.driveFileId == null) continue;
+
+        if (type == TypeQueue.tags) {
+          final res = await _driveDataService.downloadArray<TagsFile>(
+            fileId: file.driveFileId!,
+            fromMap: TagsFile.fromMap,
+            fileName: file.fileName,
+          );
+          if (res.isNotEmpty) {
+            await _tagsRepo.upsertAll(res.first.tags);
+            tagsChanged = true;
           }
-
-          // 2. REGISTRO POST-DESCARGA: 
-          // Una vez que los datos están en sus tablas, registramos el bucket como "Synced" (1)
-          await _registerFileInQueue(file, type);
-
-        } on PathNotFoundException catch (e) {
-          debugPrint("🧹 SyncPuller.processRemoteData Archivo fantasma en Drive: ${e.fileId}");
-          await _localSyncRepo.clearDriveId(file.id);
-        } catch (e) {
-          debugPrint("❌ SyncPuller.processRemoteData Error descargando bucket ${file.fileName}: $e");
-          overallSuccess = false; 
+        } else if (type == TypeQueue.folders) {
+          final res = await _driveDataService.downloadArray<FoldersFile>(
+            fileId: file.driveFileId!,
+            fromMap: FoldersFile.fromMap,
+            fileName: file.fileName,
+          );
+          if (res.isNotEmpty) {
+            debugPrint('SyncPuller.processRemoteData 185: folders: ${res.first.toMap()}');
+            await _folderRepo.upsertAll(res.first.folders);
+            foldersChanged = true;
+          }
+        } else if (type == TypeQueue.notes) {
+          final res = await _driveDataService.downloadArray<NotesFile>(
+            fileId: file.driveFileId!,
+            fromMap: NotesFile.fromMap,
+            fileName: file.fileName,
+          );
+          if (res.isNotEmpty) {
+            await _notesRepo.upsertAll(res.first.notes);
+            notesChanged = true;
+          }
+        } else if (type == TypeQueue.deletes) {
+          final res = await _driveDataService.downloadArray<DeleteFile>(
+            fileId: file.driveFileId!,
+            fromMap: DeleteFile.fromMap,
+            fileName: file.fileName,
+          );
+          if (res.isNotEmpty) {
+            await _deletesRepo.upsertAllFromRemote(res.first); 
+          }
         }
+
+        // 2. REGISTRO POST-DESCARGA EXITOSA: 
+        // Actualiza el estado local para decir "ya estoy al día con este archivo"
+        await _registerFileInQueue(file, type);
+
+      } on PathNotFoundException catch (e) {
+        debugPrint("🧹 SyncPuller: Archivo fantasma detectado en Drive: ${e.fileId}");
+        
+        // 🎯 ESTRATEGIA DE AUTOCURACIÓN:
+        // Ponemos el driveFileId en NULL y el syncStatus en DIRTY (2).
+        // Al hacer esto, el SyncPusher verá que el archivo "debe" existir pero no está en Drive,
+        // y lo subirá de nuevo automáticamente en el siguiente ciclo.
+        await _localSyncRepo.markAsDeletedInDrive(file.id);
+        
+        // No marcamos overallSuccess como false porque estamos saneando la base de datos
+      } catch (e) {
+        debugPrint("❌ SyncPuller.processRemoteData Error en bucket ${file.fileName}: $e");
+        overallSuccess = false; 
       }
     }
-    
-    return PullResult(
-      success: overallSuccess,
-      notesChanged: notesChanged,
-      foldersChanged: foldersChanged,
-      tagsChanged: tagsChanged,
-    );
   }
+  
+  return PullResult(
+    success: overallSuccess,
+    notesChanged: notesChanged,
+    foldersChanged: foldersChanged,
+    tagsChanged: tagsChanged,
+  );
+}
 
   // Helper para registrar el "Cubo" en la tabla de sincronización local
 Future<void> _registerFileInQueue(ArchiveItem remoteFile, TypeQueue type) async {
@@ -242,5 +266,6 @@ final syncPullerProvider = Provider<SyncPuller?>((ref) {
     folderRepo: ref.watch(folderRepositoryProvider),
     tagsRepo: ref.watch(tagsRepositoryProvider),
     localSyncRepo: ref.watch(localSyncQueueRepositoryProvider),
+    deletesRepo: ref.watch(deletesRepositoryProvider),
   );
 });

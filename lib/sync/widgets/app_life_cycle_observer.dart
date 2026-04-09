@@ -34,7 +34,7 @@ class _AppLifecycleObserverState extends ConsumerState<AppLifecycleObserver>
       debugPrint('⚡ App Resumed: Preparando sincronización...');
 
       // 1. Evitamos disparar inmediatamente para dejar que la UI respire
-      Future.delayed(const Duration(seconds: 1), () {
+      Future.delayed(const Duration(seconds: 3), () {
         // 2. Verificamos que el usuario siga en la app y esté autenticado
         final auth = ref.read(authProvider);
         

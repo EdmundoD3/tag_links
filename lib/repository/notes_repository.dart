@@ -73,12 +73,7 @@ class NotesRepository {
   }
 
   Future<void> serverDeleteByIds(List<String> ids) async {
-    await _deletedDao.deleteIds(ids);
     return _dao.serverDeleteByIds(ids);
-  }
-
-  Future<void> clearDeletedNotes(List<String> ids) {
-    return _deletedDao.deleteIds(ids);
   }
 
   // --------------------- SYNC section ----------------------//

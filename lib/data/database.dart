@@ -18,24 +18,29 @@ class AppDatabase {
   }
 
   static Database? _db;
-  static List<String> indexes = [
-    // -- NOTES
-    'CREATE INDEX idx_notes_folder_updated ON notes(folderId, updatedAt DESC);',
-    'CREATE INDEX idx_notes_favorite_updated ON notes(isFavorite, updatedAt DESC);',
+static List<String> indexes = [
+    // -- NOTES (Ordenamiento y filtrado rápido para la UI)
+    'CREATE INDEX IF NOT EXISTS idx_notes_folder_updated ON notes(folderId, updatedAt DESC);',
+    'CREATE INDEX IF NOT EXISTS idx_notes_favorite_updated ON notes(isFavorite, updatedAt DESC);',
 
-    // -- TAGS
-    'CREATE INDEX idx_note_tags_tag_note ON note_tags(tagId, noteId);',
+    // -- TAGS (Relación N:N)
+    'CREATE INDEX IF NOT EXISTS idx_note_tags_tag_note ON note_tags(tagId, noteId);',
 
-    // -- FOLDERS
-    'CREATE INDEX idx_folders_parentId ON folders(parentId);',
+    // -- FOLDERS (Jerarquía)
+    'CREATE INDEX IF NOT EXISTS idx_folders_parentId ON folders(parentId);',
+    
     // -- LINKS
-    'CREATE INDEX idx_link_noteId ON link_previews(noteId);',
-    // -- FILE
-    'CREATE INDEX idx_folders_fileId ON folders(fileId);',
-    'CREATE INDEX idx_notes_fileId ON notes(fileId);',
-    'CREATE INDEX idx_tags_fileId ON tags(fileId);',
+    'CREATE INDEX IF NOT EXISTS idx_link_noteId ON link_previews(noteId);',
+
+    // -- FILE / SYNC (Cruciales para el conteo de buckets y Pusher)
+    'CREATE INDEX IF NOT EXISTS idx_folders_fileId ON folders(fileId);',
+    'CREATE INDEX IF NOT EXISTS idx_notes_fileId ON notes(fileId);',
+    'CREATE INDEX IF NOT EXISTS idx_tags_fileId ON tags(fileId);',
+    
+    // -- DELETES (Optimización de limpieza y búsqueda por lote)
     'CREATE INDEX IF NOT EXISTS idx_deletes_lookup ON deletes(fileId, type);',
-  ];
+    'CREATE INDEX IF NOT EXISTS idx_deletes_fileId ON deletes(fileId);'
+];
   static List<String> triggers = [
     // -- TRIGGERS PARA NOTAS
     '''

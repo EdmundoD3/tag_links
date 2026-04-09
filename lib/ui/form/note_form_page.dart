@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/config/limit_config.dart';
 import 'package:tag_links/core/ads/ads_service_provider.dart';
 import 'package:tag_links/core/ads/interstitial_ads_provider.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
@@ -345,7 +346,7 @@ class _ContentController extends StatelessWidget {
       cursorColor: theme.appBarTheme.backgroundColor,
       style: TextStyle(color: theme.textTheme.bodyMedium?.color),
       controller: contentCtrl,
-      maxLength: NoteConfig.contentMaxLength,
+      maxLength: LimitAppConfig.contentMaxLength,
       maxLines: null, // Permite que crezca infinitamente según el texto
       minLines: 10, // Altura inicial (puedes ajustarlo a tu gusto)
       keyboardType: TextInputType.multiline,

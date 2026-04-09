@@ -10,8 +10,7 @@ import 'package:tag_links/ui/container/tile_container.dart';
 import 'package:tag_links/ui/link/link_preview_widget.dart';
 import 'package:tag_links/ui/menu/menu_container.dart';
 import 'package:tag_links/ui/form/note_form_page.dart';
-import 'package:tag_links/ui/text/expandable_decorated_text.dart';
-import 'package:tag_links/ui/text/read_more_label.dart';
+import 'package:tag_links/ui/text/visual_expandable_text.dart';
 import 'package:tag_links/ui/utils/page_buil.dart';
 import 'package:tag_links/utils/color_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -51,7 +50,8 @@ class _NoteTileState extends ConsumerState<NoteTile> {
       //expandText
       onTap: () {
         FocusScope.of(context).unfocus();
-        setState(() => _isNoteExpanded = !_isNoteExpanded);
+        // si no esta expandido, lo hacemos expandido
+        if(!_isNoteExpanded) setState(() => _isNoteExpanded = !_isNoteExpanded); 
       },
       isExpanded: _isNoteExpanded,
       onLineCountCheck: (exceeds) {
@@ -240,16 +240,9 @@ class _NoteTileCard extends StatelessWidget {
             _lineColorDecorator(note.color),
             ..._linkPreviewWidget(theme, note),
             const SizedBox(height: 10),
-            ExpandableDecoratedText(
-              text: note.content,
-              isExpanded: isExpanded, // Le pasas el estado desde el padre
-              onLineCountCheck: onLineCountCheck,
-            ),
-            if (showReadMore)
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: ReadMoreLabel(isExpanded: isExpanded),
-              ),
+            VisualExpandableText(text: note.content, isExpanded: isExpanded),
+            // Ya no necesitas el "if (showReadMore)" porque el widget visual
+            // se encarga de mostrar la flecha solo cuando no está expandido.
             const SizedBox(height: 8),
             _footer(theme: theme),
           ],
@@ -325,7 +318,7 @@ class _NoteTileCard extends StatelessWidget {
   }
 
   Widget _miniTags({required ThemeData theme, List<Tag> tags = const []}) {
-    String resultado = tags.map((tag) => '#${tag.name}').join(', ');
+    String resultado = tags.map((tag) => '#${tag.title}').join(', ');
 
     return Text(
       resultado,

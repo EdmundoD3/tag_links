@@ -47,7 +47,7 @@ class TagsSuggestionList extends SuggestionListBuilder<Tag> {
         final tag = tags[index];
         return ListTile(
           title: Text(
-            tag.name,
+            tag.title,
             style: TextStyle(color: theme.textTheme.labelSmall?.color),
           ),
           onTap: () => onItemSelected(tag), // Usamos el método del padre

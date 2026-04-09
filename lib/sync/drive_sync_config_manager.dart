@@ -41,11 +41,14 @@ class DriveSyncConfigManager {
             return await _processExistingConfig(cachedFileId, remoteMap, myId);
           }
         } catch (e) {
+          // 🎯 Si es un 401 aquí, debemos lanzarlo, NO borrar el cache y seguir.
+          if (e.toString().contains('401')) rethrow; 
+          
           await localIdManager.clearDriveFileId();
         }
       }
 
-      // 2. Camino Lento (Búsqueda por nombre)
+      // 2. Camino Lento
       final drive.FileList found = await _findConfigFileId();
       if (found.files != null && found.files!.isNotEmpty) {
         final fileId = found.files!.first.id!;
@@ -57,14 +60,60 @@ class DriveSyncConfigManager {
         }
       }
 
-      // 3. Recreación/Inicialización (Aquí entra tu lógica de inyectar metadata local)
-      debugPrint("🔍 DriveSyncConfigManager: Reconstruyendo configuración desde estado local...");
+      // 3. Recreación
+      debugPrint("🔍 DriveSyncConfigManager: Reconstruyendo configuración...");
       final newData = await _createInitialRemoteConfig(myId);
       await localIdManager.saveDriveFileId(newData.fileId);
       return newData;
+
     } catch (e) {
-      debugPrint("❌ DriveSyncConfigManager.getOrInitializeRemoteConfig: Fallo crítico en ConfigManager: $e");
+      debugPrint("❌ DriveSyncConfigManager: Fallo crítico: $e");
+      // 🎯 CRÍTICO: Si el error es de autenticación, LÁNZALO.
+      // Si solo haces 'return null', el Notifier cree que es un error de red genérico.
+      if (e.toString().contains('401')) rethrow; 
+      
+      return null; 
+    }
+  }
+
+  /// Descarga el JSON de Drive
+  Future<Map<String, dynamic>?> _downloadConfig(String fileId) async {
+    try {
+      final response = await _driveApi.files.get(
+        fileId,
+        downloadOptions: drive.DownloadOptions.fullMedia,
+      );
+
+      if (response is drive.Media) {
+        final String decoded = await response.stream
+            .transform(utf8.decoder)
+            .join();
+
+        if (decoded.trim().isEmpty) return null;
+        return jsonDecode(decoded) as Map<String, dynamic>;
+      }
       return null;
+    } catch (e) {
+      debugPrint("❌ DriveSyncConfigManager.downloadConfig error: $e");
+      
+      // 🎯 NUEVA LÓGICA DE EXCEPCIONES:
+      // Si el error es 404 (no existe), devolvemos null para que se intente crear uno nuevo.
+      // Pero si es 401 (auth), DEBEMOS lanzar la excepción.
+      if (e.toString().contains('401')) rethrow;
+      
+      return null; // Solo retornamos null si el archivo no existe o hay error de parsing
+    }
+  }
+
+  Future<void> updateRemoteConfig(String fileId, ConfigInfo config) async {
+    try {
+      final content = utf8.encode(jsonEncode(config.toMap()));
+      final media = drive.Media(Stream.value(content), content.length);
+
+      await _driveApi.files.update(drive.File(), fileId, uploadMedia: media);
+    } catch (e) {
+      debugPrint("❌ Error actualizando config: $e");
+      if (e.toString().contains('401')) rethrow; // 🔥 Deja que el SyncNotifier se entere
     }
   }
 
@@ -123,46 +172,6 @@ class DriveSyncConfigManager {
       q: "name = '$_configName' and 'appDataFolder' in parents",
       spaces: 'appDataFolder',
     );
-  }
-
-  /// Descarga el JSON de Drive
-  Future<Map<String, dynamic>?> _downloadConfig(String fileId) async {
-    try {
-      final response = await _driveApi.files.get(
-        fileId,
-        downloadOptions: drive.DownloadOptions.fullMedia,
-      );
-
-      if (response is drive.Media) {
-        // Usamos una forma más directa de convertir el stream a string
-        final String decoded = await response.stream
-            .transform(utf8.decoder)
-            .join();
-
-        if (decoded.trim().isEmpty) return null;
-        return jsonDecode(decoded) as Map<String, dynamic>;
-      }
-      return null;
-    } catch (e) {
-      debugPrint("❌ DriveSyncConfigManager.downloadConfig: Error descargando $fileId: $e"); // antes ❌ Error descargando 
-      // Si es un 404, retornamos null para que el llamador intente recrear
-      return null;
-    }
-  }
-
-  /// Sube cambios a un archivo existente
-  Future<void> updateRemoteConfig(String fileId, ConfigInfo config) async {
-    try {
-      final content = utf8.encode(jsonEncode(config.toMap()));
-      final media = drive.Media(Stream.value(content), content.length);
-
-      await _driveApi.files.update(drive.File(), fileId, uploadMedia: media);
-      debugPrint("📱 DriveSyncConfigManager.updateRemoteConfig: Configuración actualizada.");
-    } catch (e) {
-      debugPrint(
-        "DriveSyncConfigManager.updateRemoteConfig: Error actualizando $fileId: $e",
-      );
-    }
   }
 }
 

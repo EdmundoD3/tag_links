@@ -179,7 +179,7 @@ class _FolderCard extends StatelessWidget {
   }
 
   Widget _miniTags({required ThemeData theme, List<Tag> tags = const []}) {
-    String resultado = tags.map((tag) => '#${tag.name}').join(' ');
+    String resultado = tags.map((tag) => '#${tag.title}').join(' ');
     return Text(
       resultado,
       style: theme.textTheme.labelMedium,

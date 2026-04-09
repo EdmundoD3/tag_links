@@ -36,14 +36,12 @@ class TagsNotifier extends AsyncNotifier<List<Tag>> {
 
     // 3. Ejecutamos la consulta
     if (searchText.isEmpty) {
-      debugPrint('DEBUG: Buscando todos los tags (vacío)');
       return _repo.getAll(
         paginated: const PaginatedByUsage(page: 1, pageSize: 10),
       );
     }
 
-    debugPrint('DEBUG: Buscando tags por nombre: $searchText');
-    return _repo.getByName(
+    return _repo.getByTitle(
       searchText,
       paginated: const PaginatedByUsage(page: 1, pageSize: 10),
     );
@@ -69,6 +67,6 @@ class TagsNotifier extends AsyncNotifier<List<Tag>> {
   }
 
   Future<Tag?> getByExactlyName(String name) {
-    return _repo.getByExactlyName(name);
+    return _repo.getByExactlyTitle(name);
   }
 }

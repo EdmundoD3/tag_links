@@ -11,31 +11,25 @@ import 'package:tag_links/utils/paginated_utils.dart';
 
 class TagsRepository {
   final TagsDao _tagsDao;
-  final LocalSyncQueueRepository _syncRepo;
 
   TagsRepository({
     required Database db,
     required DeletedDao deletedTagsDao,
     required LocalSyncQueueRepository syncRepo,
-  }) : _tagsDao = TagsDao(db, deletedTagsDao, LocalSyncQueueDao(db)),
-       _syncRepo = syncRepo;
+  }) : _tagsDao = TagsDao(db, deletedTagsDao, LocalSyncQueueDao(db));
 
   Future<Tag?> upsert(Tag tag) async {
     final tagToInsert = tag.ensureForInsert();
-    await _syncRepo.markAsDirty(tag.fileId);
     return _tagsDao.insertIfNotExist(tagToInsert);
   }
 
   Future<void> update(Tag tag) async {
     final tagToUpdate = tag.ensureForInsert();
-    await _syncRepo.markAsDirty(tag.fileId);
     return _tagsDao.update(tagToUpdate);
   }
 
   Future<void> delete(Tag tag) async {
-    await _syncRepo.markAsDirty(tag.fileId);
-    // Si ya existía en Drive, registramos el ID para la próxima sincronización
-    _tagsDao.delete(tag.id);
+    _tagsDao.delete(tag);
   }
 
   // ---------- get ----------
@@ -44,32 +38,33 @@ class TagsRepository {
   Future<List<Tag>> getAll({required PaginatedByUsage paginated}) =>
       _tagsDao.getAll(paginated: paginated);
 
-  Future<List<Tag>> getByName(
-    String name, {
+  Future<List<Tag>> getByTitle(
+    String title, {
     required PaginatedByUsage paginated,
-  }) => _tagsDao.getByName(name, paginated: paginated);
+  }) => _tagsDao.getByTitle(title, paginated: paginated);
 
-  Future<Tag?> getByExactlyName(String name) => _tagsDao.getByExactlyName(name);
+  Future<Tag?> getByExactlyTitle(String title) => _tagsDao.getByExactlyTitle(title);
 
   // --- SYNC section ---
-Future<List<Tag>> getByFileId(String fileId) => _tagsDao.getByFileId(fileId);
+  Future<List<Tag>> getByFileId(String fileId) => _tagsDao.getByFileId(fileId);
 
-/// Genera el Wrapper de etiquetas listo para la sincronización.
-Future<TagsFile> getFileWrapper({
-  required String fileId,
-  String? driveFileId,
-  required DateTime now,
-}) async {
-  final items = await getByFileId(fileId);
+  /// Genera el Wrapper de etiquetas listo para la sincronización.
+  Future<TagsFile> getFileWrapper({
+    required String fileId,
+    String? driveFileId,
+    required DateTime now,
+  }) async {
+    final items = await getByFileId(fileId);
 
-  return TagsFile(
-    id: fileId,
-    fileId: driveFileId ?? '',
-    tags: items,
-    createdAt: now,
-    updatedAt: now,
-  );
-}
+    return TagsFile(
+      id: fileId,
+      fileId: driveFileId ?? '',
+      tags: items,
+      createdAt: now,
+      updatedAt: now,
+    );
+  }
+
   Future<void> upsertAll(List<Tag> tags) async {
     return _tagsDao.upsertAll(tags);
   }
@@ -79,10 +74,8 @@ Future<TagsFile> getFileWrapper({
   }
 
   // Obtener los registros borrados para subirlos a la nube
-  Future<List<DeletedData>> getDeletedBatch(String fileId) => 
+  Future<List<DeletedData>> getDeletedBatch(String fileId) =>
       _tagsDao.getBatchByFileId(fileId);
-
-  Future<void> clearDeletedTags(List<String> ids) => _tagsDao.clearDeletedTags(ids);
 }
 
 final tagsRepositoryProvider = Provider<TagsRepository>((ref) {

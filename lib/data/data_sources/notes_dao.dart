@@ -177,7 +177,7 @@ class NotesDao {
           note.tags.add(
             Tag(
               id: row.tagId!,
-              name: row.tagName!,
+              title: row.tagTitle!,
               fileId: row.tagFileId ?? '',
               isFavorite: row.tagIsFavorite ?? false,
               updatedAt: row.tagUpdatedAt ?? row.updatedAt,
@@ -562,22 +562,64 @@ class FetchersNotesDao {
 Future<void> upsertAll(List<Note> notes) async {
   if (notes.isEmpty) return;
 
+  // 🎯 ID constante para la carpeta de rescate
+  const String rescueFolderId = 'recovered_folder_id';
+
   await _db.transaction((txn) async {
-    // 🛡️ PASO 1: Obtener IDs borrados LOCALMENTE que aún no se suben a Drive
-    // Lo hacemos DENTRO de la transacción para que nada cambie mientras operamos.
+    // 🛡️ PASO 1: Filtrar notas borradas localmente
     final List<String> incomingIds = notes.map((e) => e.id).toList();
     final Set<String> dirtyDeletedIds = await _deletedDao.extractDirtyIdsByType(
       incomingIds, DeletedType.note,
-      executor: txn // IMPORTANTE: Pasa el executor
+      executor: txn
     );
+
+    // 🔍 PASO 2: Verificar qué folders existen actualmente
+    final Set<String> incomingFolderIds = notes
+        .map((e) => e.folderId)
+        .where((id) => id != null)
+        .cast<String>()
+        .toSet();
+
+    Set<String> existingFolderIds = {};
+    if (incomingFolderIds.isNotEmpty) {
+      final List<Map<String, dynamic>> foldersFound = await txn.query(
+        'folders',
+        columns: ['id'],
+        where: 'id IN (${incomingFolderIds.map((_) => '?').join(',')})',
+        whereArgs: incomingFolderIds.toList(),
+      );
+      existingFolderIds = foldersFound.map((f) => f['id'] as String).toSet();
+    }
+
+    // 🛠️ PASO 3: Asegurar que la carpeta de rescate existe
+    bool rescueFolderCreated = false;
 
     final batch = txn.batch();
 
     for (final note in notes) {
-      // 🛡️ PASO 2: Si el ID está en la papelera local, IGNORAMOS lo que viene de Drive
-      if (dirtyDeletedIds.contains(note.id)) {
-        debugPrint("🚫 Ignorando nota resucitada (está en deletes locales): ${note.id}");
-        continue; 
+      if (dirtyDeletedIds.contains(note.id)) continue;
+
+      // 🎯 Lógica de Sustitución por Folder Genérico
+      String? finalFolderId = note.folderId;
+      
+      if (note.folderId != null && !existingFolderIds.contains(note.folderId)) {
+        debugPrint("📦 Nota ${note.id} movida a Carpeta de Rescate (Original: ${note.folderId} no existe)");
+        finalFolderId = rescueFolderId;
+
+        // Si es la primera vez en esta transacción que usamos el rescate, aseguramos el folder
+        if (!rescueFolderCreated) {
+          batch.rawInsert('''
+            INSERT OR IGNORE INTO folders (id, title, createdAt, updatedAt, fileId)
+            VALUES (?, ?, ?, ?, ?)
+          ''', [
+            rescueFolderId, 
+            'Recuperados (Sinc)', // 🎯 Título de la carpeta
+            DateTime.now().millisecondsSinceEpoch,
+            DateTime.now().millisecondsSinceEpoch,
+            'local_rescue_file' // Agregamos un fileId ficticio para evitar errores si es NOT NULL
+          ]);
+          rescueFolderCreated = true;
+        }
       }
 
       batch.rawInsert('''
@@ -597,7 +639,7 @@ Future<void> upsertAll(List<Note> notes) async {
         WHERE excluded.updatedAt > updatedAt 
       ''', [
         note.id,
-        note.folderId,
+        finalFolderId,
         note.fileId,
         note.title,
         note.content,
@@ -607,24 +649,21 @@ Future<void> upsertAll(List<Note> notes) async {
         note.isFavorite ? 1 : 0,
       ]);
 
-      // Tags y Links (Solo si la nota no fue filtrada)
+      // Tags y Links
       _tagsNotesDao.deleteBatch(batch, noteId: note.id);
       for (final tag in note.tags) {
         _tagsNotesDao.upsertBatch(batch, noteId: note.id, tagId: tag.id);
       }
-
       if (note.link != null) {
         _linkDao.upsertBatch(batch, note.link!);
       } else {
         _linkDao.deleteBatch(batch, note.id);
       }
     }
-      // Al ser upsertAll (PULL), NO marcamos el archivo como sucio
-      // porque los datos ya vienen sincronizados de Drive.
+
     await batch.commit(noResult: true);
   });
 }
-
   /* ----------------------------------------------------------------------
    * DELETE
    * -------------------------------------------------------------------- */
@@ -642,6 +681,7 @@ Future<void> delete(Note note) async { // Recibimos el objeto completo
       // 2. ¡IMPORTANTE! Marcamos el bucket original de la nota como sucio
       // Ahora el Pusher generará un JSON de notas SIN esta nota.
       await _syncDao.markAsDirty(bucketId, executor: txn);
+      await _syncDao.decreceCount(fileId: note.fileId, executor: txn);
 
       // 3. Borrado físico local
       await txn.delete('notes', where: 'id = ?', whereArgs: [id]);

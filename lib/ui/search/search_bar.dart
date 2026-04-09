@@ -11,6 +11,7 @@ class SearchListBar<T> extends StatefulWidget {
   final Widget? iconLeftBtn;
   final Function(String text)? addIconBtnCtrl;
   final SuggestionListBuilder<T> suggestionBuilder;
+  final bool enabled;
 
   const SearchListBar({
     super.key,
@@ -21,6 +22,7 @@ class SearchListBar<T> extends StatefulWidget {
     this.iconLeftBtn,
     this.addIconBtnCtrl,
     required this.suggestionBuilder,
+    this.enabled = true,
   });
 
   @override
@@ -85,7 +87,8 @@ class _SearchListBarState<T> extends State<SearchListBar<T>> {
       children: [
         _SearchInput(
           controller: _controller,
-          focusNode: _focusNode, // <--- Pasamos el focusNode
+          focusNode: _focusNode,
+          enabled: widget.enabled,
           onChangeText: _onChangeText,
           iconLeftButton: widget.iconLeftBtn,
           sufixRightIconBtnCtrl: widget.addIconBtnCtrl,
@@ -104,13 +107,16 @@ class _SearchInput extends ConsumerWidget {
   final Widget? iconLeftButton;
   final void Function(String text)? sufixRightIconBtnCtrl;
   final void Function(String value) onChangeText;
+  final bool enabled;
+
 
   const _SearchInput({
     required this.controller,
-    required this.focusNode, // <--- Requerido
+    required this.focusNode,
     required this.onChangeText,
     this.iconLeftButton,
     required this.sufixRightIconBtnCtrl,
+    required this.enabled,
   });
 
   @override
@@ -120,6 +126,7 @@ class _SearchInput extends ConsumerWidget {
       valueListenable: controller,
       builder: (_, value, _) {
         return TextField(
+          enabled: enabled,
           controller: controller,
           focusNode: focusNode, // <--- Vinculación clave
           cursorColor: theme.appBarTheme.backgroundColor,

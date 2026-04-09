@@ -16,7 +16,7 @@ class FloatingButtonBase extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom:90.0),
+      padding: const EdgeInsets.only(bottom:20.0),
       child: FloatingActionButton(
         backgroundColor:  theme.appBarTheme.backgroundColor,
         shape: CircleBorder(),

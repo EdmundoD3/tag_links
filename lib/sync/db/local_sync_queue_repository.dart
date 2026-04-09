@@ -89,4 +89,7 @@ class LocalSyncQueueRepository {
   Future<void> clearDriveId(String localId) async {
     await _dao.clearDriveId(localId);
   }
+  Future<void> markAsDeletedInDrive(String localId) async {
+    await _dao.markAsDeletedInDrive(localId);
+  }
 }

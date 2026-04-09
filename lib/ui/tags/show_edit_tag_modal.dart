@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/config/limit_config.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/models/tag.dart';
 
@@ -15,7 +16,7 @@ Future<EditedTag?> showEditTagModal(
   WidgetRef ref,
   Tag tag,
 ) {
-  final nameCtrl = TextEditingController(text: tag.name);
+  final nameCtrl = TextEditingController(text: tag.title);
   bool isFavorite = tag.isFavorite;
 
   return showModalBottomSheet<EditedTag>(
@@ -63,6 +64,7 @@ Future<EditedTag?> showEditTagModal(
                 ),
                 TextField(
                   controller: nameCtrl,
+                  maxLength: LimitAppConfig.tagMaxLength,
                   autofocus: true,
                   decoration: InputDecoration(
                     labelText: ref.tr(
@@ -91,7 +93,7 @@ Future<EditedTag?> showEditTagModal(
                           EditedTag(
                             isDeleted: false,
                             tag: tag.copyWith(
-                              name: nameCtrl.text.trim(),
+                              title: nameCtrl.text.trim(),
                               isFavorite: isFavorite,
                             ),
                           ),

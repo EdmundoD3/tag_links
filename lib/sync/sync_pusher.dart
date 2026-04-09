@@ -9,7 +9,6 @@ import 'package:tag_links/sync/db/local_sync_queue_repository.dart';
 import 'package:tag_links/sync/drive_data_service.dart';
 import 'package:tag_links/sync/models/archive_info.dart';
 import 'package:tag_links/sync/models/archive_item.dart';
-import 'package:tag_links/sync/models/delete_file.dart';
 import 'package:tag_links/sync/models/sync_file_wrapper.dart';
 import 'package:tag_links/sync/models/local_sync_queue.dart';
 
@@ -40,19 +39,32 @@ class SyncPusher {
     required ArchiveInfo currentArchive,
     int maxFiles = 10,
   }) async {
+    // 1. MANTENIMIENTO PREVIO
+    // Limpiamos localmente. Si algo se borra, marcará su bucket como 'dirty'.
+    try {
+      await _deletesRepo.cleanOldDeletes(days: 15);
+    } catch (e) {
+      debugPrint("SyncPusher: Error en mantenimiento preventivo: $e");
+      // No lanzamos excepción aquí para no detener el Push si la limpieza falla
+    }
+
     ArchiveInfo workingArchive = currentArchive;
     int filesProcessed = 0;
     final int now = DateTime.now().millisecondsSinceEpoch;
 
+    // 2. OBTENER ARCHIVOS (Incluirá el de borrados si la limpieza hizo cambios)
     final dirtyFiles = await _syncQueueRepo.getDirtyFiles(limit: maxFiles);
-    debugPrint("SyncPusher.pushLocalChanges: ${dirtyFiles.length} dirty files found. ${dirtyFiles.map((e) => e.fileName).join(', ')}");
+
+    debugPrint(
+      "SyncPusher.pushLocalChanges: ${dirtyFiles.length} dirty files found. ${dirtyFiles.map((e) => e.fileName).join(', ')}",
+    );
     for (var fileMeta in dirtyFiles) {
       if (filesProcessed >= maxFiles) break;
 
       try {
         final type = TypeQueue.fromString(fileMeta.type);
         final SyncFileWrapper wrapper = await _createWrapper(type, fileMeta);
-
+        debugPrint('SyncPusher.pushLocalChanges 67: Subiendo ${fileMeta.toMap()}');
         final driveId = await _driveDataService.uploadArray(
           items: [wrapper],
           toMap: (w) => w.toMap(),
@@ -62,15 +74,6 @@ class SyncPusher {
 
         if (driveId == null || driveId.isEmpty) {
           throw Exception("Drive no devolvió un ID válido");
-        }
-
-        // 🎯 PASO DE LIMPIEZA PARA BORRADOS:
-        // Si acabamos de subir un archivo de "deletes", debemos confirmar
-        // el éxito en el repositorio para que borre los IDs de las tablas locales.
-        if (type == TypeQueue.deletes && wrapper is DeleteFile) {
-          // 🎯 Una sola llamada limpia todo lo que se subió
-          await _deletesRepo.confirmFullDeleteFileSucceeded(wrapper);
-          debugPrint("SyncPusher: 🗑️ Tablas de borrados limpiadas.");
         }
 
         await _syncQueueRepo.markAsSynced(

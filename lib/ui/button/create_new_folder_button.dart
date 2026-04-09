@@ -21,6 +21,7 @@ class CreateNewFolderButton extends ConsumerWidget {
         final fileId = await ref
             .read(localSyncQueueRepositoryProvider)
             .getOrCreateAvailableFileId(TypeQueue.folders);
+        debugPrint('CreateNewFolderButton.onPressed fileId: $fileId');
         if (context.mounted) {
           goPage(
             context: context,

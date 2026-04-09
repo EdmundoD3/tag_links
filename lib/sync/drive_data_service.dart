@@ -12,55 +12,51 @@ class DriveDataService {
   // DESCARGA (PULL)
   // ==========================================
 
-  Future<List<T>> downloadArray<T>({
-    required String fileId,
-    required T Function(Map<String, dynamic>) fromMap,
-
-    ///opcional para debug
-    String? fileName,
-  }) async {
-    try {
-      // 1. IMPORTANTE: Cambiado a fullMedia para obtener el contenido real
-      final response = await _driveApi.files.get(
-        fileId,
-        downloadOptions: drive.DownloadOptions.fullMedia,
+Future<List<T>> downloadArray<T>({
+  required String fileId,
+  required T Function(Map<String, dynamic>) fromMap,
+  String? fileName, // Ahora es casi obligatorio para el fallback
+}) async {
+  try {
+    return await _executeDownload<T>(fileId, fromMap);
+  } catch (e) {
+    if ((e.toString().contains("404") || e.toString().contains("File not found")) && fileName != null) {
+      debugPrint("🔍 Falló fileId, intentando recuperar por nombre: $fileName");
+      
+      // Intentamos buscarlo en Drive por nombre
+      final list = await _driveApi.files.list(
+        q: "name = '$fileName' and trashed = false",
+        spaces: 'appDataFolder',
       );
 
-      if (response is! drive.Media) {
-        throw Exception("No se pudo obtener el contenido del archivo $fileId");
+      if (list.files != null && list.files!.isNotEmpty) {
+        final newId = list.files!.first.id!;
+        debugPrint("✅ Archivo encontrado con nuevo ID: $newId");
+        // Reintentamos con el nuevo ID (Esto podrías guardarlo en el catch del Puller)
+        return await _executeDownload<T>(newId, fromMap);
       }
-
-      // 2. Forma más eficiente de recolectar bytes en Dart
-      final List<int> dataChunks = await response.stream
-          .expand((chunk) => chunk)
-          .toList();
-
-      final String decoded = utf8.decode(dataChunks);
-      final dynamic jsonData = json.decode(decoded);
-
-      // Manejamos si el JSON viene como un objeto único o una lista
-      if (jsonData is List) {
-        return jsonData
-            .map((item) => fromMap(Map<String, dynamic>.from(item)))
-            .toList();
-      } else if (jsonData is Map) {
-        // Por si acaso subes un Wrapper único en lugar de una lista
-        return [fromMap(Map<String, dynamic>.from(jsonData))];
-      }
-
-      return [];
-    } catch (e) {
-      // DETECCIÓN DE ARCHIVO NO ENCONTRADO
-      if (e.toString().contains("404") ||
-          e.toString().contains("File not found")) {
-        debugPrint("⚠️ El archivo $fileId ya no existe en Drive.");
-        // Lanzamos una excepción específica o retornamos una lista vacía
-        // Pero es mejor lanzar una excepción personalizada para que el Puller sepa qué pasó
-        throw PathNotFoundException(fileId);
-      }
-      rethrow;
+      
+      throw PathNotFoundException(fileId);
     }
+    rethrow;
   }
+}
+
+// Método privado para no repetir la lógica de streaming
+Future<List<T>> _executeDownload<T>(String id, T Function(Map<String, dynamic>) fromMap) async {
+  final response = await _driveApi.files.get(id, downloadOptions: drive.DownloadOptions.fullMedia);
+  if (response is! drive.Media) throw Exception("Error de medio");
+  
+  final List<int> dataChunks = await response.stream.expand((chunk) => chunk).toList();
+  final dynamic jsonData = json.decode(utf8.decode(dataChunks));
+
+  if (jsonData is List) {
+    return jsonData.map((item) => fromMap(Map<String, dynamic>.from(item))).toList();
+  } else if (jsonData is Map) {
+    return [fromMap(Map<String, dynamic>.from(jsonData))];
+  }
+  return [];
+}
 
   // ==========================================
   // SUBIDA (PUSH)
