@@ -64,7 +64,6 @@ class SyncPusher {
       try {
         final type = TypeQueue.fromString(fileMeta.type);
         final SyncFileWrapper wrapper = await _createWrapper(type, fileMeta);
-        debugPrint('SyncPusher.pushLocalChanges 67: Subiendo ${fileMeta.toMap()}');
         final driveId = await _driveDataService.uploadArray(
           items: [wrapper],
           toMap: (w) => w.toMap(),

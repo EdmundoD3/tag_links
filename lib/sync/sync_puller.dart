@@ -182,7 +182,6 @@ Future<PullResult> processRemoteData(
             fileName: file.fileName,
           );
           if (res.isNotEmpty) {
-            debugPrint('SyncPuller.processRemoteData 185: folders: ${res.first.toMap()}');
             await _folderRepo.upsertAll(res.first.folders);
             foldersChanged = true;
           }
