@@ -8,7 +8,9 @@ import 'package:tag_links/ui/container/tile_container.dart';
 import 'package:tag_links/ui/form/folder_form_page.dart';
 import 'package:tag_links/ui/menu/menu_container.dart';
 import 'package:tag_links/ui/utils/page_buil.dart';
-import 'package:tag_links/ui/container/bouncing_widget.dart'; // Asegúrate de que la ruta sea correcta
+import 'package:tag_links/ui/container/bouncing_widget.dart';
+
+import '../button/more_vert_button.dart'; // Asegúrate de que la ruta sea correcta
 
 class FolderTile extends ConsumerStatefulWidget {
   final List<ActionMenuItem> actionsItems;
@@ -44,14 +46,8 @@ class _FolderTileState extends ConsumerState<FolderTile> {
       trailing: Trailing(
         top: 12,
         right: 10,
-        child: IconButton(
+        child: MoreVertButton(
           onPressed: () => _actionsMenu(context, ref, null),
-          icon: const Icon(
-            Icons.more_vert,
-            size: 22,
-          ), // Un poco más grande para carpetas
-          splashRadius: 20,
-          color: Theme.of(context).hintColor,
         ),
       ),
       child: _FolderCard(

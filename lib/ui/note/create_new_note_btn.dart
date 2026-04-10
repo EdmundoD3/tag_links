@@ -13,9 +13,10 @@ class CreateNewNoteButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return FloatingButtonBase(
-      heroTag: ref.tr(TKeys.ui.addNote, fallback: 'Add note'),
-      icon: Icons.note_add,
+    final theme = Theme.of(context);
+    return IconButton(
+      icon: Icon(Icons.note_add, color: theme.iconTheme.color),
+      tooltip: ref.tr(TKeys.ui.addNote, fallback: 'Add note'),
       onPressed: () async {
         final fileId = await ref
             .read(localSyncQueueRepositoryProvider)

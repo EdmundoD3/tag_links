@@ -1,5 +1,6 @@
 import 'package:flutter/rendering.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:tag_links/config/local_sync_config.dart';
 import 'package:tag_links/sync/models/archive_info.dart';
 import 'package:tag_links/sync/models/archive_item.dart';
 import 'package:tag_links/sync/models/local_sync_queue.dart';
@@ -78,6 +79,32 @@ class LocalSyncQueueDao {
       whereArgs: [bucketId],
     );
   }
+  Future<void> markMultipleAsDirty(
+  Iterable<String> bucketIds, {
+  DatabaseExecutor? executor,
+}) async {
+  if (bucketIds.isEmpty) return;
+
+  final db = executor ?? _db;
+  final now = DateTime.now().millisecondsSinceEpoch;
+  
+  // Convertimos a lista para asegurar orden y evitar múltiples iteraciones
+  final ids = bucketIds.toList();
+  
+  // Creamos los placeholders: ?,?,?,...
+  final placeholders = List.filled(ids.length, '?').join(',');
+
+  await db.update(
+    _tableName,
+    {
+      'syncStatus': SyncStatus.dirty,
+      'lastUpdate': now,
+    },
+    // Usamos IN para actualizar todos de un solo golpe
+    where: 'id IN ($placeholders)',
+    whereArgs: ids,
+  );
+}
 
   Future<void> markAsSynced(
     String bucketId,
@@ -137,9 +164,7 @@ class LocalSyncQueueDao {
   }) async {
     final db = executor ?? _db;
     final String tName = tableType.tableName;
-    final int limit = (tName == 'deletes')
-        ? 2000
-        : (tName == 'notes' ? 50 : 200);
+    final int limit = LocalSyncConfig.limit;
 
     final List<Map<String, dynamic>> res = await db.rawQuery(
       '''

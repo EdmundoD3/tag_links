@@ -13,6 +13,8 @@ class GoDebugPageButon extends StatelessWidget {
       onPressed: () => {
         goPage(context: context, page:  DebugPage()),
       },
+      padding: const EdgeInsets.all(0),
+      tooltip: 'Debug',
       icon: Icon(Icons.bug_report, color:theme.iconTheme.color),
     );
   }

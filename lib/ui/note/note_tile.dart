@@ -16,6 +16,8 @@ import 'package:tag_links/utils/color_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:math' as math;
 
+import '../button/more_vert_button.dart';
+
 class NoteTile extends ConsumerStatefulWidget {
   final Note note;
   final List<ActionMenuItem> actionsItems;
@@ -224,10 +226,9 @@ class _NoteTileCard extends StatelessWidget {
       trailing: Trailing(
         top: 12,
         right: 10,
-        child: IconButton(
+        child: MoreVertButton(
           onPressed: () => onShowMenu(null),
-          icon: Icon(Icons.more_vert, color: Colors.black54, size: 20),
-          splashRadius: 20,
+          
         ),
       ),
       child: TileContainer(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/google/auth_provider.dart';
+import 'package:tag_links/core/google/models/auth_state_model.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/sync/sync_notifier_provider.dart';
 
@@ -12,99 +13,111 @@ class ManualSyncButton extends ConsumerWidget {
     final syncState = ref.watch(syncProvider);
     final authState = ref.watch(authProvider);
 
-    // Extraemos el estado de los datos de forma segura
+    // ✅ Si syncState es AsyncLoading o similar, manejamos el fallback
     final state = syncState.value ?? SyncState();
 
     return IconButton(
       tooltip: _getTooltip(state, authState.isAuthenticated, ref),
-      icon: _buildIcon(
-        context,
-        state: state,
-        isAuth: authState.isAuthenticated,
-        fixIntent: () => ref.read(syncProvider.notifier).synchronize(),
+      // Agregamos una opacidad ligera si no está autenticado para reforzar el "gris"
+      icon: Opacity(
+        opacity: authState.isAuthenticated ? 1.0 : 0.6,
+        child: _buildIcon(
+          context,
+          state: state,
+          isAuth: authState.isAuthenticated,
+        ),
       ),
-      onPressed: () async {
-        // 1. Caso: No hay sesión iniciada
-        if (!authState.isAuthenticated) {
-          final bool? wantLogin = await _showLoginInvitation(context, ref);
-          if (wantLogin == true) {
-            await ref.read(authProvider.notifier).login();
-          }
-          return;
-        }
-
-        // Detectar si el estado de sincronización falló por credenciales
-        final isAuthError =
-            state.status == SyncStatus.error &&
-            (state.lastError == "AUTH_401" ||
-                state.lastError == "Inicia sesión de nuevo");
-
-        if (isAuthError) {
-          // Intentamos login para refrescar el token
-          await ref.read(authProvider.notifier).login();
-          // Una vez logueado, reintentamos la sincronización automáticamente
-          ref.read(syncProvider.notifier).forceSynchronize();
-          return;
-        }
-
-        if (state.status == SyncStatus.syncing) return;
-
-        ref.read(syncProvider.notifier).forceSynchronize();
-      },
+      onPressed: () async => _syncronizeController(
+        authState: authState,
+        context: context,
+        ref: ref,
+        state: state,
+      ),
     );
+  }
+
+  Future<void> _syncronizeController({
+    required WidgetRef ref,
+    required BuildContext context,
+    required AuthState authState,
+    required SyncState state,
+  }) async {
+    final syncNotifier = ref.read(syncProvider.notifier);
+    final authNotifier = ref.read(authProvider.notifier);
+
+    // 1. Caso: Gris / No autenticado -> Invitación (El reparador manual de conexión)
+    if (!authState.isAuthenticated) {
+      final bool? wantLogin = await _showLoginInvitation(context, ref);
+      if (wantLogin == true) {
+        final success = await authNotifier.login();
+        if (success) syncNotifier.forceSynchronize();
+      }
+      return;
+    }
+
+    // 2. Caso: Error 401 (El reparador manual de credenciales)
+    final isAuthError =
+        state.status == SyncStatus.error &&
+        (state.lastError?.contains("401") == true ||
+            state.lastError == "AUTH_401");
+
+    if (isAuthError) {
+      debugPrint("🔧 Reparando sesión...");
+      bool success = await authNotifier.initSilentLogin();
+      if (!success) success = await authNotifier.login();
+
+      if (success) syncNotifier.forceSynchronize();
+      return;
+    }
+
+    // 3. Estado normal
+    if (state.status == SyncStatus.syncing) return;
+    syncNotifier.forceSynchronize();
   }
 
   Widget _buildIcon(
     BuildContext context, {
     required SyncState state,
     required bool isAuth,
-    required VoidCallback fixIntent,
   }) {
-    if (!isAuth) {
-      return const Icon(Icons.cloud_off, color: Colors.grey);
-    }
-    final theme = Theme.of(context);
+    // 🔘 Estado Gris: No hay nube configurada
+    if (!isAuth) return const Icon(Icons.cloud_off, color: Colors.grey);
 
     switch (state.status) {
       case SyncStatus.syncing:
         return const SizedBox(
           width: 20,
           height: 20,
-          child: CircularProgressIndicator(
-            strokeWidth: 2.5,
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.blueAccent),
-          ),
+          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.blue),
         );
-
       case SyncStatus.error:
-        return IconButton(
-          icon: const Icon(Icons.sync_problem),
-          onPressed: fixIntent,
-          color: Colors.orangeAccent,
-        );
-
+        // 🟠 Estado Naranja: Hay un problema que requiere atención
+        return const Icon(Icons.sync_problem, color: Colors.orangeAccent);
       case SyncStatus.success:
+        // 🟢 Estado Verde: Todo al día
         return const Icon(Icons.cloud_done, color: Colors.green);
       default:
-        return Icon(Icons.sync_outlined, color: theme.iconTheme.color);
+        return Icon(Icons.sync_outlined, color: Theme.of(context).iconTheme.color,);
     }
   }
 
   String _getTooltip(SyncState state, bool isAuth, WidgetRef ref) {
-    if (!isAuth)
+    if (!isAuth) {
       return ref.tr(
         TKeys.sync.loginSync,
         fallback: "Inicia sesión para sincronizar",
       );
+    }
     if (state.status == SyncStatus.error) {
       debugPrint("Error: ${state.lastError}");
       return ref.tr(TKeys.sync.errorSync, fallback: "Error al sincronizar");
     }
-    if (state.status == SyncStatus.syncing)
+    if (state.status == SyncStatus.syncing) {
       return ref.tr(
         TKeys.sync.driveSync,
         fallback: "Sincronizando con Drive...",
       );
+    }
     return ref.tr(TKeys.sync.syncNow, fallback: "Sincronizar ahora");
   }
 

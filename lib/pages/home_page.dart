@@ -63,7 +63,7 @@ return preferenceAsync.when(
           child: Scaffold(
             backgroundColor: theme.scaffoldBackgroundColor,
             appBar: _appBar(showFolders, preference, ref),
-            floatingActionButton: _floatingActionButton(showFolders),
+            // floatingActionButton: _floatingActionButton(showFolders),
             body: SafeArea(
               child: Column(
                 children: [
@@ -117,10 +117,11 @@ return preferenceAsync.when(
           if (kDebugMode) GoDebugPageButon(),
           const ManualSyncButton(),
           const GoSettingsButton(),
+          _creationButton(showFolders),
         ],
       );
     }
-    return AppBarPages(title: folder!.title);
+    return AppBarPages(title: folder!.title, actions:[_creationButton(showFolders)]);
   }
 
   /// 🔁 Cambiar vista y guardar preferencia
@@ -131,7 +132,7 @@ return preferenceAsync.when(
   }
 
   /// ➕ FAB dinámico
-  Widget _floatingActionButton(bool showFolders) {
+  Widget _creationButton(bool showFolders) {
     return showFolders
         ? CreateNewFolderButton(parentFolderId: folder?.id)
         : CreateNewNoteButton(folderId: folder?.id);

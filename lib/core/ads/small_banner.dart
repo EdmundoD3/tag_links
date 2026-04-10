@@ -45,40 +45,42 @@ class _SmartBannerAdState extends ConsumerState<SmartBannerAd> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
+@override
+Widget build(BuildContext context) {
+  final adsActivas = ref.watch(isAdsActiveProvider);
+  
+  if (!adsActivas || !_isLoaded || _bannerAd == null) {
+    return const SizedBox.shrink();
+  }
 
-    // 2. Si las ads están pausadas temporalmente (por un Reward)
-    final adsActivas = ref.watch(isAdsActiveProvider);
-    
-    if (!adsActivas || !_isLoaded || _bannerAd == null) {
-      return const SizedBox.shrink();
-    }
-
-    return Container(
-      alignment: Alignment.center,
-      width: double.infinity, // Centramos en el ancho disponible
-      height: _bannerAd!.size.height.toDouble() + 18, // Un poco de aire para el padding
-      child: BannerWithCloseButton(
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        onCloseTap: () => showAdManagementMenu(
-          context,
-          ref,
-          showRewardedAd: () async {
-            // Usamos el servicio que ya tienes
-            return await ref.read(adServiceProvider).showRewardedAd();
-          },
-          processPurchase: () async {
-            // 3. Mostramos el modal de compra que creamos antes
-            showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              builder: (_) => const PremiumSalesSheet(showEmpty: null,),
-            );
-          },
-        ),
+  return Container(
+    alignment: Alignment.center,
+    width: double.infinity,
+    // Le damos un margen arriba para que el botón que sobresale no se pegue al widget de arriba
+    margin: const EdgeInsets.symmetric(vertical: 8), 
+    // Altura del banner normal
+    height: _bannerAd!.size.height.toDouble(), 
+    child: BannerWithCloseButton(
+      // Quitamos el padding horizontal si quieres que la X esté pegada al borde del banner real
+      padding: EdgeInsets.zero, 
+      onCloseTap: () => showAdManagementMenu(
+        context,
+        ref,
+        showRewardedAd: () async => await ref.read(adServiceProvider).showRewardedAd(),
+        processPurchase: () async {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            builder: (_) => const PremiumSalesSheet(showEmpty: null),
+          );
+        },
+      ),
+      child: SizedBox(
+        width: _bannerAd!.size.width.toDouble(),
+        height: _bannerAd!.size.height.toDouble(),
         child: AdWidget(ad: _bannerAd!),
       ),
-    );
-  }
+    ),
+  );
+}
 }

@@ -16,25 +16,29 @@ class AuthNotifier extends Notifier<AuthState> {
 
   @override
   AuthState build() {
-    // Iniciamos sesión en segundo plano al arrancar
-    initSilentLogin();
+    // 🎯 Usamos microtask para no interferir con la creación del Provider
+    Future.microtask(() => initSilentLogin());
     return AuthState(isLoading: false);
   }
 
-  /// Proceso centralizado para crear el DriveApi y actualizar el estado de un solo golpe
-  Future<void> _updateStateWithNewAuth(GoogleSignInAccount user, {bool interactive = false}) async {
-    // Obtenemos los headers frescos del Manager
-    final authHeaders = await _authManager.getHeaders(user, forcePrompt: interactive);
-    
+  Future<void> _updateStateWithNewAuth(
+    GoogleSignInAccount user, {
+    bool interactive = false,
+  }) async {
+    // Forzamos la obtención de headers frescos.
+    // Si 'interactive' es true, el AuthManager debería forzar el refresco interno.
+    final authHeaders = await _authManager.getHeaders(
+      user,
+      forcePrompt: interactive,
+    );
+
     if (authHeaders == null) {
       throw DrivePermissionDeniedException();
     }
 
-    // Creamos el cliente y el API que vivirán en este estado
     final newClient = GoogleHttpClient(authHeaders);
     final newDriveApi = drive.DriveApi(newClient);
 
-    // 🎯 ACTUALIZACIÓN ATÓMICA
     state = AuthState(
       user: user,
       driveApi: newDriveApi,
@@ -43,11 +47,17 @@ class AuthNotifier extends Notifier<AuthState> {
     );
   }
 
-  Future<void> initSilentLogin() async {
+  /// Proceso centralizado para crear el DriveApi y actualizar el estado de un solo golpe
+  Future<bool> initSilentLogin() async {
     final hasSkipped = ref.read(skipedAuthProvider);
     if (hasSkipped == true) {
-      state = AuthState(user: null, driveApi: null, isLoading: false, lastResult: null);
-      return;
+      state = AuthState(
+        user: null,
+        driveApi: null,
+        isLoading: false,
+        lastResult: null,
+      );
+      return false;
     }
 
     state = AuthState(isLoading: true);
@@ -59,43 +69,85 @@ class AuthNotifier extends Notifier<AuthState> {
       );
 
       if (user == null) {
-        state = AuthState(isLoading: false, lastResult: SilentLoginResult.noUser);
-        return;
+        state = AuthState(
+          isLoading: false,
+          lastResult: SilentLoginResult.noUser,
+        );
+        return false;
       }
 
+      // 🎯 Refrescamos headers para evitar el error 401 inmediato
       await _updateStateWithNewAuth(user);
-      
-      // Si tuvo éxito, nos aseguramos de que el flag de skip esté en false
-      await ref.read(skipedAuthProvider.notifier).saveHasSkippedAuth(false);
 
+      await ref.read(skipedAuthProvider.notifier).saveHasSkippedAuth(false);
+      return true;
     } catch (e) {
       debugPrint("⚠️ Error en silent login: $e");
+
+      final isAuthErr =
+          e.toString().contains("401") ||
+          e.toString().contains("AUTH_401") ||
+          e is DrivePermissionDeniedException;
+
       state = AuthState(
-        isLoading: false, 
-        lastResult: _mapErrorToResult(e),
+        isLoading: false,
+        lastResult: isAuthErr
+            ? SilentLoginResult.expired
+            : _mapErrorToResult(e),
+        // Mantenemos al usuario aunque esté expirado para poder intentar login(interactivo) después
+        user: state.user,
       );
+      return false;
     }
   }
 
-  Future<void> login() async {
+  Future<bool> login() async {
     state = AuthState(isLoading: true);
     try {
       final user = await _authManager.getInteractiveUser();
-      
+
       if (user == null) {
-        state = AuthState(isLoading: false, lastResult: SilentLoginResult.noUser);
-        return;
+        state = AuthState(
+          isLoading: false,
+          lastResult: SilentLoginResult.noUser,
+        );
+        return false;
       }
 
+      // forcePrompt: true asegura que se pidan los permisos/headers de nuevo
       await _updateStateWithNewAuth(user, interactive: true);
       await ref.read(skipedAuthProvider.notifier).saveHasSkippedAuth(false);
-
-    } on DrivePermissionDeniedException {
-      state = AuthState(isLoading: false, lastResult: SilentLoginResult.expired);
+      return true;
     } catch (e) {
       debugPrint("❌ Error en Login Manual: $e");
       state = AuthState(isLoading: false, lastResult: SilentLoginResult.error);
+      return false;
     }
+  }
+
+  Future<bool> attemptSessionRepair() async {
+    if (state.isAuthenticated && state.lastResult == SilentLoginResult.success)
+      return true;
+    if (state.isLoading) return false;
+
+    if (_isRepairingResult) {
+      debugPrint("🔧 AuthNotifier: Intentando reparación...");
+
+      final currentUser = state.user;
+      try {
+        if (currentUser != null) {
+          // Intentamos refrescar headers del usuario actual
+          await _updateStateWithNewAuth(currentUser);
+          return true;
+        } else {
+          return await initSilentLogin();
+        }
+      } catch (e) {
+        // Si falla la actualización del usuario actual, intentamos flujo completo
+        return await initSilentLogin();
+      }
+    }
+    return state.isAuthenticated;
   }
 
   Future<void> logout() async {
@@ -126,33 +178,6 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
-  Future<bool> attemptSessionRepair() async {
-    // Si ya hay API y no hay errores, no hacemos nada
-    if (state.isAuthenticated && state.lastResult == SilentLoginResult.success) return true;
-    
-    if (state.isLoading) return false;
-
-    // Solo reparamos si el error es de red, timeout o genérico
-    if (_isRepairingResult) {
-      debugPrint("🔧 AuthNotifier: Intentando reparación...");
-      
-      final currentUser = state.user;
-      if (currentUser != null) {
-        try {
-          await _updateStateWithNewAuth(currentUser);
-          return true;
-        } catch (e) {
-          // Si falla con el usuario actual, intentamos login silencioso completo
-          await initSilentLogin();
-        }
-      } else {
-        await initSilentLogin();
-      }
-    }
-
-    return state.isAuthenticated;
-  }
-
   bool get _isRepairingResult =>
       state.lastResult == SilentLoginResult.timeout ||
       state.lastResult == SilentLoginResult.networkError ||
@@ -161,10 +186,13 @@ class AuthNotifier extends Notifier<AuthState> {
 
   SilentLoginResult _mapErrorToResult(Object e) {
     final err = e.toString().toLowerCase();
-    if (err.contains('network') || err.contains('socket')) return SilentLoginResult.networkError;
+    if (err.contains('network') || err.contains('socket'))
+      return SilentLoginResult.networkError;
     if (err.contains('timeout')) return SilentLoginResult.timeout;
     return SilentLoginResult.error;
   }
 }
 
-final authProvider = NotifierProvider<AuthNotifier, AuthState>(AuthNotifier.new);
+final authProvider = NotifierProvider<AuthNotifier, AuthState>(
+  AuthNotifier.new,
+);

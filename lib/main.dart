@@ -116,7 +116,6 @@ class _MyAppState extends ConsumerState<MyApp> {
 
     // 2. Envolvemos SIEMPRE en el MaterialApp
     return MaterialApp(
-      debugShowCheckedModeBanner: false, // Opcional: quita la banda roja
       theme: getPalette(palette: palette),
       home: const AppLifecycleObserver(child: MainPageRouter()),
     );
@@ -128,22 +127,16 @@ class MainPageRouter extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final auth = ref.watch(authProvider);
+    // Escuchamos ambos para reaccionar a cambios de sesión o de saltos
+    ref.watch(authProvider); 
     final hasSkipped = ref.watch(skipedAuthProvider);
 
-    // 1. SOLO SI ES LA PRIMERA VEZ (Nunca ha decidido nada)
-    if (hasSkipped == null && !auth.isAuthenticated && !auth.isLoading) {
+    // 🎯 La única condición de salida es ser un usuario totalmente nuevo
+    if (hasSkipped == null) {
       return const WelcomePage();
     }
 
-    // 2. SOLO SI LA SESIÓN EXPIRÓ (Caso exclusivo que pediste)
-    if (auth.lastResult == SilentLoginResult.expired) {
-      return const WelcomePage(isExpired: true);
-    }
-
-    // 3. PARA todo lo demás: HomePage
-    // Incluye: isAuthenticated, isLoading (mientras carga entra a Home),
-    // networkError, o simplemente si ya pasó el welcome antes.
+    // Para todo lo demás (Logueado, Omitido, Error, Offline): Home.
     return const HomePage(folder: null);
   }
 }

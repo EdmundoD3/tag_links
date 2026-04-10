@@ -180,6 +180,11 @@ ThemeData _generatePalette({
   return ThemeData(
     useMaterial3: true,
     scaffoldBackgroundColor: scaffoldBackgroundColor,
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: strongBackground,
+      primary: strongBackground,
+      onSurface: textColor, 
+    ),
     canvasColor:
         scaffoldBackgroundColor, //Agrega esto para evitar el flash blanco
     highlightColor: Colors.transparent,
@@ -213,6 +218,7 @@ ThemeData _generatePalette({
 
     // ------------ icon --------------------------
     iconTheme: IconThemeData(color: icon),
+    iconButtonTheme: IconButtonThemeData(style: IconButton.styleFrom(foregroundColor: icon)),
     badgeTheme: BadgeThemeData(textColor: badge),
     chipTheme: ChipThemeData(),
 

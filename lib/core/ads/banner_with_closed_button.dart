@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:flutter/material.dart';
+
 class BannerWithCloseButton extends StatelessWidget {
   final Widget child;
   final VoidCallback onCloseTap;
@@ -16,17 +18,23 @@ class BannerWithCloseButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Definimos cuánto queremos que el botón sobresalga.
+    // Con 16px, la mitad del botón (que mide ~24px) quedará fuera.
+    const double offsetValue = 16.0;
+
     return Padding(
       padding: padding,
       child: Stack(
+        clipBehavior: Clip.none, // IMPORTANTE: permite que la X se dibuje fuera del marco
         children: [
-          // Banner
+          // 1. EL BANNER
           ClipRRect(child: child),
 
+          // 2. LA X (Posicionada en la esquina superior derecha hacia afuera)
           if (showClose)
             Positioned(
-              top: 0,
-              right: 0,
+              top: -offsetValue,    // Sube la X hacia arriba
+              right: -offsetValue,  // Mueve la X hacia la derecha
               child: _CloseButton(onTap: onCloseTap),
             ),
         ],
@@ -34,6 +42,8 @@ class BannerWithCloseButton extends StatelessWidget {
     );
   }
 }
+
+// ... aquí sigue tu clase _CloseButton igual que la tenías ...
 
 class _CloseButton extends StatefulWidget {
   final VoidCallback onTap;
@@ -69,32 +79,23 @@ class _CloseButtonState extends State<_CloseButton>
     super.dispose();
   }
 
-@override
-Widget build(BuildContext context) {
-  return ScaleTransition(
-    scale: _scaleAnimation,
-    child: GestureDetector(
-      onTap: widget.onTap, // Usar onTap o onPressed según prefieras
-      behavior: HitTestBehavior.opaque,
-      child: Container( // Quitamos el SizedBox o lo hacemos de 24x24
-        padding: const EdgeInsets.all(2), // Da un margen pequeño al icono
-        // decoration: BoxDecoration(
-        //   color: Colors.white.withValues(alpha: 0.8),
-        //   shape: BoxShape.circle,
-        //   boxShadow: [
-        //     BoxShadow(
-        //       color: Colors.black.withValues(alpha: 0.1),
-        //       blurRadius: 4,
-        //     ),
-        //   ],
-        // ),
-        child: const Icon(
-          Icons.cancel_outlined, 
-          size: 18, 
-          color: Colors.blueAccent
+  @override
+  Widget build(BuildContext context) {
+    return ScaleTransition(
+      scale: _scaleAnimation,
+      child: GestureDetector(
+        onTap: widget.onTap, // Usar onTap o onPressed según prefieras
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          // Quitamos el SizedBox o lo hacemos de 24x24
+          padding: const EdgeInsets.all(2), // Da un margen pequeño al icono
+          child: const Icon(
+            Icons.cancel_outlined,
+            size: 18,
+            color: Colors.blueAccent,
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 }

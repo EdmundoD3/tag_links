@@ -456,12 +456,25 @@ class FoldersDao {
     bool toRoot = true,
   }) async {
     final now = DateTime.now().millisecondsSinceEpoch;
-    // Si toRoot es true, los hijos van a null (Raíz)
-    // Si no, van al parentId que tenía la carpeta (suben un nivel)
     final childrenNewParentId = toRoot ? null : folder.parentId;
 
     await _db.transaction((txn) async {
-      // 1. "Subir" a los hijos
+      // 1. Obtener todos los fileIds que van a ser afectados ANTES de moverlos
+      // Buscamos el fileId de la carpeta padre y de todos sus hijos directos.
+      final List<Map<String, dynamic>> result = await txn.rawQuery(
+        '''
+      SELECT DISTINCT fileId FROM folders 
+      WHERE id = ? OR parentId = ?
+    ''',
+        [folder.id, folder.id],
+      );
+
+      final fileIdsAfectados = result
+          .map((row) => row['fileId'] as String)
+          .where((id) => id.isNotEmpty)
+          .toSet(); // Set para evitar duplicados
+
+      // 2. "Subir" a los hijos (Flatten)
       await txn.update(
         'folders',
         {'parentId': childrenNewParentId, 'updatedAt': now},
@@ -469,7 +482,7 @@ class FoldersDao {
         whereArgs: [folder.id],
       );
 
-      // 2. Mover la carpeta padre
+      // 3. Mover la carpeta padre (Move)
       final rowsPadre = await txn.update(
         'folders',
         {'parentId': newParentId, 'updatedAt': now},
@@ -478,6 +491,9 @@ class FoldersDao {
       );
 
       if (rowsPadre == 0) throw Exception('Error: Carpeta no encontrada');
+
+      // 🚀 4. Marcar todos los Buckets como Dirty de golpe
+      await _syncDao.markMultipleAsDirty(fileIdsAfectados, executor: txn);
     });
   }
 
@@ -505,7 +521,7 @@ class FoldersDao {
     );
   }
 
-Future<List<Tag>> _getTagsByFolderId(Database db, String folderId) async {
+  Future<List<Tag>> _getTagsByFolderId(Database db, String folderId) async {
     final result = await db.rawQuery(
       '''
       SELECT t.*
