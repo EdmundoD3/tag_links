@@ -72,7 +72,7 @@ class NotesToFile {
       folderId: map['folderId'] as String?,
       // Si no viene fileId en el JSON, usamos un String vacío o un valor por defecto
       fileId: map['fileId'] as String? ?? '',
-      title: map['title']?.toString() ?? '',
+      title: map['title']?.toString() ?? 'no title',
       content: map['content']?.toString() ?? '',
       color: map['color'] as String?,
       createdAt: 

@@ -613,7 +613,7 @@ Future<void> upsertAll(List<Note> notes) async {
             VALUES (?, ?, ?, ?, ?)
           ''', [
             rescueFolderId, 
-            'Recuperados (Sinc)', // 🎯 Título de la carpeta
+            'rescue_folder (Sync)', // 🎯 Título de la carpeta
             DateTime.now().millisecondsSinceEpoch,
             DateTime.now().millisecondsSinceEpoch,
             'local_rescue_file' // Agregamos un fileId ficticio para evitar errores si es NOT NULL

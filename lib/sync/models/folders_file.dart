@@ -1,6 +1,7 @@
 import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/sync/models/sync_file_wrapper.dart';
+import 'package:uuid/uuid.dart';
 
 class FoldersFile extends SyncFileWrapper {
   final List<Folder> folders;
@@ -60,11 +61,12 @@ class FoldersToFile {
   }
 
   static Folder fromMap(Map<String, dynamic> map) {
+    final noteId = map['id']?.toString() ?? const Uuid().v4();
     return Folder(
-      id: map['id'] as String,
+      id: noteId,
       parentId: map['parentId'] as String?,
       fileId: map['fileId'] as String,
-      title: map['title'] ?? '',
+      title: map['title'] ?? 'no title',
       description: map['description'] as String?,
       image: map['image'] as String?,
       color: map['color'] as String?,
