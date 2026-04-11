@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:tag_links/config/limit_config.dart';
 import 'package:tag_links/models/link_preview.dart';
-import 'package:tag_links/models/note.dart';
 import 'package:tag_links/service/link_preview_service.dart';
 import 'package:tag_links/ui/link/link_preview_widget.dart';
 

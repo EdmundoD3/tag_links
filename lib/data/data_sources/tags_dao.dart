@@ -3,7 +3,6 @@ import 'package:sqflite/sqflite.dart';
 import 'package:tag_links/data/data_sources/deleted_dao.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/sync/db/local_sync_queue_dao.dart';
-import 'package:tag_links/sync/models/local_sync_queue.dart';
 import 'package:tag_links/utils/paginated_utils.dart';
 
 class TagsDao {

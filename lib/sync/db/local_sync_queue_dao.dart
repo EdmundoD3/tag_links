@@ -33,7 +33,7 @@ class LocalSyncQueueDao {
   }
 
   // 2. UPSERT DE BUCKETS (Usado en Pull y creación local)
-static Future<void> upsertTx(
+  static Future<void> upsertTx(
     DatabaseExecutor executor, {
     required LocalSyncQueue item,
   }) async {
@@ -77,7 +77,7 @@ static Future<void> upsertTx(
       ORDER BY lastUpdate DESC
       LIMIT ?
     ''';
-    
+
     final args = [SyncStatus.localOnly, SyncStatus.dirty, limit];
 
     final res = await _db.rawQuery(query, args);
@@ -115,14 +115,13 @@ static Future<void> upsertTx(
     // Creamos los placeholders: ?,?,?,...
     final placeholders = List.filled(ids.length, '?').join(',');
 
-    final count = await executor.update(
+    await executor.update(
       _tableName,
       {'syncStatus': SyncStatus.dirty, 'lastUpdate': now},
       // Usamos IN para actualizar todos de un solo golpe
       where: 'id IN ($placeholders)',
       whereArgs: ids,
     );
-
   }
 
   Future<void> markAsSynced(
@@ -130,7 +129,6 @@ static Future<void> upsertTx(
     String driveFileId,
     int timestamp,
   ) async {
-
     await _db.update(
       _tableName,
       {
@@ -274,24 +272,37 @@ static Future<void> upsertTx(
     );
   }
 
-Future<void> updateMissingDriveIds(List<ArchiveItem> items) async {
-  final batch = _db.batch();
-  for (var item in items) {
-    batch.rawUpdate('''
+  Future<void> updateMissingDriveIds(List<ArchiveItem> items) async {
+    final batch = _db.batch();
+    for (var item in items) {
+      batch.rawUpdate(
+        '''
       UPDATE files 
       SET driveFileId = ?, 
           fileName = ?
       WHERE id = ? AND driveFileId IS NULL
-    ''', [item.driveFileId, item.fileName, item.id]);
-    
-    // Y un insert por si el registro ni siquiera existe
-    batch.rawInsert('''
+    ''',
+        [item.driveFileId, item.fileName, item.id],
+      );
+
+      // Y un insert por si el registro ni siquiera existe
+      batch.rawInsert(
+        '''
       INSERT OR IGNORE INTO files (id, driveFileId, fileName, lastUpdate, type, syncStatus)
       VALUES (?, ?, ?, ?, ?, ?)
-    ''', [item.id, item.driveFileId, item.fileName, item.lastUpdate, item.type, SyncStatus.synced]);
+    ''',
+        [
+          item.id,
+          item.driveFileId,
+          item.fileName,
+          item.lastUpdate,
+          item.type,
+          SyncStatus.synced,
+        ],
+      );
+    }
+    await batch.commit(noResult: true);
   }
-  await batch.commit(noResult: true);
-}
 
   // En LocalSyncQueueDao / Repository
   Future<void> clearDriveId(String localId) async {
@@ -321,7 +332,6 @@ Future<void> updateMissingDriveIds(List<ArchiveItem> items) async {
         where: 'id = ?',
         whereArgs: [localId],
       );
-
     } catch (e) {
       debugPrint("Error en markAsDeletedInDrive: $e");
     }
