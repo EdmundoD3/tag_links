@@ -75,7 +75,7 @@ class BannerPendingFolder extends ConsumerWidget {
                       await onToggleView();
                       await ref
                           .read(folderMoveProvider)
-                          .moveAndFlatten(
+                          .move(
                             folder: folder,
                             toParentId: toParent?.id,
                           );

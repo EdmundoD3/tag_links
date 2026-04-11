@@ -90,6 +90,7 @@ class Note extends BaseSyncModel {
   Note copyWith({
     String? id,
     String? folderId, // Quitamos required para permitir null (raíz)
+    String? fileId,
     String? title,
     String? content,
     String? color,
@@ -102,7 +103,7 @@ class Note extends BaseSyncModel {
     return Note(
       id: id ?? this.id,
       folderId: folderId, 
-      fileId: fileId,
+      fileId: fileId ?? this.fileId,
       title: title ?? this.title,
       content: content ?? this.content,
       color: color ?? this.color,

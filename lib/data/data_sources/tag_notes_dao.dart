@@ -1,33 +1,26 @@
-
 import 'package:sqflite/sqflite.dart';
 
 class TagsNotesDao {
-  final String _tableName = "note_tags";
-  final Database _db;
+  static const String _tableName = "note_tags";
 
-  TagsNotesDao(this._db);
-
-  // 1. Método para INSERT/UPSERT
-  // pero lo importante es que acepte Batch, Transaction o Database.
-  Future<void> upsert({
+  // 1. Operación Individual (Inmediata)
+  // Usamos DatabaseExecutor para que acepte tanto la DB como una Transaction
+  static Future<void> upsert(
+    DatabaseExecutor db, {
     required String tagId,
     required String noteId,
-    Transaction? executor, // Puede ser Transaction o Database
   }) async {
-    final db = executor ?? _db;
     await db.insert(_tableName, {
       'noteId': noteId,
       'tagId': tagId,
     }, conflictAlgorithm: ConflictAlgorithm.ignore);
   }
 
-  // 2. Método para DELETE
-  Future<void> delete({
+  static Future<void> delete(
+    DatabaseExecutor db, {
     required String tagId,
     required String noteId,
-    Transaction? executor,
   }) async {
-    final db = executor ?? _db;
     await db.delete(
       _tableName,
       where: 'noteId = ? AND tagId = ?',
@@ -35,19 +28,21 @@ class TagsNotesDao {
     );
   }
 
-  void deleteBatch(Batch batch, {required String noteId}) {
-    batch.delete('note_tags', where: 'noteId = ?', whereArgs: [noteId]);
-  }
-
-  // 3. Método especial para BATCH (Sincronización masiva)
-  void upsertBatch(
+  // 2. Operaciones en Batch (Sincronización masiva)
+  static void upsertBatch(
     Batch batch, {
     required String tagId,
     required String noteId,
   }) {
-    batch.insert(_tableName, {
-      'noteId': noteId,
-      'tagId': tagId,
-    }, conflictAlgorithm: ConflictAlgorithm.replace);
+    batch.insert(
+      _tableName,
+      {'noteId': noteId, 'tagId': tagId},
+      conflictAlgorithm: ConflictAlgorithm
+          .ignore, // Usamos ignore para no reescribir si ya existe
+    );
+  }
+
+  static void deleteBatch(Batch batch, {required String noteId}) {
+    batch.delete(_tableName, where: 'noteId = ?', whereArgs: [noteId]);
   }
 }

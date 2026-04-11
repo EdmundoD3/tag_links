@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:tag_links/data/data_sources/deleted_dao.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/sync/db/local_sync_queue_dao.dart';
+import 'package:tag_links/sync/models/local_sync_queue.dart';
 import 'package:tag_links/utils/paginated_utils.dart';
 
 class TagsDao {
@@ -25,7 +26,7 @@ class TagsDao {
       );
 
       if (idResult > 0) {
-        _syncDao.markAsDirty(tag.fileId);
+        await LocalSyncQueueDao.markAsDirty(_db, bucketId: tag.fileId);
         return tagToInsert;
       }
 
@@ -46,15 +47,15 @@ class TagsDao {
         whereArgs: [tag.id],
       );
 
-      await _syncDao.markAsDirty(tag.fileId, executor: txn);
+      await LocalSyncQueueDao.markAsDirty(txn, bucketId: tag.fileId);
     });
   }
 
   Future<void> delete(Tag tag) async {
     await _db.transaction((txn) async {
       await txn.delete(_tableName, where: 'id = ?', whereArgs: [tag.id]);
-      await _deletedDao.saveId(tag.id, DeletedType.tag, executor: txn);
-      await _syncDao.markAsDirty(tag.fileId, executor: txn);
+      await DeletedDao.saveId(txn, id: tag.id, type: DeletedType.tag);
+      await LocalSyncQueueDao.markAsDirty(txn, bucketId: tag.fileId);
       await _syncDao.decreceCount(fileId: tag.fileId, executor: txn);
     });
   }
@@ -72,7 +73,8 @@ class TagsDao {
   }
 
   Future<List<Tag>> getAll({required PaginatedByUsage paginated}) async {
-    const String customOrder = 'isFavorite DESC, usageCount DESC, updatedAt DESC';
+    const String customOrder =
+        'isFavorite DESC, usageCount DESC, updatedAt DESC';
 
     final result = await _db.query(
       _tableName,
@@ -150,7 +152,7 @@ class TagsDao {
             tag.updatedAt,
           ],
         );
-        await _syncDao.markAsDirty(tag.fileId, executor: txn);
+        await LocalSyncQueueDao.markAsDirty(txn, bucketId: tag.fileId);
       });
     } catch (e) {
       debugPrint('TagsDao.upsert error: $e');
@@ -215,7 +217,11 @@ class TagsDao {
     final placeholders = List.filled(ids.length, '?').join(',');
 
     try {
-      await _db.delete(_tableName, where: 'id IN ($placeholders)', whereArgs: ids);
+      await _db.delete(
+        _tableName,
+        where: 'id IN ($placeholders)',
+        whereArgs: ids,
+      );
     } catch (e) {
       debugPrint('TagsDao.serverDeleteByIds ERROR: $e');
     }

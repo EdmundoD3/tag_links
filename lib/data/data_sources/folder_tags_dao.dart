@@ -1,36 +1,37 @@
 import 'package:sqflite/sqflite.dart';
 
 class FolderTagsDao {
-  final String _tableName = 'folder_tags';
-  final Database _db;
+  static const String _tableName = 'folder_tags';
 
-  FolderTagsDao(this._db);
-
-  // 1. Operación Individual o Transaccional
-  Future<void> upsert({
+  // Un solo método para individual/transacción
+  static Future<void> upsert(
+    DatabaseExecutor db, { // Acepta Database o Transaction
     required String folderId,
     required String tagId,
-    Transaction? executor,
   }) async {
-    final db = executor ?? _db;
     await db.insert(
       _tableName,
-      {
-        'folderId': folderId,
-        'tagId': tagId,
-      },
-      // Usamos IGNORE porque si la relación ya existe, no hay nada que actualizar
+      {'folderId': folderId, 'tagId': tagId},
+      conflictAlgorithm: ConflictAlgorithm.ignore,
+    );
+  }
+    static Future<void> upsertBatch(
+    Batch db, { // Acepta Database o Transaction
+    required String folderId,
+    required String tagId,
+  }) async {
+    db.insert(
+      _tableName,
+      {'folderId': folderId, 'tagId': tagId},
       conflictAlgorithm: ConflictAlgorithm.ignore,
     );
   }
 
-  // 2. Borrado Individual o Transaccional
-  Future<void> delete({
+  static Future<void> delete(
+    DatabaseExecutor db, {
     required String folderId,
     required String tagId,
-    Transaction? executor,
   }) async {
-    final db = executor ?? _db;
     await db.delete(
       _tableName,
       where: 'folderId = ? AND tagId = ?',
@@ -38,24 +39,8 @@ class FolderTagsDao {
     );
   }
 
-  // 3. Borrado masivo de etiquetas de una carpeta (Útil para el upsertAll)
-  void deleteBatch(Batch batch, {required String folderId}) {
-    batch.delete(
-      _tableName,
-      where: 'folderId = ?',
-      whereArgs: [folderId],
-    );
-  }
-
-  // 4. Inserción masiva para Sincronización (Batch)
-  void upsertBatch(Batch batch, {required String folderId, required String tagId}) {
-    batch.insert(
-      _tableName,
-      {
-        'folderId': folderId,
-        'tagId': tagId,
-      },
-      conflictAlgorithm: ConflictAlgorithm.ignore,
-    );
+  // Batch sigue siendo especial porque no es async de la misma forma
+  static void deleteBatch(Batch batch, {required String folderId}) {
+    batch.delete(_tableName, where: 'folderId = ?', whereArgs: [folderId]);
   }
 }

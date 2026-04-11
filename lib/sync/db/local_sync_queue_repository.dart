@@ -28,13 +28,8 @@ class LocalSyncQueueRepository {
 
   // --- LÓGICA DE SINCRONIZACIÓN (PUSH/PULL) ---
 
-  /// Marca los archivos sucios para poder enviarlos al servidor
-  Future<void> markAsDirty(String id) {
-    return _dao.markAsDirty(id);
-  }
-
   /// PUSH: Obtiene los buckets que están en estado Dirty o LocalOnly para subirlos a Drive
-  Future<List<LocalSyncQueue>> getDirtyFiles({int limit = 10}) async {
+  Future<List<LocalSyncQueue>> getDirtyFiles({int limit = 10}) {
     return _dao.getDirtyFiles(limit: limit);
   }
 

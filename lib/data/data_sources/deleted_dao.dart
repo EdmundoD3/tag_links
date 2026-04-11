@@ -13,17 +13,15 @@ final deletedDaoProvider = Provider<DeletedDao>((ref) {
 
 class DeletedDao {
   final Database _db;
-  final LocalSyncQueueDao _syncDao;
-  final String _tableName = 'deletes';
+  static final String _tableName = 'deletes';
 
-  DeletedDao(this._db) : _syncDao = LocalSyncQueueDao(_db);
+  DeletedDao(this._db);
 
   /// Guarda el borrado usando el Enum para garantizar integridad
-  Future<void> saveId(
-    String id,
-    DeletedType type, {
-    required DatabaseExecutor executor,
-  }) async {
+  static Future<void> saveId(DatabaseExecutor executor,
+    {required String id,
+    required DeletedType type}
+  ) async {
     final now = DateTime.now().millisecondsSinceEpoch;
 
     final exist = await executor.query(
@@ -33,9 +31,9 @@ class DeletedDao {
     );
     if (exist.isNotEmpty) return;
 
-    final bucketId = await _syncDao.getOrCreateAvailableFileId(
-      TypeQueue.deletes,
-      executor: executor,
+    final bucketId = await LocalSyncQueueDao.getOrCreateAvailableFileIdTxn(
+      executor,
+      tableType: TypeQueue.deletes,
     );
 
     await executor.insert(_tableName, {
@@ -45,7 +43,7 @@ class DeletedDao {
       'deletedAt': now,
     });
 
-    await _syncDao.markAsDirty(bucketId, executor: executor);
+    await LocalSyncQueueDao.markAsDirty(executor, bucketId: bucketId);
   }
 
   /// Busqueda filtrada por Bucket y Tipo
@@ -128,63 +126,83 @@ class DeletedDao {
     );
   }
 
-Future<void> upsertAllFromRemote(DeleteFile remoteFile) async {
-  // 1. Aplanamos todas las listas
-  final List<Map<String, dynamic>> rows = [];
+  Future<void> upsertAllFromRemote(DeleteFile remoteFile) async {
+    // 1. Aplanamos todas las listas
+    final List<Map<String, dynamic>> rows = [];
 
-  // Validamos que el fileId no sea nulo o vacío para evitar errores de FK
-  if (remoteFile.fileId.isEmpty) {
-    debugPrint("❌ DeletedDao: remoteFile.fileId está vacío. Abortando upsert.");
-    return;
-  }
+    // Validamos que el fileId no sea nulo o vacío para evitar errores de FK
+    if (remoteFile.fileId.isEmpty) {
+      debugPrint(
+        "❌ DeletedDao: remoteFile.fileId está vacío. Abortando upsert.",
+      );
+      return;
+    }
 
-  for (var item in remoteFile.notes) {
-    rows.add({'id': item.id, 'type': DeletedType.note.name, 'fileId': remoteFile.fileId, 'deletedAt': item.deletedAt});
-  }
-  for (var item in remoteFile.folders) {
-    rows.add({'id': item.id, 'type': DeletedType.folder.name, 'fileId': remoteFile.fileId, 'deletedAt': item.deletedAt});
-  }
-  for (var item in remoteFile.tags) {
-    rows.add({'id': item.id, 'type': DeletedType.tag.name, 'fileId': remoteFile.fileId, 'deletedAt': item.deletedAt});
-  }
-
-  if (rows.isEmpty) return;
-
-  await _db.transaction((txn) async {
-    // --- 🎯 PASO CRÍTICO: Asegurar la Foreign Key ---
-    final bucketExist = await txn.query(
-      'files',
-      where: 'id = ?',
-      whereArgs: [remoteFile.fileId],
-    );
-
-    if (bucketExist.isEmpty) {
-      // Usar exactamente los nombres de tu tabla 'files'
-      await txn.insert('files', {
-        'id': remoteFile.fileId,
-        'driveFileId': remoteFile.fileId, // Asumimos que es el mismo si viene de la nube
-        'fileName': 'deletes_${remoteFile.id}.json',
-        'type': TypeQueue.deletes.name,
-        'itemCount': rows.length,
-        'syncStatus': SyncStatus.synced, 
-        'lastUpdate': DateTime.now().millisecondsSinceEpoch,
+    for (var item in remoteFile.notes) {
+      rows.add({
+        'id': item.id,
+        'type': DeletedType.note.name,
+        'fileId': remoteFile.fileId,
+        'deletedAt': item.deletedAt,
+      });
+    }
+    for (var item in remoteFile.folders) {
+      rows.add({
+        'id': item.id,
+        'type': DeletedType.folder.name,
+        'fileId': remoteFile.fileId,
+        'deletedAt': item.deletedAt,
+      });
+    }
+    for (var item in remoteFile.tags) {
+      rows.add({
+        'id': item.id,
+        'type': DeletedType.tag.name,
+        'fileId': remoteFile.fileId,
+        'deletedAt': item.deletedAt,
       });
     }
 
-    // 2. Ejecutamos la inserción masiva
-    final batch = txn.batch();
-    for (var row in rows) {
-      batch.insert(
-        'deletes',
-        row,
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
-    }
-    await batch.commit(noResult: true);
-  });
+    if (rows.isEmpty) return;
 
-  debugPrint("DeletesRepo: 💾 ${rows.length} registros sincronizados localmente.");
-}
+    await _db.transaction((txn) async {
+      // --- 🎯 PASO CRÍTICO: Asegurar la Foreign Key ---
+      final bucketExist = await txn.query(
+        'files',
+        where: 'id = ?',
+        whereArgs: [remoteFile.fileId],
+      );
+
+      if (bucketExist.isEmpty) {
+        // Usar exactamente los nombres de tu tabla 'files'
+        await txn.insert('files', {
+          'id': remoteFile.fileId,
+          'driveFileId':
+              remoteFile.fileId, // Asumimos que es el mismo si viene de la nube
+          'fileName': 'deletes_${remoteFile.id}.json',
+          'type': TypeQueue.deletes.name,
+          'itemCount': rows.length,
+          'syncStatus': SyncStatus.synced,
+          'lastUpdate': DateTime.now().millisecondsSinceEpoch,
+        });
+      }
+
+      // 2. Ejecutamos la inserción masiva
+      final batch = txn.batch();
+      for (var row in rows) {
+        batch.insert(
+          'deletes',
+          row,
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+      await batch.commit(noResult: true);
+    });
+
+    debugPrint(
+      "DeletesRepo: 💾 ${rows.length} registros sincronizados localmente.",
+    );
+  }
 }
 
 class DeletedData {

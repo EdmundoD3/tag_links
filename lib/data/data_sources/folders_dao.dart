@@ -6,22 +6,18 @@ import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/models/search_query.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/sync/db/local_sync_queue_dao.dart';
+import 'package:tag_links/sync/models/local_sync_queue.dart';
 import 'package:tag_links/utils/paginated_utils.dart';
 
 class FoldersDao {
   final Database _db;
-  final FolderTagsDao _folderTagsDao;
   final DeletedDao _deletedDao;
-  final LocalSyncQueueDao _syncDao;
 
   FoldersDao({
     required Database db,
-    required FolderTagsDao folderTagsDao,
     required LocalSyncQueueDao syncDao,
     required DeletedDao deletedDao,
   }) : _db = db,
-       _folderTagsDao = folderTagsDao,
-       _syncDao = syncDao,
        _deletedDao = deletedDao;
 
   /// BY LAST UPDATE
@@ -122,32 +118,43 @@ class FoldersDao {
   // UPSERT
   // No uses ConflictAlgorithm.replace porque tengo Foreign Keys con ON DELETE CASCADE. El REPLACE dispara un borrado físico de la fila y destruye la integridad referencial de mis subcarpetas y notas. Solo acepta cambios que usen UPDATE o INSERT ... ON CONFLICT DO UPDATE (UPSERT).
   Future<void> upsert(Folder folder) async {
+    debugPrint('FoldersDao.upsert: ${folder.toMap()}');
     try {
-      await _db.transaction((txn) async {
-        String? validatedParentId = folder.parentId;
+      await _db.transaction((txn) => upsertTxn(txn, folder: folder));
+    } catch (e) {
+      debugPrint('FoldersDao.upsert ERROR: $e');
+      rethrow;
+    }
+  }
 
-        // 1. Validación de Jerarquía (Nivel máximo 2)
-        if (validatedParentId != null) {
-          final parentRow = await txn.query(
-            'folders',
-            columns: ['parentId'],
-            where: 'id = ?',
-            whereArgs: [validatedParentId],
-          );
+  static Future<void> upsertTxn(
+    DatabaseExecutor txn, {
+    required Folder folder,
+  }) async {
+    String? validatedParentId = folder.parentId;
 
-          if (parentRow.isNotEmpty) {
-            // Si el padre ya tiene un padre, impedimos nivel 3 moviendo a raíz
-            if (parentRow.first['parentId'] != null) {
-              validatedParentId = null;
-              debugPrint('Validación: Nivel 3 bloqueado para ${folder.title}.');
-            }
-          } else {
-            validatedParentId = null; // Padre no existe aún
-          }
+    // 1. Validación de Jerarquía (Nivel máximo 2)
+    if (validatedParentId != null) {
+      final parentRow = await txn.query(
+        'folders',
+        columns: ['parentId'],
+        where: 'id = ?',
+        whereArgs: [validatedParentId],
+      );
+
+      if (parentRow.isNotEmpty) {
+        // Si el padre ya tiene un padre, impedimos nivel 3 moviendo a raíz
+        if (parentRow.first['parentId'] != null) {
+          validatedParentId = null;
+          debugPrint('Validación: Nivel 3 bloqueado para ${folder.title}.');
         }
+      } else {
+        validatedParentId = null; // Padre no existe aún
+      }
+    }
 
-        await txn.rawInsert(
-          '''
+    await txn.rawInsert(
+      '''
         INSERT INTO folders (
           id, parentId, fileId, title, description, image, color, 
           createdAt, updatedAt, isFavorite
@@ -163,53 +170,47 @@ class FoldersDao {
           isFavorite = excluded.isFavorite
         WHERE excluded.updatedAt >= updatedAt
         ''',
-          [
-            folder.id, validatedParentId, folder.fileId, folder.title,
-            folder.description, folder.image, folder.color,
-            folder.createdAt, folder.updatedAt,
-            folder.isFavorite ? 1 : 0,
-            validatedParentId, // Para el SET parentId = ?
-          ],
-        );
+      [
+        folder.id, validatedParentId, folder.fileId, folder.title,
+        folder.description, folder.image, folder.color,
+        folder.createdAt, folder.updatedAt,
+        folder.isFavorite ? 1 : 0,
+        validatedParentId, // Para el SET parentId = ?
+      ],
+    );
 
-        // 3. Sincronizar Etiquetas (Relación many-to-many)
-        final currentTagRows = await txn.query(
-          'folder_tags',
-          columns: ['tagId'],
-          where: 'folderId = ?',
-          whereArgs: [folder.id],
-        );
+    // 3. Sincronizar Etiquetas (Relación many-to-many)
+    final currentTagRows = await txn.query(
+      'folder_tags',
+      columns: ['tagId'],
+      where: 'folderId = ?',
+      whereArgs: [folder.id],
+    );
 
-        final currentTagIds = currentTagRows
-            .map((e) => e['tagId'] as String)
-            .toSet();
-        final newTagIds = folder.tags.map((t) => t.id).toSet();
+    final currentTagIds = currentTagRows
+        .map((e) => e['tagId'] as String)
+        .toSet();
+    final newTagIds = folder.tags.map((t) => t.id).toSet();
 
-        for (final tagId in newTagIds.difference(currentTagIds)) {
-          await _folderTagsDao.upsert(
-            folderId: folder.id,
-            tagId: tagId,
-            executor: txn,
-          );
-        }
-        for (final tagId in currentTagIds.difference(newTagIds)) {
-          await _folderTagsDao.delete(
-            folderId: folder.id,
-            tagId: tagId,
-            executor: txn,
-          );
-        }
-
-        // 🚀 4. NOTIFICAR AL BUCKET: Marcar como Dirty (syncStatus = 2)
-        await _syncDao.markAsDirty(folder.fileId, executor: txn);
-      });
-    } catch (e) {
-      debugPrint('FoldersDao.upsert ERROR: $e');
-      rethrow;
+    for (final tagId in newTagIds.difference(currentTagIds)) {
+      await FolderTagsDao.upsert(txn, folderId: folder.id, tagId: tagId);
     }
+    for (final tagId in currentTagIds.difference(newTagIds)) {
+      await FolderTagsDao.delete(txn, folderId: folder.id, tagId: tagId);
+    }
+
+    // 🚀 4. NOTIFICAR AL BUCKET: Marcar como Dirty (syncStatus = 2)
+    await LocalSyncQueueDao.markAsDirty(txn, bucketId: folder.fileId);
   }
 
-  Future<void> upsertAll(List<Folder> folders) async {
+  Future<void> upsertAll(List<Folder> rawFolders) async {
+    if (rawFolders.isEmpty) return;
+    final dirtysIds = await _deletedDao.extractDirtyIdsByType(
+      rawFolders.map((e) => e.id).toList(),
+      DeletedType.folder,
+    );
+    final folders = rawFolders.where((e) => !dirtysIds.contains(e.id)).toList();
+
     if (folders.isEmpty) return;
 
     // Ordenamos: Primero carpetas raíz para que las subcarpetas encuentren su FK
@@ -255,16 +256,9 @@ class FoldersDao {
         );
 
         // B. Sincronizar etiquetas (Limpieza rápida en batch)
-        batch.delete(
-          'folder_tags',
-          where: 'folderId = ?',
-          whereArgs: [folder.id],
-        );
+        FolderTagsDao.deleteBatch(batch, folderId: folder.id);
         for (final tag in folder.tags) {
-          batch.insert('folder_tags', {
-            'folderId': folder.id,
-            'tagId': tag.id,
-          }, conflictAlgorithm: ConflictAlgorithm.ignore);
+          FolderTagsDao.upsertBatch(batch, folderId: folder.id, tagId: tag.id);
         }
       }
 
@@ -312,7 +306,7 @@ class FoldersDao {
           bucketsToDirty.add(bId);
           countsToDecrement[bId] = (countsToDecrement[bId] ?? 0) + 1;
 
-          await _deletedDao.saveId(fId, DeletedType.folder, executor: txn);
+          await DeletedDao.saveId(txn, id: fId, type: DeletedType.folder);
         }
 
         // 5. REGISTRO DE NOTAS
@@ -323,7 +317,7 @@ class FoldersDao {
           bucketsToDirty.add(bId);
           countsToDecrement[bId] = (countsToDecrement[bId] ?? 0) + 1;
 
-          await _deletedDao.saveId(nId, DeletedType.note, executor: txn);
+          await DeletedDao.saveId(txn, id: nId, type: DeletedType.note);
         }
 
         // 6. BORRADO FÍSICO: Aquí el ON DELETE CASCADE elimina notas y subcarpetas localmente
@@ -336,15 +330,14 @@ class FoldersDao {
         // 7. ACTUALIZACIÓN MASIVA DE BUCKETS (Sincronización y Conteos)
         for (final bId in bucketsToDirty) {
           // Marcamos como sucio para que el Pusher suba la nueva versión del bucket
-          await _syncDao.markAsDirty(bId, executor: txn);
+          await LocalSyncQueueDao.markAsDirty(txn, bucketId: bId);
 
           // Restamos el total acumulado (carpetas + notas) de este bucket específico
           final totalADescontar = countsToDecrement[bId] ?? 0;
           if (totalADescontar > 0) {
-            await _syncDao.decrementCountBy(
+            await LocalSyncQueueDao.decrementCountBy(txn,
               fileId: bId,
               amount: totalADescontar,
-              executor: txn,
             );
           }
         }
@@ -455,6 +448,7 @@ class FoldersDao {
     String? newParentId, {
     bool toRoot = true,
   }) async {
+    debugPrint('FoldersDao.moveAndFlatten: ${folder.toMap()}');
     final now = DateTime.now().millisecondsSinceEpoch;
     final childrenNewParentId = toRoot ? null : folder.parentId;
 
@@ -468,6 +462,7 @@ class FoldersDao {
     ''',
         [folder.id, folder.id],
       );
+      debugPrint('FoldersDao.moveAndFlatten: DISTINCT fileId $result');
 
       final fileIdsAfectados = result
           .map((row) => row['fileId'] as String)
@@ -491,9 +486,13 @@ class FoldersDao {
       );
 
       if (rowsPadre == 0) throw Exception('Error: Carpeta no encontrada');
+      debugPrint("se movieron ${fileIdsAfectados.length} buckets");
 
       // 🚀 4. Marcar todos los Buckets como Dirty de golpe
-      await _syncDao.markMultipleAsDirty(fileIdsAfectados, executor: txn);
+      await LocalSyncQueueDao.markMultipleAsDirty(
+        txn,
+        bucketIds: fileIdsAfectados,
+      );
     });
   }
 

@@ -7,13 +7,20 @@ import 'package:tag_links/sync/models/local_sync_queue.dart';
 import 'package:uuid/uuid.dart';
 
 class LocalSyncQueueDao {
-  final String _tableName = 'files';
+  static final String _tableName = 'files';
   final Database _db;
   LocalSyncQueueDao(this._db);
 
   // 1. OBTENCIÓN BÁSICA
   Future<LocalSyncQueue?> getById(String id) async {
-    final result = await _db.query(
+    return await getByIdTxn(executor: _db, id: id);
+  }
+
+  static Future<LocalSyncQueue?> getByIdTxn({
+    required DatabaseExecutor executor,
+    required String id,
+  }) async {
+    final result = await executor.query(
       _tableName,
       where: 'id = ?',
       whereArgs: [id],
@@ -21,20 +28,29 @@ class LocalSyncQueueDao {
     return result.isEmpty ? null : LocalSyncQueue.fromMap(result.first);
   }
 
-  // 2. UPSERT DE BUCKETS (Usado en Pull y creación local)
-  Future<void> upsert(LocalSyncQueue item, {DatabaseExecutor? executor}) async {
-    final db = executor ?? _db; // Usa la transacción si existe
+  Future<void> upsert(LocalSyncQueue item) {
+    return LocalSyncQueueDao.upsertTx(_db, item: item);
+  }
 
-    await db.rawInsert(
+  // 2. UPSERT DE BUCKETS (Usado en Pull y creación local)
+static Future<void> upsertTx(
+    DatabaseExecutor executor, {
+    required LocalSyncQueue item,
+  }) async {
+    await executor.rawInsert(
       """
       INSERT INTO $_tableName (id, driveFileId, fileName, lastUpdate, type, syncStatus, itemCount)
       VALUES (?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         driveFileId = COALESCE(excluded.driveFileId, driveFileId),
         fileName = excluded.fileName,
-        lastUpdate = excluded.lastUpdate,
-        type = excluded.type,
-        syncStatus = excluded.syncStatus,
+        -- 🛡️ PROTECCIÓN: Si el actual es Dirty (2), no lo pises con el status del Pull (1)
+        syncStatus = CASE 
+            WHEN syncStatus = 2 THEN 2 
+            ELSE excluded.syncStatus 
+        END,
+        -- Solo actualizamos la fecha si la que viene es más nueva
+        lastUpdate = MAX(lastUpdate, excluded.lastUpdate),
         itemCount = excluded.itemCount
       """,
       [
@@ -53,22 +69,27 @@ class LocalSyncQueueDao {
   // ¡Súper simple ahora! Sin cálculos de fechas.
   // En LocalSyncQueueDao
   Future<List<LocalSyncQueue>> getDirtyFiles({int limit = 10}) async {
-    final res = await _db.query(
-      _tableName,
-      where: 'syncStatus IN (?, ?)',
-      whereArgs: [SyncStatus.localOnly, SyncStatus.dirty], // Correcto
-      orderBy: 'lastUpdate DESC',
-      limit: limit,
-    );
+    final query =
+        '''
+      SELECT *
+      FROM $_tableName
+      WHERE syncStatus IN (?, ?)
+      ORDER BY lastUpdate DESC
+      LIMIT ?
+    ''';
+    
+    final args = [SyncStatus.localOnly, SyncStatus.dirty, limit];
+
+    final res = await _db.rawQuery(query, args);
+
     return res.map((row) => LocalSyncQueue.fromMap(row)).toList();
   }
 
-  Future<void> markAsDirty(
-    String bucketId, {
-    DatabaseExecutor? executor,
+  static Future<void> markAsDirty(
+    DatabaseExecutor executor, {
+    required String bucketId,
   }) async {
-    final db = executor ?? _db;
-    await db.update(
+    await executor.update(
       _tableName,
       {
         'syncStatus':
@@ -79,38 +100,37 @@ class LocalSyncQueueDao {
       whereArgs: [bucketId],
     );
   }
-  Future<void> markMultipleAsDirty(
-  Iterable<String> bucketIds, {
-  DatabaseExecutor? executor,
-}) async {
-  if (bucketIds.isEmpty) return;
 
-  final db = executor ?? _db;
-  final now = DateTime.now().millisecondsSinceEpoch;
-  
-  // Convertimos a lista para asegurar orden y evitar múltiples iteraciones
-  final ids = bucketIds.toList();
-  
-  // Creamos los placeholders: ?,?,?,...
-  final placeholders = List.filled(ids.length, '?').join(',');
+  static Future<void> markMultipleAsDirty(
+    DatabaseExecutor executor, {
+    required Iterable<String> bucketIds,
+  }) async {
+    if (bucketIds.isEmpty) return;
 
-  await db.update(
-    _tableName,
-    {
-      'syncStatus': SyncStatus.dirty,
-      'lastUpdate': now,
-    },
-    // Usamos IN para actualizar todos de un solo golpe
-    where: 'id IN ($placeholders)',
-    whereArgs: ids,
-  );
-}
+    final now = DateTime.now().millisecondsSinceEpoch;
+
+    // Convertimos a lista para asegurar orden y evitar múltiples iteraciones
+    final ids = bucketIds.toList();
+
+    // Creamos los placeholders: ?,?,?,...
+    final placeholders = List.filled(ids.length, '?').join(',');
+
+    final count = await executor.update(
+      _tableName,
+      {'syncStatus': SyncStatus.dirty, 'lastUpdate': now},
+      // Usamos IN para actualizar todos de un solo golpe
+      where: 'id IN ($placeholders)',
+      whereArgs: ids,
+    );
+
+  }
 
   Future<void> markAsSynced(
     String bucketId,
     String driveFileId,
     int timestamp,
   ) async {
+
     await _db.update(
       _tableName,
       {
@@ -144,13 +164,12 @@ class LocalSyncQueueDao {
     }
   }
 
-  Future<void> updateCount({
+  static Future<void> updateCount(
+    DatabaseExecutor executor, {
     required String id,
     required int count,
-    DatabaseExecutor? executor,
   }) async {
-    final db = executor ?? _db;
-    await db.update(
+    await executor.update(
       _tableName,
       {'itemCount': count},
       where: 'id = ?',
@@ -158,15 +177,21 @@ class LocalSyncQueueDao {
     );
   }
 
-  Future<String> getOrCreateAvailableFileId(
-    TypeQueue tableType, {
-    DatabaseExecutor? executor,
+  Future<String> getOrCreateAvailableFileId(TypeQueue tableType) async {
+    return await LocalSyncQueueDao.getOrCreateAvailableFileIdTxn(
+      _db,
+      tableType: tableType,
+    );
+  }
+
+  static Future<String> getOrCreateAvailableFileIdTxn(
+    DatabaseExecutor executor, {
+    required TypeQueue tableType,
   }) async {
-    final db = executor ?? _db;
     final String tName = tableType.tableName;
     final int limit = LocalSyncConfig.limit;
 
-    final List<Map<String, dynamic>> res = await db.rawQuery(
+    final List<Map<String, dynamic>> res = await executor.rawQuery(
       '''
     SELECT id, (SELECT COUNT(*) FROM $tName WHERE fileId = files.id) as realCount
     FROM $_tableName 
@@ -184,7 +209,7 @@ class LocalSyncQueueDao {
       final String id = res.first['id'] as String;
 
       // ⚠️ ASEGÚRATE de que updateCount reciba el executor (db)
-      await updateCount(id: id, count: realCount, executor: db);
+      await LocalSyncQueueDao.updateCount(executor, id: id, count: realCount);
 
       if (realCount < limit) {
         return id;
@@ -193,8 +218,9 @@ class LocalSyncQueueDao {
 
     // Si no hay o está lleno, creamos uno nuevo
     final String newLocalId = const Uuid().v4();
-    await upsert(
-      LocalSyncQueue(
+    await LocalSyncQueueDao.upsertTx(
+      executor,
+      item: LocalSyncQueue(
         id: newLocalId,
         driveFileId: null,
         fileName: "${tName}_$newLocalId.json",
@@ -203,7 +229,6 @@ class LocalSyncQueueDao {
         syncStatus: SyncStatus.localOnly, // Es 0, el Pusher lo verá
         itemCount: 1, // Ya contamos el que vas a insertar
       ),
-      executor: db,
     );
 
     return newLocalId;
@@ -249,44 +274,24 @@ class LocalSyncQueueDao {
     );
   }
 
-  Future<void> updateMissingDriveIds(
-    List<ArchiveItem> items, {
-    DatabaseExecutor? executor,
-  }) async {
-    final db = executor ?? _db;
-
-    // Si usamos el db global y no hay transacción, un Batch es más seguro y rápido
-    final batch = db.batch();
-    for (var item in items) {
-      batch.rawInsert(
-        '''
-      INSERT INTO files (id, driveFileId, fileName, lastUpdate, type, syncStatus)
+Future<void> updateMissingDriveIds(List<ArchiveItem> items) async {
+  final batch = _db.batch();
+  for (var item in items) {
+    batch.rawUpdate('''
+      UPDATE files 
+      SET driveFileId = ?, 
+          fileName = ?
+      WHERE id = ? AND driveFileId IS NULL
+    ''', [item.driveFileId, item.fileName, item.id]);
+    
+    // Y un insert por si el registro ni siquiera existe
+    batch.rawInsert('''
+      INSERT OR IGNORE INTO files (id, driveFileId, fileName, lastUpdate, type, syncStatus)
       VALUES (?, ?, ?, ?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        driveFileId = excluded.driveFileId,
-        fileName = excluded.fileName,
-        -- 🎯 LA CLAVE: Solo cambiamos a 1 si el registro actual NO es Dirty (2) 
-        -- y NO es Local-Only (0). Si ya estaba sucio, se queda sucio.
-        syncStatus = CASE 
-            WHEN syncStatus IN (0, 2) THEN syncStatus 
-            ELSE 1 
-        END,
-        -- Solo actualizamos el lastUpdate si el remoto es más nuevo
-        lastUpdate = MAX(lastUpdate, excluded.lastUpdate)
-      ''',
-        [
-          item.id,
-          item.driveFileId,
-          item.fileName,
-          item.lastUpdate,
-          item.type,
-          1, // Este es el valor por defecto si es INSERT puro
-        ],
-      );
-    }
-
-    await batch.commit(noResult: true);
+    ''', [item.id, item.driveFileId, item.fileName, item.lastUpdate, item.type, SyncStatus.synced]);
   }
+  await batch.commit(noResult: true);
+}
 
   // En LocalSyncQueueDao / Repository
   Future<void> clearDriveId(String localId) async {
@@ -316,9 +321,7 @@ class LocalSyncQueueDao {
         where: 'id = ?',
         whereArgs: [localId],
       );
-      debugPrint(
-        "LocalSyncQueue: Bucket $localId reseteado para recreación en Drive.",
-      );
+
     } catch (e) {
       debugPrint("Error en markAsDeletedInDrive: $e");
     }
@@ -340,13 +343,12 @@ class LocalSyncQueueDao {
     });
   }
 
-  Future<void> decrementCountBy({
+  static Future<void> decrementCountBy(
+    DatabaseExecutor executor, {
     required String fileId,
     required int amount,
-    DatabaseExecutor? executor,
   }) async {
-    final db = executor ?? _db;
-    await db.rawUpdate(
+    await executor.rawUpdate(
       '''
     UPDATE files 
     SET itemCount = MAX(0, itemCount - ?) 

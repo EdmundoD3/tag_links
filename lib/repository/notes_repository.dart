@@ -4,16 +4,14 @@ import 'package:tag_links/data/data_sources/notes_dao.dart';
 import 'package:tag_links/data/database.dart';
 import 'package:tag_links/models/note.dart';
 import 'package:tag_links/models/search_query.dart';
-import 'package:tag_links/sync/db/local_sync_queue_repository.dart';
 import 'package:tag_links/sync/models/notes_file.dart';
 import 'package:tag_links/utils/paginated_utils.dart';
 
 class NotesRepository {
   final NotesDao _dao;
   final DeletedDao _deletedDao;
-  final LocalSyncQueueRepository _syncRepo;
 
-  NotesRepository(this._dao, this._deletedDao, this._syncRepo);
+  NotesRepository(this._dao, this._deletedDao);
 
   Future<List<Note>> searchByQuery(
     SearchQuery query, {
@@ -60,7 +58,6 @@ class NotesRepository {
   }
 
   Future<void> upsert(Note note) async {
-    await _syncRepo.markAsDirty(note.fileId);
     return _dao.upsert(note);
   }
 
@@ -103,7 +100,5 @@ final notesRepositoryProvider = Provider<NotesRepository>((ref) {
   final db = ref.read(databaseProvider);
   final deletedDao = ref.read(deletedDaoProvider);
   final notesDao = NotesDao(db,deletedDao);
-  
-  final syncRepo = ref.read(localSyncQueueRepositoryProvider);
-  return NotesRepository(notesDao, deletedDao, syncRepo);
+  return NotesRepository(notesDao, deletedDao);
 });

@@ -9,6 +9,7 @@ import 'package:tag_links/models/note_join_row.dart';
 import 'package:tag_links/models/search_query.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/sync/db/local_sync_queue_dao.dart';
+import 'package:tag_links/sync/models/local_sync_queue.dart';
 import 'package:tag_links/utils/paginated_utils.dart';
 
 //DAO = Data Access Object
@@ -17,8 +18,6 @@ class NotesDao {
   NotesDao(Database db, DeletedDao deletedDao)
     : _fetch = FetchersNotesDao(
         db: db,
-        linkDao: LinkPreviewDao(db),
-        tagsNotesDao: TagsNotesDao(db),
         deletedDao: deletedDao,
         synDao: LocalSyncQueueDao(db),
       );
@@ -196,19 +195,13 @@ class NotesDao {
 /* ----------------------------- FETCHERS ----------------------------- */
 class FetchersNotesDao {
   final Database _db;
-  final LinkPreviewDao _linkDao;
-  final TagsNotesDao _tagsNotesDao;
   final DeletedDao _deletedDao;
   final LocalSyncQueueDao _syncDao;
   FetchersNotesDao({
     required Database db,
-    required LinkPreviewDao linkDao,
-    required TagsNotesDao tagsNotesDao,
     required DeletedDao deletedDao,
     required LocalSyncQueueDao synDao,
   }) : _db = db,
-       _linkDao = linkDao,
-       _tagsNotesDao = tagsNotesDao,
        _deletedDao = deletedDao,
        _syncDao = synDao;
 
@@ -533,51 +526,52 @@ class FetchersNotesDao {
       final newIds = note.tags.map((t) => t.id).toSet();
 
       for (final tagId in currentIds.difference(newIds)) {
-        await _tagsNotesDao.delete(
+        await TagsNotesDao.delete(txn,
           noteId: note.id,
           tagId: tagId,
-          executor: txn,
         );
       }
       for (final tagId in newIds.difference(currentIds)) {
-        await _tagsNotesDao.upsert(
+        await TagsNotesDao.upsert(txn,
           noteId: note.id,
           tagId: tagId,
-          executor: txn,
         );
       }
 
       // 3. Link Preview
       if (note.link != null) {
-        await _linkDao.upsert(link: note.link!, txn: txn);
+        await LinkPreviewDao.upsert(txn,link: note.link!);
       } else {
-        await _linkDao.delete(txn, note.id);
+        await LinkPreviewDao.delete(txn, note.id);
       }
 
       // 🚀 NOTIFICAR AL BUCKET: Cambio local detectado
-      await _syncDao.markAsDirty(note.fileId, executor: txn);
+      await LocalSyncQueueDao.markAsDirty(txn, bucketId: note.fileId);
     });
   }
 
-Future<void> upsertAll(List<Note> notes) async {
-  if (notes.isEmpty) return;
+Future<void> upsertAll(List<Note> unverifyNotes) async {
+  if (unverifyNotes.isEmpty) return;
 
-  // 🎯 ID constante para la carpeta de rescate
-  const String rescueFolderId = 'recovered_folder_id';
+  // 1. Pre-procesamiento de IDs de archivo (Fuera de la transacción para velocidad)
+  final String sharedFileId = await _syncDao.getOrCreateAvailableFileId(TypeQueue.notes);
+  
+  final notes = unverifyNotes.map((n) {
+    return (n.fileId == null || n.fileId!.isEmpty) 
+        ? n.copyWith(fileId: sharedFileId) 
+        : n;
+  }).toList();
 
   await _db.transaction((txn) async {
     // 🛡️ PASO 1: Filtrar notas borradas localmente
     final List<String> incomingIds = notes.map((e) => e.id).toList();
-    final Set<String> dirtyDeletedIds = await _deletedDao.extractDirtyIdsByType(
-      incomingIds, DeletedType.note,
-      executor: txn
-    );
+    final Set<String> dirtyDeletedIds = await _deletedDao
+        .extractDirtyIdsByType(incomingIds, DeletedType.note, executor: txn);
 
-    // 🔍 PASO 2: Verificar qué folders existen actualmente
+    // 🔍 PASO 2: Verificar folders existentes (Solo para las notas que traen folderId)
     final Set<String> incomingFolderIds = notes
         .map((e) => e.folderId)
-        .where((id) => id != null)
-        .cast<String>()
+        .whereType<String>()
         .toSet();
 
     Set<String> existingFolderIds = {};
@@ -591,38 +585,20 @@ Future<void> upsertAll(List<Note> notes) async {
       existingFolderIds = foldersFound.map((f) => f['id'] as String).toSet();
     }
 
-    // 🛠️ PASO 3: Asegurar que la carpeta de rescate existe
-    bool rescueFolderCreated = false;
-
     final batch = txn.batch();
 
     for (final note in notes) {
       if (dirtyDeletedIds.contains(note.id)) continue;
 
-      // 🎯 Lógica de Sustitución por Folder Genérico
+      // 🎯 Lógica de Rescate: Si el folder no existe, mandamos a NULL (Raíz)
       String? finalFolderId = note.folderId;
-      
-      if (note.folderId != null && !existingFolderIds.contains(note.folderId)) {
-        debugPrint("📦 Nota ${note.id} movida a Carpeta de Rescate (Original: ${note.folderId} no existe)");
-        finalFolderId = rescueFolderId;
-
-        // Si es la primera vez en esta transacción que usamos el rescate, aseguramos el folder
-        if (!rescueFolderCreated) {
-          batch.rawInsert('''
-            INSERT OR IGNORE INTO folders (id, title, createdAt, updatedAt, fileId)
-            VALUES (?, ?, ?, ?, ?)
-          ''', [
-            rescueFolderId, 
-            'rescue_folder (Sync)', // 🎯 Título de la carpeta
-            DateTime.now().millisecondsSinceEpoch,
-            DateTime.now().millisecondsSinceEpoch,
-            'local_rescue_file' // Agregamos un fileId ficticio para evitar errores si es NOT NULL
-          ]);
-          rescueFolderCreated = true;
-        }
+      if (finalFolderId != null && !existingFolderIds.contains(finalFolderId)) {
+        finalFolderId = null; // Directo a la raíz
+        debugPrint("📦 Nota ${note.id} movida a Raíz (Folder original no existe)");
       }
 
-      batch.rawInsert('''
+      batch.rawInsert(
+        '''
         INSERT INTO notes (
           id, folderId, fileId, title, content, color, 
           createdAt, updatedAt, isFavorite
@@ -637,27 +613,30 @@ Future<void> upsertAll(List<Note> notes) async {
           updatedAt = excluded.updatedAt,
           isFavorite = excluded.isFavorite
         WHERE excluded.updatedAt > updatedAt 
-      ''', [
-        note.id,
-        finalFolderId,
-        note.fileId,
-        note.title,
-        note.content,
-        note.color,
-        note.createdAt,
-        note.updatedAt,
-        note.isFavorite ? 1 : 0,
-      ]);
+      ''',
+        [
+          note.id,
+          finalFolderId,
+          note.fileId,
+          note.title,
+          note.content,
+          note.color,
+          note.createdAt,
+          note.updatedAt,
+          note.isFavorite ? 1 : 0,
+        ],
+      );
 
-      // Tags y Links
-      _tagsNotesDao.deleteBatch(batch, noteId: note.id);
+      // Tags y Links (Batch)
+      TagsNotesDao.deleteBatch(batch, noteId: note.id);
       for (final tag in note.tags) {
-        _tagsNotesDao.upsertBatch(batch, noteId: note.id, tagId: tag.id);
+        TagsNotesDao.upsertBatch(batch, noteId: note.id, tagId: tag.id);
       }
+      
       if (note.link != null) {
-        _linkDao.upsertBatch(batch, note.link!);
+        LinkPreviewDao.upsertBatch(batch, note.link!);
       } else {
-        _linkDao.deleteBatch(batch, note.id);
+        LinkPreviewDao.deleteBatch(batch, note.id);
       }
     }
 
@@ -668,29 +647,31 @@ Future<void> upsertAll(List<Note> notes) async {
    * DELETE
    * -------------------------------------------------------------------- */
 
-Future<void> delete(Note note) async { // Recibimos el objeto completo
-  try {
-    await _db.transaction((txn) async {
-      final String id = note.id;
-      final String bucketId = note.fileId; // 🎯 Ya lo tenemos, no hay que buscarlo
+  Future<void> delete(Note note) async {
+    // Recibimos el objeto completo
+    try {
+      await _db.transaction((txn) async {
+        final String id = note.id;
+        final String bucketId =
+            note.fileId; // 🎯 Ya lo tenemos, no hay que buscarlo
 
-      // 1. Registramos el borrado en la tabla de "deletes"
-      // (Esto marcará el bucket de borrados como sucio internamente)
-      await _deletedDao.saveId(id,DeletedType.note, executor: txn);
+        // 1. Registramos el borrado en la tabla de "deletes"
+        // (Esto marcará el bucket de borrados como sucio internamente)
+        await DeletedDao.saveId(txn,id: id,type: DeletedType.note);
 
-      // 2. ¡IMPORTANTE! Marcamos el bucket original de la nota como sucio
-      // Ahora el Pusher generará un JSON de notas SIN esta nota.
-      await _syncDao.markAsDirty(bucketId, executor: txn);
-      await _syncDao.decreceCount(fileId: note.fileId, executor: txn);
+        // 2. ¡IMPORTANTE! Marcamos el bucket original de la nota como sucio
+        // Ahora el Pusher generará un JSON de notas SIN esta nota.
+        await LocalSyncQueueDao.markAsDirty(txn, bucketId: bucketId);
+        await _syncDao.decreceCount(fileId: note.fileId, executor: txn);
 
-      // 3. Borrado físico local
-      await txn.delete('notes', where: 'id = ?', whereArgs: [id]);
-    });
-  } catch (e) {
-    debugPrint('NotesDao.delete ERROR: $e');
-    rethrow;
+        // 3. Borrado físico local
+        await txn.delete('notes', where: 'id = ?', whereArgs: [id]);
+      });
+    } catch (e) {
+      debugPrint('NotesDao.delete ERROR: $e');
+      rethrow;
+    }
   }
-}
 
   Future<void> serverDeleteByIds(List<String> ids) async {
     if (ids.isEmpty) return;

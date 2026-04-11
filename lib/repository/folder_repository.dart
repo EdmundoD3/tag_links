@@ -1,14 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/data/data_sources/deleted_dao.dart';
 import 'package:tag_links/data/data_sources/folder_preferences_dao.dart';
-import 'package:tag_links/data/data_sources/folder_tags_dao.dart';
 import 'package:tag_links/data/data_sources/folders_dao.dart';
 import 'package:tag_links/data/database.dart';
 import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/models/folder_preference.dart';
 import 'package:tag_links/models/search_query.dart';
 import 'package:tag_links/sync/db/local_sync_queue_dao.dart';
-import 'package:tag_links/sync/db/local_sync_queue_repository.dart';
 import 'package:tag_links/sync/models/folders_file.dart';
 import 'package:tag_links/utils/paginated_utils.dart';
 
@@ -16,13 +14,11 @@ class FolderRepository {
   final FoldersDao _dao;
   final DeletedDao _deletedDao;
   final FolderPreferencesDao _preferencesDao;
-  final LocalSyncQueueRepository _syncRepo;
 
   FolderRepository(
     this._dao,
     this._preferencesDao,
     this._deletedDao,
-    this._syncRepo,
   );
 
   Future<List<Folder>> searchByQuery(
@@ -33,25 +29,16 @@ class FolderRepository {
   }
 
   Future<void> upsertAll(List<Folder> folders) async {
-    final dirtysIds = await _deletedDao.extractDirtyIdsByType(
-      folders.map((e) => e.id).toList(),DeletedType.folder,
-    );
-    final cleanFolders = folders
-        .where((e) => !dirtysIds.contains(e.id))
-        .toList();
-    return _dao.upsertAll(cleanFolders);
+    
+    return _dao.upsertAll(folders);
   }
 
   Future<void> create(Folder folder) async {
-    final folderToSave = folder.ensureForInsert();
-    await _syncRepo.markAsDirty(folder.fileId);
-    return _dao.upsert(folderToSave);
+    return _dao.upsert(folder);
   }
 
   Future<void> upsert(Folder folder) async {
-    final folderToUpdate = folder.ensureForInsert();
-    await _syncRepo.markAsDirty(folder.fileId);
-    return _dao.upsert(folderToUpdate);
+    return _dao.upsert(folder);
   }
 
   Future<void> delete(Folder folder) async {
@@ -77,7 +64,6 @@ class FolderRepository {
   }
 
   Future<void> toggleFavorite(Folder folder) async {
-    await _syncRepo.markAsDirty(folder.fileId);
     return upsert(
       folder.copyWith(
         isFavorite: !folder.isFavorite,
@@ -103,7 +89,6 @@ class FolderRepository {
     String? newParentId, {
     bool toRoot = true,
   }) async {
-    await _syncRepo.markAsDirty(folder.fileId);
     return _dao.moveAndFlatten(folder, newParentId, toRoot: true);
   }
 
@@ -147,12 +132,9 @@ final folderRepositoryProvider = Provider<FolderRepository>((ref) {
   final deletedDao = ref.read(deletedDaoProvider);
   final foldersDao = FoldersDao(
     db: db,
-    folderTagsDao: FolderTagsDao(db),
     syncDao: LocalSyncQueueDao(db),
     deletedDao: deletedDao,
   );
   final preferencesDao = FolderPreferencesDao(db: db);
-  final syncRepo = ref.read(localSyncQueueRepositoryProvider);
-
-  return FolderRepository(foldersDao, preferencesDao, deletedDao, syncRepo);
+  return FolderRepository(foldersDao, preferencesDao, deletedDao);
 });

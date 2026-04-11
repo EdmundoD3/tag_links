@@ -61,61 +61,48 @@ class FolderMoveService {
 
   FolderRepository get _repo => ref.read(folderRepositoryProvider);
 
-  Future<void> move({
-    required Folder folder,
-    required String? toParentId,
-  }) async {
-    final fromParentId = folder.parentId;
+Future<void> move({
+  required Folder folder,
+  required String? toParentId,
+}) async {
+  final fromParentId = folder.parentId;
 
+  // 🎯 Lógica de decisión automática:
+  // Si movemos una carpeta a dentro de otra (toParentId != null), 
+  // automáticamente debemos aplanar sus hijos porque no permitimos nivel 3.
+  final bool needsFlattening = toParentId != null;
+
+  if (needsFlattening) {
+    // 1. DB: Mueve la carpeta y rescata a los hijos (los sube a raíz o al padre anterior)
+    await _repo.moveAndFlatten(folder, toParentId, toRoot: true);
+    
+    // 2. UI: Invalidadción de los hijos que quedaron huérfanos
+    ref.invalidate(foldersProvider(null)); // Asumimos que caen en raíz
+    ref.invalidate(foldersProvider(folder.id));
+  } else {
+    // Es un movimiento hacia la raíz, no hay riesgo de nivel 3
     final moved = folder.copyWith(
       parentId: toParentId,
       updatedAt: DateTime.now().millisecondsSinceEpoch,
     );
-
     await _repo.upsert(moved);
-
-    _updateUi(
-      folder: folder, 
-      fromParentId: fromParentId, 
-      toParentId: toParentId, 
-      updatedFolder: moved
-    );
-
-    _cleanup();
   }
 
-  Future<void> moveAndFlatten({
-    required Folder folder,
-    required String? toParentId,
-    bool toRoot = true,
-  }) async {
-    final fromParentId = folder.parentId;
-    final childrenParentId = toRoot ? null : fromParentId;
+  // 3. UI: Actualizar la carpeta que se movió
+  final updatedFolder = folder.copyWith(
+    parentId: toParentId,
+    updatedAt: DateTime.now().millisecondsSinceEpoch,
+  );
 
-    // 1. DB: Operación atómica (Recuerda que aquí rescatamos hijos antes de mover)
-    await _repo.moveAndFlatten(folder, toParentId, toRoot: toRoot);
+  _updateUi(
+    folder: folder, 
+    fromParentId: fromParentId, 
+    toParentId: toParentId, 
+    updatedFolder: updatedFolder
+  );
 
-    // 2. UI: Actualizar la carpeta principal
-    final moved = folder.copyWith(
-      parentId: toParentId, 
-      updatedAt: DateTime.now().millisecondsSinceEpoch,
-    );
-    
-    _updateUi(
-      folder: folder, 
-      fromParentId: fromParentId, 
-      toParentId: toParentId, 
-      updatedFolder: moved
-    );
-
-    // 3. UI: Invalidadción estratégica
-    // Invalidamos el destino donde cayeron los hijos (Raíz o antiguo padre)
-    ref.invalidate(foldersProvider(childrenParentId));
-    // Invalidamos la carpeta que se movió porque ahora está vacía
-    ref.invalidate(foldersProvider(folder.id));
-
-    _cleanup();
-  }
+  _cleanup();
+}
 
   void _updateUi({
     required Folder folder,
