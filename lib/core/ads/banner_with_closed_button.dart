@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'package:flutter/material.dart';
-
 class BannerWithCloseButton extends StatelessWidget {
   final Widget child;
   final VoidCallback onCloseTap;

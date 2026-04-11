@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:tag_links/config/limit_config.dart';
-import 'package:tag_links/models/note.dart';
 
 class TitleFormController extends StatelessWidget {
   final TextEditingController titleCtrl;

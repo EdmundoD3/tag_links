@@ -94,7 +94,7 @@ class LinkPreview {
   }
 
   static LinkPreview fromMiniMap(Map<String, dynamic> map, String noteId) {
-    return LinkPreview(id: map['id'], noteId: map['noteId'], url: map['url']);
+    return LinkPreview(id: map['id'], noteId: map['noteId']?? noteId, url: map['url']);
   }
 
   bool _isValidUrl(String url) {
