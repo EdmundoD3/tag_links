@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:tag_links/data/data_sources/deleted_dao.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/sync/db/local_sync_queue_dao.dart';
+import 'package:tag_links/sync/models/local_sync_queue.dart';
 import 'package:tag_links/utils/paginated_utils.dart';
 
 class TagsDao {
@@ -164,8 +165,8 @@ class TagsDao {
     try {
       await _db.transaction((txn) async {
         final List<String> incomingIds = tags.map((e) => e.id).toList();
-        final Set<String> dirtyDeletedIds = await _deletedDao
-            .extractDirtyIdsByType(incomingIds, DeletedType.tag, executor: txn);
+        final Set<String> dirtyDeletedIds = await DeletedDao
+          .extractDirtyIdsByTypeTxn(txn,ids: incomingIds,type: DeletedType.tag);
 
         final batch = txn.batch();
 
@@ -174,7 +175,7 @@ class TagsDao {
             debugPrint("🚫 Ignorando Tag resucitado: ${tag.title}");
             continue;
           }
-          _upsertAllBatch(tag, batch);
+          TagsDao.upsertAllBatch(tag, batch);
         }
 
         await batch.commit(noResult: true);
@@ -185,7 +186,7 @@ class TagsDao {
     }
   }
 
-  void _upsertAllBatch(Tag tag, Batch batch) {
+  static void upsertAllBatch(Tag tag, Batch batch) {
     final tagToUpdate = tag.ensureForInsert();
 
     batch.rawInsert(
@@ -224,6 +225,63 @@ class TagsDao {
     } catch (e) {
       debugPrint('TagsDao.serverDeleteByIds ERROR: $e');
     }
+  }
+
+static Future<void> ensureTagsDependencies(
+    Transaction txn,
+    List<Tag> tags,
+  ) async {
+    if (tags.isEmpty) return;
+
+    // 1. Obtener IDs únicos para verificar si han sido borrados
+    final allTagIds = tags.map((t) => t.id).toList();
+    
+    // 🛡️ FILTRO DE SEGURIDAD: Consultamos cuáles de estos tags están en la "lista negra" de borrados
+    final deletedTagIds = await DeletedDao.extractDirtyIdsByTypeTxn(
+      txn,
+      ids: allTagIds,
+      type: DeletedType.tag,
+    );
+
+    // Solo procesamos los tags que NO han sido borrados localmente
+    final activeTags = tags.where((t) => !deletedTagIds.contains(t.id)).toSet().toList();
+    if (activeTags.isEmpty) return;
+
+    // 2. Extraer todos los fileIds únicos de los tags activos
+    final fileIds = activeTags.map((t) => t.fileId).whereType<String>().toSet();
+
+    for (final fId in fileIds) {
+      // Aseguramos que el bucket (archivo) existe para los tags válidos
+      await LocalSyncQueueDao.ensureExistenceTxn(
+        txn,
+        id: fId,
+        type: TypeQueue.tags,
+      );
+    }
+
+    // 3. Insertamos o ignoramos los tags que pasaron el filtro
+    for (final tag in activeTags) {
+      await TagsDao.insertOrIgnoreAllTxn(txn, tag);
+    }
+  }
+
+  static Future<void> insertOrIgnoreAllTxn(Transaction txn, Tag tag) async {
+    // Usamos INSERT OR IGNORE para que si el ID existe, no haga nada.
+    // Esto protege la etiqueta si ya fue insertada por otra carpeta en el mismo pull.
+    await txn.rawInsert(
+      '''
+    INSERT OR IGNORE INTO tags (id, title, fileId, isFavorite, usageCount, updatedAt)
+    VALUES (?, ?, ?, ?, ?, ?)
+    ''',
+      [
+        tag.id,
+        tag.title,
+        tag.fileId,
+        tag.isFavorite ? 1 : 0,
+        tag.usageCount,
+        tag.updatedAt,
+      ],
+    );
   }
 
   Future<List<DeletedData>> getBatchByFileId(String fileId) =>

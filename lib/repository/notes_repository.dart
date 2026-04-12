@@ -62,11 +62,8 @@ class NotesRepository {
   }
 
   Future<void> upsertAll(List<Note> notes) async {
-    final dirtysIds = await _deletedDao.extractDirtyIdsByType(
-      notes.map((e) => e.id).toList(),DeletedType.note,
-    );
-    final cleanNotes = notes.where((e) => !dirtysIds.contains(e.id)).toList();
-    return _dao.upsertAll(cleanNotes);
+    
+    return _dao.upsertAll(notes);
   }
 
   Future<void> serverDeleteByIds(List<String> ids) async {

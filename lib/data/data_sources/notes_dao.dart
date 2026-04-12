@@ -3,6 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:tag_links/data/data_sources/deleted_dao.dart';
 import 'package:tag_links/data/data_sources/link_preview_dao.dart';
 import 'package:tag_links/data/data_sources/tag_notes_dao.dart';
+import 'package:tag_links/data/data_sources/tags_dao.dart';
 import 'package:tag_links/models/link_preview.dart';
 import 'package:tag_links/models/note.dart';
 import 'package:tag_links/models/note_join_row.dart';
@@ -526,21 +527,15 @@ class FetchersNotesDao {
       final newIds = note.tags.map((t) => t.id).toSet();
 
       for (final tagId in currentIds.difference(newIds)) {
-        await TagsNotesDao.delete(txn,
-          noteId: note.id,
-          tagId: tagId,
-        );
+        await TagsNotesDao.delete(txn, noteId: note.id, tagId: tagId);
       }
       for (final tagId in newIds.difference(currentIds)) {
-        await TagsNotesDao.upsert(txn,
-          noteId: note.id,
-          tagId: tagId,
-        );
+        await TagsNotesDao.upsert(txn, noteId: note.id, tagId: tagId);
       }
 
       // 3. Link Preview
       if (note.link != null) {
-        await LinkPreviewDao.upsert(txn,link: note.link!);
+        await LinkPreviewDao.upsert(txn, link: note.link!);
       } else {
         await LinkPreviewDao.delete(txn, note.id);
       }
@@ -550,55 +545,85 @@ class FetchersNotesDao {
     });
   }
 
-Future<void> upsertAll(List<Note> unverifyNotes) async {
-  if (unverifyNotes.isEmpty) return;
+Future<void> upsertAll(List<Note> rawNotes) async {
+    if (rawNotes.isEmpty) return;
 
-  // 1. Pre-procesamiento de IDs de archivo (Fuera de la transacción para velocidad)
-  final String sharedFileId = await _syncDao.getOrCreateAvailableFileId(TypeQueue.notes);
-  
-  final notes = unverifyNotes.map((n) {
-    return (n.fileId == null || n.fileId!.isEmpty) 
-        ? n.copyWith(fileId: sharedFileId) 
-        : n;
-  }).toList();
+    // 🛡️ Filtro inicial rápido fuera de la transacción
+    final dirtysIds = await DeletedDao.extractDirtyIdsByTypeTxn(
+      _db,
+      ids: rawNotes.map((e) => e.id).toList(),
+      type: DeletedType.note,
+    );
+    final unverifyNotes = rawNotes.where((e) => !dirtysIds.contains(e.id)).toList();
+    if (unverifyNotes.isEmpty) return;
 
-  await _db.transaction((txn) async {
-    // 🛡️ PASO 1: Filtrar notas borradas localmente
-    final List<String> incomingIds = notes.map((e) => e.id).toList();
-    final Set<String> dirtyDeletedIds = await _deletedDao
-        .extractDirtyIdsByType(incomingIds, DeletedType.note, executor: txn);
+    // 1. Pre-procesamiento de IDs de archivo (Fuera de la transacción para velocidad)
+    final String sharedFileId = await _syncDao.getOrCreateAvailableFileId(
+      TypeQueue.notes,
+    );
 
-    // 🔍 PASO 2: Verificar folders existentes (Solo para las notas que traen folderId)
-    final Set<String> incomingFolderIds = notes
-        .map((e) => e.folderId)
-        .whereType<String>()
-        .toSet();
+    final notes = unverifyNotes.map((n) {
+      return (n.fileId == null || n.fileId!.isEmpty)
+          ? n.copyWith(fileId: sharedFileId)
+          : n;
+    }).toList();
 
-    Set<String> existingFolderIds = {};
-    if (incomingFolderIds.isNotEmpty) {
-      final List<Map<String, dynamic>> foldersFound = await txn.query(
-        'folders',
-        columns: ['id'],
-        where: 'id IN (${incomingFolderIds.map((_) => '?').join(',')})',
-        whereArgs: incomingFolderIds.toList(),
-      );
-      existingFolderIds = foldersFound.map((f) => f['id'] as String).toSet();
-    }
-
-    final batch = txn.batch();
-
-    for (final note in notes) {
-      if (dirtyDeletedIds.contains(note.id)) continue;
-
-      // 🎯 Lógica de Rescate: Si el folder no existe, mandamos a NULL (Raíz)
-      String? finalFolderId = note.folderId;
-      if (finalFolderId != null && !existingFolderIds.contains(finalFolderId)) {
-        finalFolderId = null; // Directo a la raíz
-        debugPrint("📦 Nota ${note.id} movida a Raíz (Folder original no existe)");
+    await _db.transaction((txn) async {
+      // 🛡️ PASO 0: Asegurar que los Buckets de las notas y sus Tags existan
+      final uniqueFileIds = notes.map((n) => n.fileId).whereType<String>().toSet();
+      for (final fId in uniqueFileIds) {
+        await LocalSyncQueueDao.ensureExistenceTxn(txn, id: fId, type: TypeQueue.notes);
       }
 
-      batch.rawInsert(
-        '''
+      // Aseguramos las etiquetas y obtenemos cuáles están borradas para evitar "Zombies"
+      final allTags = notes.expand((n) => n.tags).toList();
+      await TagsDao.ensureTagsDependencies(txn, allTags);
+
+      // Obtenemos los IDs de tags borrados para filtrar las relaciones en el batch
+      final Set<String> deletedTagIds = await DeletedDao.extractDirtyIdsByTypeTxn(
+        txn,
+        ids: allTags.map((t) => t.id).toList(),
+        type: DeletedType.tag,
+      );
+
+      // 🛡️ PASO 1: Filtrar notas borradas localmente (Verificación atómica)
+      final List<String> incomingIds = notes.map((e) => e.id).toList();
+      final Set<String> dirtyDeletedIds = await DeletedDao.extractDirtyIdsByTypeTxn(
+        txn,
+        ids: incomingIds,
+        type: DeletedType.note,
+      );
+
+      // 🔍 PASO 2: Verificar folders existentes
+      final Set<String> incomingFolderIds = notes
+          .map((e) => e.folderId)
+          .whereType<String>()
+          .toSet();
+
+      Set<String> existingFolderIds = {};
+      if (incomingFolderIds.isNotEmpty) {
+        final List<Map<String, dynamic>> foldersFound = await txn.query(
+          'folders',
+          columns: ['id'],
+          where: 'id IN (${incomingFolderIds.map((_) => '?').join(',')})',
+          whereArgs: incomingFolderIds.toList(),
+        );
+        existingFolderIds = foldersFound.map((f) => f['id'] as String).toSet();
+      }
+
+      final batch = txn.batch();
+
+      for (final note in notes) {
+        if (dirtyDeletedIds.contains(note.id)) continue;
+
+        // 🎯 Lógica de Rescate: Si el folder no existe, mandamos a NULL (Raíz)
+        String? finalFolderId = note.folderId;
+        if (finalFolderId != null && !existingFolderIds.contains(finalFolderId)) {
+          finalFolderId = null; 
+        }
+
+        batch.rawInsert(
+          '''
         INSERT INTO notes (
           id, folderId, fileId, title, content, color, 
           createdAt, updatedAt, isFavorite
@@ -613,36 +638,39 @@ Future<void> upsertAll(List<Note> unverifyNotes) async {
           updatedAt = excluded.updatedAt,
           isFavorite = excluded.isFavorite
         WHERE excluded.updatedAt > updatedAt 
-      ''',
-        [
-          note.id,
-          finalFolderId,
-          note.fileId,
-          note.title,
-          note.content,
-          note.color,
-          note.createdAt,
-          note.updatedAt,
-          note.isFavorite ? 1 : 0,
-        ],
-      );
+        ''',
+          [
+            note.id,
+            finalFolderId,
+            note.fileId,
+            note.title,
+            note.content,
+            note.color,
+            note.createdAt,
+            note.updatedAt,
+            note.isFavorite ? 1 : 0,
+          ],
+        );
 
-      // Tags y Links (Batch)
-      TagsNotesDao.deleteBatch(batch, noteId: note.id);
-      for (final tag in note.tags) {
-        TagsNotesDao.upsertBatch(batch, noteId: note.id, tagId: tag.id);
-      }
-      
-      if (note.link != null) {
-        LinkPreviewDao.upsertBatch(batch, note.link!);
-      } else {
-        LinkPreviewDao.deleteBatch(batch, note.id);
-      }
-    }
+        // Tags y Links (Batch)
+        TagsNotesDao.deleteBatch(batch, noteId: note.id);
+        for (final tag in note.tags) {
+          // 🛡️ Evitamos insertar la relación si el Tag fue borrado
+          if (!deletedTagIds.contains(tag.id)) {
+            TagsNotesDao.upsertBatch(batch, noteId: note.id, tagId: tag.id);
+          }
+        }
 
-    await batch.commit(noResult: true);
-  });
-}
+        if (note.link != null) {
+          LinkPreviewDao.upsertBatch(batch, note.link!);
+        } else {
+          LinkPreviewDao.deleteBatch(batch, note.id);
+        }
+      }
+
+      await batch.commit(noResult: true);
+    });
+  }
   /* ----------------------------------------------------------------------
    * DELETE
    * -------------------------------------------------------------------- */
@@ -657,7 +685,7 @@ Future<void> upsertAll(List<Note> unverifyNotes) async {
 
         // 1. Registramos el borrado en la tabla de "deletes"
         // (Esto marcará el bucket de borrados como sucio internamente)
-        await DeletedDao.saveId(txn,id: id,type: DeletedType.note);
+        await DeletedDao.saveId(txn, id: id, type: DeletedType.note);
 
         // 2. ¡IMPORTANTE! Marcamos el bucket original de la nota como sucio
         // Ahora el Pusher generará un JSON de notas SIN esta nota.

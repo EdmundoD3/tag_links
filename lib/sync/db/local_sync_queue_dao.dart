@@ -367,4 +367,35 @@ class LocalSyncQueueDao {
       [amount, fileId],
     );
   }
+/// Asegura que un bucket exista para evitar errores de Foreign Key (SQLITE_CONSTRAINT_FOREIGNKEY).
+  /// Si el ID no existe, crea un placeholder con status 'synced' para que el Pusher lo ignore
+  /// hasta que llegue el archivo real desde el Pull.
+  static Future<void> ensureExistenceTxn(
+    DatabaseExecutor executor, {
+    required String id,
+    required TypeQueue type,
+  }) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    
+    await executor.rawInsert(
+      '''
+      INSERT OR IGNORE INTO $_tableName 
+      (id, driveFileId, fileName, lastUpdate, type, syncStatus, itemCount)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+      ''',
+      [
+        id,
+        null,                               // driveFileId: Desconocido aún
+        _generateName(type: type, id: id),  // Nombre consistente: "tipo_uuid.json"
+        now,                                // Timestamp de creación del placeholder
+        type.tableName,                    // El nombre de la tabla destino ('tags', 'notes', etc)
+        SyncStatus.synced,                  // Status 1: Evita que el Pusher intente subirlo
+        0,                                  // itemCount: Empezamos en 0
+      ],
+    );
+  }
+
+  static String _generateName({required TypeQueue type, required String id}) {
+    return "${type.tableName}_$id.json";
+  }
 }

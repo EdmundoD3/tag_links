@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:tag_links/data/data_sources/deleted_dao.dart';
 import 'package:tag_links/data/data_sources/folder_tags_dao.dart';
+import 'package:tag_links/data/data_sources/tags_dao.dart';
 import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/models/search_query.dart';
 import 'package:tag_links/models/tag.dart';
@@ -11,14 +12,12 @@ import 'package:tag_links/utils/paginated_utils.dart';
 
 class FoldersDao {
   final Database _db;
-  final DeletedDao _deletedDao;
 
   FoldersDao({
     required Database db,
     required LocalSyncQueueDao syncDao,
     required DeletedDao deletedDao,
-  }) : _db = db,
-       _deletedDao = deletedDao;
+  }) : _db = db;
 
   /// BY LAST UPDATE
 
@@ -203,11 +202,15 @@ class FoldersDao {
     await LocalSyncQueueDao.markAsDirty(txn, bucketId: folder.fileId);
   }
 
-  Future<void> upsertAll(List<Folder> rawFolders) async {
+Future<void> upsertAll(List<Folder> rawFolders) async {
     if (rawFolders.isEmpty) return;
-    final dirtysIds = await _deletedDao.extractDirtyIdsByType(
-      rawFolders.map((e) => e.id).toList(),
-      DeletedType.folder,
+    
+    // 🛡️ Filtro inicial de borrados
+    final incomingIds = rawFolders.map((e) => e.id).toList();
+    final dirtysIds = await DeletedDao.extractDirtyIdsByTypeTxn(
+      _db,
+      ids: incomingIds,
+      type: DeletedType.folder,
     );
     final folders = rawFolders.where((e) => !dirtysIds.contains(e.id)).toList();
 
@@ -220,6 +223,22 @@ class FoldersDao {
     ];
 
     await _db.transaction((txn) async {
+      // 🛡️ PASO 0: Asegurar que los Buckets de las Folders existan (Evitar Error 787)
+      final uniqueFileIds = sortedFolders.map((f) => f.fileId).whereType<String>().toSet();
+      for (final fId in uniqueFileIds) {
+        await LocalSyncQueueDao.ensureExistenceTxn(txn, id: fId, type: TypeQueue.folders);
+      }
+
+      // Aseguramos etiquetas y obtenemos borradas para filtrar relaciones
+      final allTags = sortedFolders.expand((f) => f.tags).toList();
+      await TagsDao.ensureTagsDependencies(txn, allTags);
+
+      final Set<String> deletedTagIds = await DeletedDao.extractDirtyIdsByTypeTxn(
+        txn,
+        ids: allTags.map((t) => t.id).toList(),
+        type: DeletedType.tag,
+      );
+
       final batch = txn.batch();
 
       for (final folder in sortedFolders) {
@@ -255,15 +274,17 @@ class FoldersDao {
           ],
         );
 
-        // B. Sincronizar etiquetas (Limpieza rápida en batch)
+        // B. Sincronizar etiquetas (Relaciones)
         FolderTagsDao.deleteBatch(batch, folderId: folder.id);
         for (final tag in folder.tags) {
-          FolderTagsDao.upsertBatch(batch, folderId: folder.id, tagId: tag.id);
+          // 🛡️ Solo vinculamos si el tag NO está borrado
+          if (!deletedTagIds.contains(tag.id)) {
+            FolderTagsDao.upsertBatch(batch, folderId: folder.id, tagId: tag.id);
+          }
         }
       }
 
       await batch.commit(noResult: true);
-      // Al ser PULL (upsertAll), no marcamos el bucket como sucio.
     });
   }
 
@@ -335,7 +356,8 @@ class FoldersDao {
           // Restamos el total acumulado (carpetas + notas) de este bucket específico
           final totalADescontar = countsToDecrement[bId] ?? 0;
           if (totalADescontar > 0) {
-            await LocalSyncQueueDao.decrementCountBy(txn,
+            await LocalSyncQueueDao.decrementCountBy(
+              txn,
               fileId: bId,
               amount: totalADescontar,
             );

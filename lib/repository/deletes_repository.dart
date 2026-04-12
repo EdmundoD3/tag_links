@@ -61,7 +61,7 @@ class DeletesRepository {
       TypeQueue.deletes => throw UnimplementedError(),
     };
 
-    return _deletedDao.extractDirtyIdsByType(ids, typeStr);
+    return _deletedDao.extractDirtyIdsByType(ids,type: typeStr);
   }
   Future<void> upsertAllFromRemote(DeleteFile remoteFile) {
     return _deletedDao.upsertAllFromRemote(remoteFile);

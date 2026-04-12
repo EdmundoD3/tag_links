@@ -7,7 +7,8 @@ class TitleFormController extends StatelessWidget {
   final String validatorMsg;
   final void Function()? onChange;
 
-  const TitleFormController({super.key, 
+  const TitleFormController({
+    super.key,
     required this.titleCtrl,
     required this.label,
     required this.validatorMsg,
@@ -27,12 +28,12 @@ class TitleFormController extends StatelessWidget {
         fillColor: theme.inputDecorationTheme.fillColor?.withAlpha(60),
         labelText: label,
         border: OutlineInputBorder(),
-        labelStyle: TextStyle(color: theme.hintColor),
+        labelStyle: TextStyle(color: theme.textTheme.bodyMedium?.color),
         enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: theme.focusColor, width: 1),
+          borderSide: BorderSide(color: theme.hintColor, width: 1),
         ),
         focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: theme.focusColor, width: 2),
+          borderSide: BorderSide(color: theme.hintColor, width: 2),
         ),
       ),
       onChanged: (value) => onChange?.call(),

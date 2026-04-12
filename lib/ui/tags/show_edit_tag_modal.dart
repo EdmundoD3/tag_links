@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/config/limit_config.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/models/tag.dart';
+import 'package:tag_links/ui/tags/input_tag_widgets.dart';
 
 class EditedTag {
   final Tag tag;
@@ -16,7 +16,7 @@ Future<EditedTag?> showEditTagModal(
   WidgetRef ref,
   Tag tag,
 ) {
-  final nameCtrl = TextEditingController(text: tag.title);
+  final titleCtrol = TextEditingController(text: tag.title);
   bool isFavorite = tag.isFavorite;
 
   return showModalBottomSheet<EditedTag>(
@@ -62,30 +62,24 @@ Future<EditedTag?> showEditTagModal(
                     ),
                   ],
                 ),
-                TextField(
-                  controller: nameCtrl,
-                  maxLength: LimitAppConfig.tagMaxLength,
-                  autofocus: true,
-                  decoration: InputDecoration(
-                    labelText: ref.tr(
-                      TKeys.tags.nameField,
-                      fallback: 'Nombre del tag',
-                    ),
+                InputTitleTag(
+                  controller: titleCtrol,
+                  label: ref.tr(
+                    TKeys.tags.nameField,
+                    fallback: 'Nombre del tag',
                   ),
                 ),
 
                 // Botones de acción (Guardar / Cancelar)
                 Row(
                   children: [
-                    TextButton(
+                    ActionButtonModal(
                       onPressed: () =>
                           Navigator.pop(context), // Retorna null (Cancelar)
-                      child: Text(
-                        ref.tr(TKeys.actions.cancel, fallback: 'Cancelar'),
-                      ),
+                      label: ref.tr(TKeys.actions.cancel, fallback: 'Cancelar'),
                     ),
                     const Spacer(),
-                    FilledButton(
+                    ActionButtonModal(
                       onPressed: () {
                         // Retornamos el objeto con isDeleted en false
                         Navigator.pop(
@@ -93,15 +87,13 @@ Future<EditedTag?> showEditTagModal(
                           EditedTag(
                             isDeleted: false,
                             tag: tag.copyWith(
-                              title: nameCtrl.text.trim(),
+                              title: titleCtrol.text.trim(),
                               isFavorite: isFavorite,
                             ),
                           ),
                         );
                       },
-                      child: Text(
-                        ref.tr(TKeys.actions.save, fallback: 'Guardar'),
-                      ),
+                      label: ref.tr(TKeys.actions.save, fallback: 'Guardar'),
                     ),
                   ],
                 ),

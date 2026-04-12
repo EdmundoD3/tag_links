@@ -18,10 +18,11 @@ class DeletedDao {
   DeletedDao(this._db);
 
   /// Guarda el borrado usando el Enum para garantizar integridad
-  static Future<void> saveId(DatabaseExecutor executor,
-    {required String id,
-    required DeletedType type}
-  ) async {
+  static Future<void> saveId(
+    DatabaseExecutor executor, {
+    required String id,
+    required DeletedType type,
+  }) async {
     final now = DateTime.now().millisecondsSinceEpoch;
 
     final exist = await executor.query(
@@ -59,15 +60,22 @@ class DeletedDao {
     );
     return result.map(DeletedData.fromRaw).toList();
   }
-
-  /// Extraer IDs sucios filtrando por tipo
   Future<Set<String>> extractDirtyIdsByType(
-    List<String> ids,
-    DeletedType type, {
-    DatabaseExecutor? executor,
+    List<String> ids, {
+    required DeletedType type,
   }) async {
     if (ids.isEmpty) return {};
-    final db = executor ?? _db;
+    return extractDirtyIdsByTypeTxn(_db, ids: ids, type: type);
+    }
+
+  /// Extraer IDs sucios filtrando por tipo
+  static Future<Set<String>> extractDirtyIdsByTypeTxn(
+    DatabaseExecutor executor, {
+    required List<String> ids,
+    required DeletedType type,
+  }) async {
+    if (ids.isEmpty) return {};
+    final db = executor;
     final placeholders = List.filled(ids.length, '?').join(',');
     final result = await db.query(
       _tableName,

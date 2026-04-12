@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/config/limit_config.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/state/tags_provider.dart';
 import 'package:tag_links/sync/db/local_sync_queue_repository.dart';
 import 'package:tag_links/sync/models/local_sync_queue.dart';
+import 'package:tag_links/ui/tags/input_tag_widgets.dart';
 import 'package:uuid/uuid.dart';
 
 Future<Tag?> showCreateTagModal({
@@ -21,7 +21,7 @@ Future<Tag?> showCreateTagModal({
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
     ),
-    backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+    // backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
     builder: (context) {
       return Padding(
         padding: EdgeInsets.only(
@@ -40,49 +40,22 @@ Future<Tag?> showCreateTagModal({
             ),
             const SizedBox(height: 12),
 
-            TextField(
+            InputTitleTag(
               controller: controller,
-              autofocus: true,
-              style: TextStyle(color: theme.textTheme.bodyMedium?.color),
-              cursorColor: theme.scaffoldBackgroundColor,
-              maxLength: LimitAppConfig.tagMaxLength,
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: theme.inputDecorationTheme.fillColor?.withAlpha(60),
-                labelText: ref.tr(
-                  TKeys.tags.nameField,
-                  fallback: 'Nombre del tag',
-                ),
-                alignLabelWithHint: true,
-                border: OutlineInputBorder(),
-                labelStyle: TextStyle(color: theme.textTheme.bodyMedium?.color),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: theme.hintColor, width: 1),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: theme.hintColor, width: 2),
-                ),
-              ),
-              textInputAction: TextInputAction.done,
+              label: ref.tr(TKeys.tags.nameField, fallback: 'Nombre del tag'),
             ),
 
             const SizedBox(height: 12),
 
             Align(
               alignment: Alignment.centerRight,
-              child: FilledButton(
+              child: ActionButtonModal(
                 onPressed: () async => await _submit(
                   context: context,
                   controller: controller,
                   ref: ref,
                 ),
-                style: FilledButton.styleFrom(
-                  backgroundColor:
-                      theme.scaffoldBackgroundColor, // Color de fondo
-                  foregroundColor:
-                      theme.textTheme.titleLarge?.color, // Color del texto
-                ),
-                child: Text(ref.tr(TKeys.tags.create, fallback: 'Crear tag')),
+                label:ref.tr(TKeys.tags.create, fallback: 'Crear tag'),
               ),
             ),
           ],

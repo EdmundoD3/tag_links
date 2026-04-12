@@ -4,49 +4,48 @@ class BannerWithCloseButton extends StatelessWidget {
   final Widget child;
   final VoidCallback onCloseTap;
   final EdgeInsets padding;
-  final bool showClose;
-
+  final double width;
+  final double closeSize;
   const BannerWithCloseButton({
     super.key,
     required this.child,
     required this.onCloseTap,
+    required this.width,
     this.padding = const EdgeInsets.symmetric(horizontal: 12),
-    this.showClose = true,
+    this.closeSize = 18,
   });
 
   @override
   Widget build(BuildContext context) {
-    // Definimos cuánto queremos que el botón sobresalga.
-    // Con 16px, la mitad del botón (que mide ~24px) quedará fuera.
-    const double offsetValue = 16.0;
+    // Obtenemos el ancho máximo disponible
+    final maxWidth = MediaQuery.of(context).size.width - (padding.horizontal);
+
+    // Calculamos tu ancho ideal, pero limitado al máximo de la pantalla
+    final totalWidth = (width + closeSize * 1.8).clamp(0.0, maxWidth);
 
     return Padding(
       padding: padding,
-      child: Stack(
-        clipBehavior: Clip.none, // IMPORTANTE: permite que la X se dibuje fuera del marco
+      child: Column(
         children: [
-          // 1. EL BANNER
-          ClipRRect(child: child),
-
-          // 2. LA X (Posicionada en la esquina superior derecha hacia afuera)
-          if (showClose)
-            Positioned(
-              top: -offsetValue,    // Sube la X hacia arriba
-              right: -offsetValue,  // Mueve la X hacia la derecha
-              child: _CloseButton(onTap: onCloseTap),
+          SizedBox(
+            width: totalWidth,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [_CloseButton(onTap: onCloseTap, size: closeSize)],
             ),
+          ),
+          child,
         ],
       ),
     );
   }
 }
 
-// ... aquí sigue tu clase _CloseButton igual que la tenías ...
-
 class _CloseButton extends StatefulWidget {
   final VoidCallback onTap;
+  final double size;
 
-  const _CloseButton({required this.onTap});
+  const _CloseButton({required this.onTap, required this.size});
 
   @override
   State<_CloseButton> createState() => _CloseButtonState();
@@ -87,9 +86,19 @@ class _CloseButtonState extends State<_CloseButton>
         child: Container(
           // Quitamos el SizedBox o lo hacemos de 24x24
           padding: const EdgeInsets.all(2), // Da un margen pequeño al icono
-          child: const Icon(
+          // decoration: BoxDecoration(
+          //   color: Colors.white.withValues(alpha: 0.8),
+          //   shape: BoxShape.circle,
+          //   boxShadow: [
+          //     BoxShadow(
+          //       color: Colors.black.withValues(alpha: 0.1),
+          //       blurRadius: 4,
+          //     ),
+          //   ],
+          // ),
+          child: Icon(
             Icons.cancel_outlined,
-            size: 18,
+            size: widget.size,
             color: Colors.blueAccent,
           ),
         ),
