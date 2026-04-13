@@ -16,6 +16,7 @@ import 'package:tag_links/ui/button/create_new_folder_button.dart';
 import 'package:tag_links/ui/button/go_settings_button.dart';
 import 'package:tag_links/ui/folder/banner_pending_folder.dart';
 import 'package:tag_links/ui/folder/build_folders_section.dart';
+import 'package:tag_links/ui/form/note_mini_form.dart';
 import 'package:tag_links/ui/is_loading_indicators/scaffold_loading.dart';
 import 'package:tag_links/ui/note/banner_pending_note.dart';
 import 'package:tag_links/ui/note/build_notes_section.dart';
@@ -46,7 +47,7 @@ class HomePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final preferenceAsync = ref.watch(_foldersPreferenceProvider);
     final theme = Theme.of(context);
-return preferenceAsync.when(
+    return preferenceAsync.when(
       loading: () => const ScaffoldLoading(),
       error: (err, _) {
         debugPrint('_HomePage.build Error: $err');
@@ -59,35 +60,55 @@ return preferenceAsync.when(
 
         // --- ENVOLVEMOS EL SCAFFOLD AQUÍ ---
         return GestureDetector(
-          onTap: () => FocusScope.of(context).unfocus(), // <--- Quita el foco de cualquier TextField
+          onTap: () => FocusScope.of(
+            context,
+          ).unfocus(), // <--- Quita el foco de cualquier TextField
           child: Scaffold(
             backgroundColor: theme.scaffoldBackgroundColor,
             appBar: _appBar(showFolders, preference, ref),
-            // floatingActionButton: _floatingActionButton(showFolders),
             body: SafeArea(
-              child: Column(
+              // 1. Usamos el Stack como base del cuerpo
+              child: Stack(
                 children: [
-                  BannerPendingNote(
-                    key: const ValueKey('banner_note'),
-                    toFolderId: folder?.id,
-                    onToggleView: () => _selectView(FolderDefaultView.notes, ref),
+                  // 2. El contenido principal en una Column (Banners + Buscador + Lista)
+                  Column(
+                    children: [
+                      BannerPendingNote(
+                        key: const ValueKey('banner_note'),
+                        toFolderId: folder?.id,
+                        onToggleView: () =>
+                            _selectView(FolderDefaultView.notes, ref),
+                      ),
+                      BannerPendingFolder(
+                        key: const ValueKey('banner_folder'),
+                        toParent: folder,
+                        onToggleView: () =>
+                            _selectView(FolderDefaultView.folders, ref),
+                      ),
+
+                      if (_isRoot) const RootSearchSection(),
+
+                      Expanded(
+                        child: showFolders
+                            ? FoldersSection(parentId: folder?.id)
+                            : NotesSection(
+                                folderId: folder?.id,
+                                highlightNoteId: highlightNoteId,
+                              ),
+                      ),
+                    ],
                   ),
-                  BannerPendingFolder(
-                    key: const ValueKey('banner_folder'),
-                    toParent: folder,
-                    onToggleView: () => _selectView(FolderDefaultView.folders, ref),
-                  ),
-                  // Aquí es donde vive tu RootSearchSection que contiene el SearchListBar
-                  if (_isRoot) const RootSearchSection(), 
-                  
-                  Expanded(
-                    child: showFolders
-                        ? FoldersSection(parentId: folder?.id)
-                        : NotesSection(
-                            folderId: folder?.id,
-                            highlightNoteId: highlightNoteId,
-                          ),
-                  ),
+
+                  // 3. El MiniForm posicionado de forma absoluta
+                  // Ahora sí, el Positioned es hijo directo del Stack
+                  if (!showFolders)
+                    Positioned(
+                      bottom:
+                          10, // Un poco separado del fondo o del banner de anuncios
+                      right: 0,
+                      left: 0,
+                      child: NoteMiniForm(folderId: folder?.id),
+                    ),
                 ],
               ),
             ),
@@ -99,7 +120,8 @@ return preferenceAsync.when(
                 if (!_isLimitFolder)
                   BottomButtonBar(
                     defaultview: preference,
-                    onSelect: (newPreference) => _selectView(newPreference, ref),
+                    onSelect: (newPreference) =>
+                        _selectView(newPreference, ref),
                   ),
               ],
             ),
@@ -109,7 +131,11 @@ return preferenceAsync.when(
     );
   }
 
-  PreferredSizeWidget _appBar(bool showFolders, FolderDefaultView preference, WidgetRef ref) {
+  PreferredSizeWidget _appBar(
+    bool showFolders,
+    FolderDefaultView preference,
+    WidgetRef ref,
+  ) {
     if (_isRoot) {
       return AppBarPages(
         title: ref.tr(TKeys.pages.appName, fallback: 'Tag Links'),
@@ -121,7 +147,10 @@ return preferenceAsync.when(
         ],
       );
     }
-    return AppBarPages(title: folder!.title, actions:[_creationButton(showFolders)]);
+    return AppBarPages(
+      title: folder!.title,
+      actions: [_creationButton(showFolders)],
+    );
   }
 
   /// 🔁 Cambiar vista y guardar preferencia

@@ -41,6 +41,7 @@ class BuildNotesList extends ConsumerWidget {
 
         return ListView.builder(
           controller: scrollController,
+          padding: const EdgeInsets.fromLTRB(0, 0, 0, 70),
           // Aplicamos el +1 para el spinner al final
           itemCount: notes.length + (isLoadingMore ? 1 : 0),
           itemBuilder: (_, i) {
@@ -69,7 +70,10 @@ class BuildNotesList extends ConsumerWidget {
                 if (goFolder != null)
                   ActionMenuItem(
                     icon: Icons.drive_folder_upload,
-                    label: ref.tr(TKeys.ui.goToFolder, fallback: 'Ir a la carpeta'),
+                    label: ref.tr(
+                      TKeys.ui.goToFolder,
+                      fallback: 'Ir a la carpeta',
+                    ),
                     onTap: () => goFolder!(note),
                   ),
               ],

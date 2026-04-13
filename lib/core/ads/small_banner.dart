@@ -55,10 +55,9 @@ class _SmartBannerAdState extends ConsumerState<SmartBannerAd> {
     }
 
     return Container(
-      alignment: Alignment.center,
       width: double.infinity,
       // Le damos un margen arriba para que el botón que sobresale no se pegue al widget de arriba
-      margin: const EdgeInsets.symmetric(vertical: 8),
+      margin: const EdgeInsets.fromLTRB(0, 4, 0, 4),
       // Altura del banner normal
       // height: _bannerAd!.size.height.toDouble(),
       child: BannerWithCloseButton(

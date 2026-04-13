@@ -34,7 +34,7 @@ class BodyForm extends StatelessWidget {
         // El anuncio fijo al final
         bottomNavigationBar: const SafeArea(
           child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
+            padding: EdgeInsets.fromLTRB(0,0,0,8),
             child: SmartBannerAd(),
           ),
         ),

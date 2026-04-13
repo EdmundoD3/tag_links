@@ -13,6 +13,8 @@ class TranslatesForms {
 
   // --- Notas (Notes) ---
   final String newNote = 'newNote';
+  final String fastNote = 'fastNote';
+  final String hiddenFastNote = 'hiddenFastNote';
   final String content = 'content';
   final String title = 'title';
 
@@ -36,6 +38,8 @@ class TranslatesForms {
 
     // Note Form
     'newNote': {AppLang.es: 'Nueva nota', AppLang.en: 'New note'},
+    'fastNote': {AppLang.es: 'Nota rápida', AppLang.en: 'Fast note'},
+    'hiddenFastNote': {AppLang.es: 'Ocultar', AppLang.en: 'Hide'},
     'content': {AppLang.es: 'Contenido', AppLang.en: 'Content'},
     'title': {AppLang.es: 'Título', AppLang.en: 'Title'},
   };

@@ -43,9 +43,8 @@ class NotesRepository {
   }
 
   Future<void> create(Note note) async {
-    final noteToSave = note.ensureForInsert();
     // 1. IMPORTANTE: El bucket se marca como sucio ANTES o después de la inserción
-    return _dao.upsert(noteToSave);
+    return _dao.upsert(note);
   }
 
   Future<void> update(Note note) async {

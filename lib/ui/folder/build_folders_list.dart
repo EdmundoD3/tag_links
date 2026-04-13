@@ -37,6 +37,7 @@ class BuildFoldersList extends ConsumerWidget {
 
         return ListView.builder(
           controller: scrollController,
+          padding: const EdgeInsets.fromLTRB(0, 0, 0, 70),
           // Añadimos +1 al count si está cargando para mostrar el spinner al final
           itemCount: folders.length + (notifier.isLoadingMore ? 1 : 0),
           itemBuilder: (_, i) {

@@ -26,6 +26,7 @@ class BannerWithCloseButton extends StatelessWidget {
     return Padding(
       padding: padding,
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           SizedBox(
             width: totalWidth,
@@ -86,16 +87,6 @@ class _CloseButtonState extends State<_CloseButton>
         child: Container(
           // Quitamos el SizedBox o lo hacemos de 24x24
           padding: const EdgeInsets.all(2), // Da un margen pequeño al icono
-          // decoration: BoxDecoration(
-          //   color: Colors.white.withValues(alpha: 0.8),
-          //   shape: BoxShape.circle,
-          //   boxShadow: [
-          //     BoxShadow(
-          //       color: Colors.black.withValues(alpha: 0.1),
-          //       blurRadius: 4,
-          //     ),
-          //   ],
-          // ),
           child: Icon(
             Icons.cancel_outlined,
             size: widget.size,
