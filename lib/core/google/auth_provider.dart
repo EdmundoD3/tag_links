@@ -126,8 +126,9 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   Future<bool> attemptSessionRepair() async {
-    if (state.isAuthenticated && state.lastResult == SilentLoginResult.success)
+    if (state.isAuthenticated && state.lastResult == SilentLoginResult.success) {
       return true;
+    }
     if (state.isLoading) return false;
 
     if (_isRepairingResult) {
@@ -186,8 +187,9 @@ class AuthNotifier extends Notifier<AuthState> {
 
   SilentLoginResult _mapErrorToResult(Object e) {
     final err = e.toString().toLowerCase();
-    if (err.contains('network') || err.contains('socket'))
+    if (err.contains('network') || err.contains('socket')) {
       return SilentLoginResult.networkError;
+    }
     if (err.contains('timeout')) return SilentLoginResult.timeout;
     return SilentLoginResult.error;
   }

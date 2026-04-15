@@ -6,7 +6,7 @@ import 'package:html/parser.dart' show parse;
 import 'package:tag_links/models/link_preview.dart';
 
 class LinkPreviewService {
-  Future<LinkPreview?> prepareForSave(LinkPreview? link) async {
+  static Future<LinkPreview?> prepareForSave(LinkPreview? link) async {
     if (link == null) return null;
     if (link.hasMetadata) return link;
 
@@ -18,18 +18,7 @@ class LinkPreviewService {
     }
   }
 
-  Future<LinkPreview?> enrich(LinkPreview link) async {
-    if (link.hasMetadata) return link;
-
-    try {
-      final updated = await _fetchMetadata(link);
-      return updated ?? link;
-    } catch (_) {
-      return link;
-    }
-  }
-
-  Future<LinkPreview?> _fetchMetadata(LinkPreview link) async {
+  static Future<LinkPreview?> _fetchMetadata(LinkPreview link) async {
     try {
       final uri = Uri.tryParse(link.url);
       if (uri == null) return null;

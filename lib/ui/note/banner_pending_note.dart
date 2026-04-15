@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
-import 'package:tag_links/state/pending_note_provider.dart';
+import 'package:tag_links/core/media_in_coming/pending_note_provider.dart';
 import 'package:tag_links/sync/db/local_sync_queue_repository.dart';
 import 'package:tag_links/sync/models/local_sync_queue.dart';
+import 'package:tag_links/sync/sync_notifier_provider.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
 import 'package:tag_links/ui/banners/banner_pending.dart';
 import 'package:tag_links/ui/form/note_form_page.dart';
@@ -32,18 +35,19 @@ class BannerPendingNote extends ConsumerWidget {
       actions: [
         // ───────── Almacenar directo
         BannerOptionsTile(
-          onTap: () {
+          onTap: () async {
             onToggleView();
             if (pendingNote.type == TypeMove.move) {
-              ref
+              await ref
                   .read(noteMoveProvider)
                   .move(note: note, toFolderId: toFolderId);
             }
             if (pendingNote.type == TypeMove.newNote) {
-              ref
+              await ref
                   .read(noteMoveProvider)
                   .save(note: note, toFolderId: toFolderId);
             }
+            unawaited(ref.read(syncProvider.notifier).forceSynchronize());
           },
           title: ref.tr(TKeys.actions.store, fallback: 'Almacenar'),
         ),
@@ -53,7 +57,7 @@ class BannerPendingNote extends ConsumerWidget {
           BannerOptionsTile(
             onTap: () async {
               onToggleView();
-              ref
+              await ref
                   .read(noteMoveProvider)
                   .save(note: note, toFolderId: toFolderId);
               final fileId = await ref

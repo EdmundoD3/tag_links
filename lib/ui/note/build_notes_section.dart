@@ -127,6 +127,7 @@ class _NotesSectionState extends ConsumerState<NotesSection> {
           ctx,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
+          alignment: 0.1, // 0.0 es arriba del todo, 1.0 es abajo. 0.1 la deja un pelín bajada del borde.
         );
       });
     });

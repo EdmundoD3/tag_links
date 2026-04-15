@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/models/note.dart';
-import 'package:tag_links/state/pending_note_provider.dart';
+import 'package:tag_links/core/media_in_coming/pending_note_provider.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
 import 'package:tag_links/ui/is_loading_indicators/shimmer_note_list.dart';
 import 'package:tag_links/ui/menu/menu_container.dart';

@@ -21,7 +21,7 @@ import 'package:tag_links/data/shared_prefs_provider.dart';
 import 'package:tag_links/state/url_provider.dart';
 import 'package:tag_links/core/theme/app_theme.dart';
 import 'package:tag_links/sync/widgets/app_life_cycle_observer.dart';
-import 'package:tag_links/utils/handle_media_in_coming_url.dart';
+import 'package:tag_links/core/media_in_coming/handle_media_in_coming_url.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

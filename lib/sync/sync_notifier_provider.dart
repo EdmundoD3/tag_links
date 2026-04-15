@@ -194,8 +194,9 @@ Future<void> _realSyncLogic() async {
     // Log para depuración
     debugPrint("Mapping error: $e");
 
-    if (e.toString().contains('401'))
+    if (e.toString().contains('401')) {
       return "AUTH_401"; // Código interno para el botón
+    }
 
     return switch (e) {
       NetworkSyncException() => "Revisa tu conexión",

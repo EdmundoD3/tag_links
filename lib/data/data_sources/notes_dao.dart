@@ -196,14 +196,12 @@ class NotesDao {
 /* ----------------------------- FETCHERS ----------------------------- */
 class FetchersNotesDao {
   final Database _db;
-  final DeletedDao _deletedDao;
   final LocalSyncQueueDao _syncDao;
   FetchersNotesDao({
     required Database db,
     required DeletedDao deletedDao,
     required LocalSyncQueueDao synDao,
   }) : _db = db,
-       _deletedDao = deletedDao,
        _syncDao = synDao;
 
   Future<bool> hasAnyData() async {
@@ -563,7 +561,7 @@ Future<void> upsertAll(List<Note> rawNotes) async {
     );
 
     final notes = unverifyNotes.map((n) {
-      return (n.fileId == null || n.fileId!.isEmpty)
+      return (n.fileId == null || n.fileId.isEmpty)
           ? n.copyWith(fileId: sharedFileId)
           : n;
     }).toList();

@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/state/pending_folder_provider.dart';
+import 'package:tag_links/sync/sync_notifier_provider.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
 import 'package:tag_links/ui/banners/banner_pending.dart';
 
@@ -61,7 +64,7 @@ class BannerPendingFolder extends ConsumerWidget {
             if (!isForbidden)
               BannerOptionsTile(
                 onTap: () async {
-                  debugPrint('按钮 Click: Intentando guardar...');
+                  debugPrint('BannerPendingFolder.build Click: Intentando guardar...');
 
                   // CASO: SUB-CARPETA + HIJOS -> DIÁLOGO
                   if (_isInFolder && folderValidation.hasChildren) {
@@ -89,6 +92,7 @@ class BannerPendingFolder extends ConsumerWidget {
                         .read(folderMoveProvider)
                         .move(folder: folder, toParentId: toParent?.id);
                   }
+                  unawaited(ref.read(syncProvider.notifier).forceSynchronize());
                 },
                 title: ref.tr(TKeys.actions.store),
               ),

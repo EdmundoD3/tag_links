@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_handler/share_handler.dart';
 import 'package:tag_links/models/link_preview.dart';
 import 'package:tag_links/models/note.dart';
-import 'package:tag_links/state/pending_note_provider.dart';
+import 'package:tag_links/core/media_in_coming/pending_note_provider.dart';
 import 'package:tag_links/sync/models/local_sync_queue.dart';
 import 'package:tag_links/sync/db/local_sync_queue_repository.dart';
 

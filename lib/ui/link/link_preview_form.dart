@@ -78,8 +78,7 @@ class _LinkPreviewFormState extends State<LinkPreviewForm> {
 
     final base = LinkPreview.create(noteId: widget.noteId, url: trimmed);
 
-    final service = LinkPreviewService();
-    final result = await service.prepareForSave(base);
+    final result = await LinkPreviewService.prepareForSave(base);
 
     if (!mounted) return;
 

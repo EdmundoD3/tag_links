@@ -90,8 +90,8 @@ class VisualExpandableText extends StatelessWidget {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                Theme.of(context).cardColor.withOpacity(0.0),
-                Theme.of(context).cardColor.withOpacity(0.8), // Sombra suave
+                Theme.of(context).cardColor.withAlpha(0),
+                Theme.of(context).cardColor.withAlpha(204), // Sombra suave
               ],
             ),
           ),

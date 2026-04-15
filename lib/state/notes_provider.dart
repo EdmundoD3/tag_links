@@ -194,7 +194,6 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
   final Set<String> _processingUrls = {};
 
   Future<void> _enrichLinks(List<LinkPreview> links) async {
-    final service = LinkPreviewService();
 
     // Filtramos las que ya se están procesando para no repetir peticiones
     final toProcess = links
@@ -204,7 +203,7 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
 
     try {
       for (final link in toProcess) {
-        final updated = await service.enrich(link);
+        final updated = await LinkPreviewService.prepareForSave(link);
         if (updated != null && updated.hasMetadata) {
           await _repoLinkPreview.replace(updated);
           // En lugar de invalidateSelf, actualiza solo la nota en el state actual

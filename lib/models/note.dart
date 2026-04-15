@@ -45,7 +45,7 @@ class Note extends BaseSyncModel {
       id: id?.isEmpty ?? true ? const Uuid().v4() : id!,
       folderId: folderId,
       fileId: fileId,
-      title: title ?? 'Nueva nota',
+      title: title ?? 'New Note',
       content: content ?? '',
       color: color,
       link: link,
@@ -89,7 +89,7 @@ class Note extends BaseSyncModel {
 
   Note copyWith({
     String? id,
-    String? folderId, // Quitamos required para permitir null (raíz)
+    String? folderId,
     String? fileId,
     String? title,
     String? content,

@@ -26,10 +26,10 @@ class WelcomePage extends ConsumerWidget {
           padding: const EdgeInsets.all(24.0),
           child: Column(
             children: [
-              Align(
-                alignment: Alignment.topRight,
-                child: const LangSelector(),
-              ),
+              // Align(
+              //   alignment: Alignment.topRight,
+              //   child: const LangSelector(),
+              // ),
               
               const Spacer(),
 
