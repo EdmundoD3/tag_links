@@ -1,4 +1,4 @@
-package com.papitas.seshat.notes
+package com.papitas.notita
 
 import io.flutter.embedding.android.FlutterActivity
 

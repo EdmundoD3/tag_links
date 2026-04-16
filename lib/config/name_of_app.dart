@@ -1,4 +1,4 @@
 class NameOfApp {
-  static const String upperCase = "Tag Links";
-  static const String lowerCase = "tag links";
+  static const String upperCase = "Notita";
+  static const String lowerCase = "notita";
 }

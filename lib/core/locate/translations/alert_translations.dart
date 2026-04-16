@@ -4,8 +4,7 @@ class TranslatesAlerts {
   const TranslatesAlerts();
 
   // --- Notas ---
-  final String deleteNoteTitle =
-      'alertDeleteNoteTitle'; // Mantengo el ID del mapa igual si quieres, pero la propiedad es corta
+  final String deleteNoteTitle = 'alertDeleteNoteTitle';
   final String deleteNote = 'alertDeleteNote';
   final String deleteNoteSuccess = 'alertDeleteNoteSucces';
   final String deleteNoteError = 'alertDeleteNoteError';
@@ -36,7 +35,6 @@ class TranslatesAlerts {
   final String limitReached = 'limitReached';
   final String limitReachedMessage = 'flattenMessage';
 
-
   //--Form --
   final String discard = 'alertDiscard';
   final String discardFormTitle = 'alertDiscardFormTitle';
@@ -46,113 +44,143 @@ class TranslatesAlerts {
     'alertDeleteNoteTitle': {
       AppLang.es: 'Eliminar nota',
       AppLang.en: 'Delete note',
+      AppLang.de: 'Notiz löschen',
     },
     'alertDeleteNote': {
       AppLang.es: '¿Estás seguro de eliminar la nota?',
       AppLang.en: 'Are you sure you want to delete the note?',
+      AppLang.de: 'Möchtest du die Notiz wirklich löschen?',
     },
     'alertDeleteNoteSucces': {
       AppLang.es: 'Nota eliminada',
       AppLang.en: 'Note deleted',
+      AppLang.de: 'Notiz gelöscht',
     },
     'alertDeleteNoteError': {
       AppLang.es: 'Error al eliminar',
       AppLang.en: 'Error deleting note',
+      AppLang.de: 'Fehler beim Löschen',
     },
     'alertMoveNoteTitle': {
       AppLang.es: 'Cambiar de carpeta',
       AppLang.en: 'Change folder',
+      AppLang.de: 'Ordner ändern',
     },
     'alertMoveNote': {
       AppLang.es: '¿Estás seguro de mover la nota?',
       AppLang.en: 'Are you sure you want to move the note?',
+      AppLang.de: 'Möchtest du die Notiz verschieben?',
     },
 
     // Folders
     'alertDeleteFolderTitle': {
       AppLang.es: 'Eliminar carpeta',
       AppLang.en: 'Delete folder',
+      AppLang.de: 'Ordner löschen',
     },
     'alertDeleteFolder': {
       AppLang.es: '¿Estás seguro de eliminar la carpeta?',
       AppLang.en: 'Are you sure you want to delete the folder?',
+      AppLang.de: 'Möchtest du den Ordner wirklich löschen?',
     },
     'alertDeleteFolderSucces': {
       AppLang.es: 'Carpeta eliminada',
       AppLang.en: 'Folder deleted',
+      AppLang.de: 'Ordner gelöscht',
     },
     'alertDeleteFolderError': {
       AppLang.es: 'Error al eliminar',
       AppLang.en: 'Error deleting folder',
+      AppLang.de: 'Fehler beim Löschen',
     },
     'alertMoveFolder': {
       AppLang.es: '¿Estás seguro de mover la carpeta?',
       AppLang.en: 'Are you sure you want to move the carpeta?',
+      AppLang.de: 'Möchtest du den Ordner verschieben?',
     },
     'alertMoveFolderTitle': {
       AppLang.es: 'Cambiar de carpeta',
       AppLang.en: 'Change folder',
+      AppLang.de: 'Ordner ändern',
     },
     'alertMovePendingFolder': {
       AppLang.es: 'Tienes una carpeta pendiente de mover',
       AppLang.en: 'You have a folder pending to move',
+      AppLang.de: 'Du hast einen Ordner, der noch verschoben werden muss',
     },
 
-    // Tags 
+    // Tags
     'alertDeleteTagTitle': {
       AppLang.es: 'Eliminar etiqueta',
       AppLang.en: 'Delete tag',
+      AppLang.de: 'Tag löschen',
     },
     'alertDeleteTagPermanent': {
-      AppLang.es: '¿Estás seguro de eliminar permanentemente esta etiqueta? Se quitará de todas las notas.',
-      AppLang.en: 'Are you sure you want to permanently delete this tag? It will be removed from all notes.',
+      AppLang.es:
+          '¿Estás seguro de eliminar permanentemente esta etiqueta? Se quitará de todas las notas.',
+      AppLang.en:
+          'Are you sure you want to permanently delete this tag? It will be removed from all notes.',
+      AppLang.de:
+          'Möchtest du dieses Tag dauerhaft löschen? Es wird aus allen Notizen entfernt.',
     },
     'alertDeleteTagSuccess': {
       AppLang.es: 'Etiqueta eliminada para siempre',
       AppLang.en: 'Tag deleted permanently',
+      AppLang.de: 'Tag dauerhaft gelöscht',
     },
     'alertDeleteTagError': {
       AppLang.es: 'Error al intentar borrar la etiqueta',
       AppLang.en: 'Error deleting tag',
+      AppLang.de: 'Fehler beim Löschen des Tags',
     },
 
     // Banners
     'bannerPendingNote': {
       AppLang.es: 'Tienes una nota pendiente de almacenar',
       AppLang.en: 'You have a note pending to store',
+      AppLang.de: 'Du hast eine Notiz, die noch gespeichert werden muss',
     },
-    'bannerNotMove': {AppLang.es: 'No mover', AppLang.en: "Don't move"},
+    'bannerNotMove': {
+      AppLang.es: 'No mover',
+      AppLang.en: "Don't move",
+      AppLang.de: 'Nicht verschieben',
+    },
     'discardAction': {
       AppLang.es: '¿Estás seguro de descartar la acción?',
       AppLang.en: 'Are you sure you want to discard the action?',
+      AppLang.de: 'Möchtest du die Aktion verwerfen?',
     },
     'alertMoveFolderErrorIsDeepFolder': {
       AppLang.es: 'No puedes almacenar carpetas aquí, elije otra carpeta',
       AppLang.en: 'You can\'t store folders here, choose another folder',
+      AppLang.de: 'Hier können keine Ordner gespeichert werden, wähle einen anderen Ordner',
     },
     'alertMoveFolderErrorIsSameFolder': {
       AppLang.es: 'No puedes mover una carpeta a sí misma',
       AppLang.en: 'You can\'t move a folder to itself',
+      AppLang.de: 'Ein Ordner kann nicht in sich selbst verschoben werden',
     },
     'limitReached': {
       AppLang.es: 'Límite de niveles',
       AppLang.en: 'Limit reached',
+      AppLang.de: 'Limit erreicht',
     },
     'flattenMessage': {
       AppLang.es: 'Esta carpeta tiene hijos. Se moverán a la raíz.',
       AppLang.en: 'This folder has children. They will be moved to the root.',
+      AppLang.de: 'Dieser Ordner hat Unterordner. Sie werden ins Hauptverzeichnis verschoben.',
     },
 
-    //Form
+    // Form
     'alertDiscard': {
       AppLang.es: 'Descatar cambios',
       AppLang.en: 'Discard changes',
+      AppLang.de: 'Änderungen verwerfen',
     },
     'alertDiscardFormTitle': {
       AppLang.es: 'Falta el título. ¿Quieres descartarla?',
       AppLang.en: 'Missing title. Do you want to discard it?',
+      AppLang.de: 'Titel fehlt. Möchtest du sie verwerfen?',
     },
-
-
   };
 }

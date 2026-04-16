@@ -12,11 +12,35 @@ class TranslatesTags {
   final String label = 'tags';
 
   static const Map<String, Map<AppLang, String>> translations = {
-    'tagsTitle': {AppLang.es: 'Etiquetas', AppLang.en: 'Tags'},
-    'tagName': {AppLang.es: 'Nombre del tag', AppLang.en: 'Tag name'},
-    'createTag': {AppLang.es: 'Nuevo tag', AppLang.en: 'New tag'},
-    'deleteTag': {AppLang.es: 'Eliminar tag', AppLang.en: 'Delete tag'},
-    'editTag': {AppLang.es: 'Editar tag', AppLang.en: 'Edit tag'},
-    'tags': {AppLang.es: 'Etiquetas', AppLang.en: 'Tags'},
+    'tagsTitle': {
+      AppLang.es: 'Etiquetas',
+      AppLang.en: 'Tags',
+      AppLang.de: 'Tags',
+    },
+    'tagName': {
+      AppLang.es: 'Nombre del tag',
+      AppLang.en: 'Tag name',
+      AppLang.de: 'Tag-Name',
+    },
+    'createTag': {
+      AppLang.es: 'Nuevo tag',
+      AppLang.en: 'New tag',
+      AppLang.de: 'Neuer Tag',
+    },
+    'deleteTag': {
+      AppLang.es: 'Eliminar tag',
+      AppLang.en: 'Delete tag',
+      AppLang.de: 'Tag löschen',
+    },
+    'editTag': {
+      AppLang.es: 'Editar tag',
+      AppLang.en: 'Edit tag',
+      AppLang.de: 'Tag bearbeiten',
+    },
+    'tags': {
+      AppLang.es: 'Etiquetas',
+      AppLang.en: 'Tags',
+      AppLang.de: 'Tags',
+    },
   };
 }

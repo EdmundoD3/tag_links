@@ -42,7 +42,7 @@ abstract class TKeys {
   static const pages = TranslatesPages();
   static const ads = TranslatesAds();
   static const auth = TranslatesAuth();
-  static const premium = TanslatesPremium();
+  static const premium = TranslatesPremium();
 
 
   static final Map<String, Map<AppLang, String>> map = {
@@ -56,6 +56,6 @@ abstract class TKeys {
     ...TranslatesPages.translations,
     ...TranslatesAds.translations,
     ...TranslatesAuth.translations,
-    ...TanslatesPremium.translations,
+    ...TranslatesPremium.translations,
   };
 }

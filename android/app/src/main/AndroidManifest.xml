@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <application android:label="tag_links" android:name="${applicationName}" android:icon="@mipmap/launcher_icon">
+    <application android:label="notita" android:name="${applicationName}" android:icon="@mipmap/launcher_icon">
     <!-- ahora usa id de pruebas, cambiar por el normal -->
         <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-9608093026390913~4221493837"/>
         <activity android:name=".MainActivity" android:exported="true" android:launchMode="singleTop" android:taskAffinity="" android:theme="@style/LaunchTheme" android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode" android:hardwareAccelerated="true" android:windowSoftInputMode="adjustResize">
