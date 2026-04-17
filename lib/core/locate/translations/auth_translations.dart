@@ -23,6 +23,7 @@ class TranslatesAuth {
       AppLang.fr: 'Se connecter avec Google',
       AppLang.ru: 'Войти через Google',
       AppLang.ja: 'Googleでログイン',
+      AppLang.zh: '使用 Google 登录',
     },
     'logOut': {
       AppLang.es: 'Cerrar sesión',
@@ -32,6 +33,7 @@ class TranslatesAuth {
       AppLang.fr: 'Se déconnecter',
       AppLang.ru: 'Выйти',
       AppLang.ja: 'ログアウト',
+      AppLang.zh: '退出登录',
     },
     'syncLinks': {
       AppLang.es: 'Sincroniza tus enlaces',
@@ -41,6 +43,7 @@ class TranslatesAuth {
       AppLang.fr: 'Synchronisez vos liens',
       AppLang.ru: 'Синхронизируйте свои ссылки',
       AppLang.ja: 'リンクを同期',
+      AppLang.zh: '同步你的链接',
     },
     'syncWithGoogleDrive': {
       AppLang.es:
@@ -56,6 +59,7 @@ class TranslatesAuth {
       AppLang.ru:
           'Мы будем использовать Google Drive, чтобы ваши заметки были в безопасности и синхронизированы между устройствами.',
       AppLang.ja: 'Google Driveを使用して、メモを安全に保ち、デバイス間で同期します。',
+      AppLang.zh: '我们将使用 Google Drive 来确保你的笔记安全，并在设备之间同步。',
     },
     'continueWithGoogle': {
       AppLang.es: 'Continuar con Google',
@@ -65,6 +69,7 @@ class TranslatesAuth {
       AppLang.fr: 'Continuer avec Google',
       AppLang.ru: 'Продолжить через Google',
       AppLang.ja: 'Googleで続行',
+      AppLang.zh: '使用 Google 继续',
     },
     'authenticationError': {
       AppLang.es: 'Error de autenticación',
@@ -74,6 +79,7 @@ class TranslatesAuth {
       AppLang.fr: "Erreur d'authentification",
       AppLang.ru: 'Ошибка аутентификации',
       AppLang.ja: '認証エラー',
+      AppLang.zh: '身份验证错误',
     },
     'skipNow': {
       AppLang.es: 'Omitir por ahora',
@@ -83,6 +89,7 @@ class TranslatesAuth {
       AppLang.fr: 'Passer pour le moment',
       AppLang.ru: 'Пропустить пока',
       AppLang.ja: '今はスキップ',
+      AppLang.zh: '暂时跳过',
     },
     'sessionExpired': {
       AppLang.es: 'Sesión expirada',
@@ -92,6 +99,7 @@ class TranslatesAuth {
       AppLang.fr: 'Session expirée',
       AppLang.ru: 'Сессия истекла',
       AppLang.ja: 'セッションの有効期限が切れました',
+      AppLang.zh: '会话已过期',
     },
     'reconnectGoogle': {
       AppLang.es:
@@ -107,6 +115,7 @@ class TranslatesAuth {
       AppLang.ru:
           'Соединение с Google Drive было потеряно. Войдите снова, чтобы синхронизировать изменения.',
       AppLang.ja: 'Google Driveとの接続が失われました。再度ログインして変更を同期してください。',
+      AppLang.zh: '你的 Google Drive 连接已断开，请重新登录以同步更改。',
     },
     'confirmLogoutMessage': {
       AppLang.es: '¿Estás seguro de que quieres cerrar sesión?',
@@ -116,6 +125,7 @@ class TranslatesAuth {
       AppLang.fr: 'Êtes-vous sûr de vouloir vous déconnecter ?',
       AppLang.ru: 'Вы уверены, что хотите выйти?',
       AppLang.ja: 'ログアウトしてもよろしいですか？',
+      AppLang.zh: '确定要退出登录吗？',
     },
   };
 }

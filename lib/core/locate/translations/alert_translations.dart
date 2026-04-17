@@ -49,6 +49,7 @@ class TranslatesAlerts {
       AppLang.fr: 'Supprimer la note',
       AppLang.ru: 'Удалить заметку',
       AppLang.ja: 'ノートを削除',
+      AppLang.zh: '删除笔记',
     },
     'alertDeleteNote': {
       AppLang.es: '¿Estás seguro de eliminar la nota?',
@@ -58,6 +59,7 @@ class TranslatesAlerts {
       AppLang.fr: 'Êtes-vous sûr de vouloir supprimer la note ?',
       AppLang.ru: 'Вы уверены, что хотите удалить заметку?',
       AppLang.ja: 'このノートを削除してもよろしいですか？',
+      AppLang.zh: '确定要删除这条笔记吗？',
     },
     'alertDeleteNoteSucces': {
       AppLang.es: 'Nota eliminada',
@@ -67,6 +69,7 @@ class TranslatesAlerts {
       AppLang.fr: 'Note supprimée',
       AppLang.ru: 'Заметка удалена',
       AppLang.ja: 'ノートを削除しました',
+      AppLang.zh: '笔记已删除',
     },
     'alertDeleteNoteError': {
       AppLang.es: 'Error al eliminar',
@@ -76,6 +79,7 @@ class TranslatesAlerts {
       AppLang.fr: 'Erreur lors de la suppression',
       AppLang.ru: 'Ошибка при удалении',
       AppLang.ja: '削除中にエラーが発生しました',
+      AppLang.zh: '删除失败',
     },
     'alertMoveNoteTitle': {
       AppLang.es: 'Cambiar de carpeta',
@@ -85,6 +89,7 @@ class TranslatesAlerts {
       AppLang.fr: 'Changer de dossier',
       AppLang.ru: 'Изменить папку',
       AppLang.ja: 'フォルダを変更',
+      AppLang.zh: '移动到文件夹',
     },
     'alertMoveNote': {
       AppLang.es: '¿Estás seguro de mover la nota?',
@@ -94,6 +99,7 @@ class TranslatesAlerts {
       AppLang.fr: 'Êtes-vous sûr de vouloir déplacer la note ?',
       AppLang.ru: 'Вы уверены, что хотите переместить заметку?',
       AppLang.ja: 'このノートを移動してもよろしいですか？',
+      AppLang.zh: '确定要移动这条笔记吗？',
     },
 
     // Folders
@@ -105,6 +111,7 @@ class TranslatesAlerts {
       AppLang.fr: 'Supprimer le dossier',
       AppLang.ru: 'Удалить папку',
       AppLang.ja: 'フォルダを削除',
+      AppLang.zh: '删除文件夹',
     },
     'alertDeleteFolder': {
       AppLang.es: '¿Estás seguro de eliminar la carpeta?',
@@ -114,6 +121,7 @@ class TranslatesAlerts {
       AppLang.fr: 'Êtes-vous sûr de vouloir supprimer le dossier ?',
       AppLang.ru: 'Вы уверены, что хотите удалить папку?',
       AppLang.ja: 'このフォルダを削除してもよろしいですか？',
+      AppLang.zh: '确定要删除这个文件夹吗？',
     },
     'alertDeleteFolderSucces': {
       AppLang.es: 'Carpeta eliminada',
@@ -123,6 +131,7 @@ class TranslatesAlerts {
       AppLang.fr: 'Dossier supprimé',
       AppLang.ru: 'Папка удалена',
       AppLang.ja: 'フォルダを削除しました',
+      AppLang.zh: '文件夹已删除',
     },
     'alertDeleteFolderError': {
       AppLang.es: 'Error al eliminar',
@@ -132,6 +141,7 @@ class TranslatesAlerts {
       AppLang.fr: 'Erreur lors de la suppression',
       AppLang.ru: 'Ошибка при удалении',
       AppLang.ja: '削除中にエラーが発生しました',
+      AppLang.zh: '删除文件夹失败',
     },
     'alertMoveFolder': {
       AppLang.es: '¿Estás seguro de mover la carpeta?',
@@ -141,6 +151,7 @@ class TranslatesAlerts {
       AppLang.fr: 'Êtes-vous sûr de vouloir déplacer le dossier ?',
       AppLang.ru: 'Вы уверены, что хотите переместить папку?',
       AppLang.ja: 'このフォルダを移動してもよろしいですか？',
+      AppLang.zh: '确定要移动这个文件夹吗？',
     },
     'alertMoveFolderTitle': {
       AppLang.es: 'Cambiar de carpeta',
@@ -150,6 +161,7 @@ class TranslatesAlerts {
       AppLang.fr: 'Changer de dossier',
       AppLang.ru: 'Изменить папку',
       AppLang.ja: 'フォルダを変更',
+      AppLang.zh: '更改文件夹',
     },
     'alertMovePendingFolder': {
       AppLang.es: 'Tienes una carpeta pendiente de mover',
@@ -159,6 +171,7 @@ class TranslatesAlerts {
       AppLang.fr: 'Vous avez un dossier en attente de déplacement',
       AppLang.ru: 'У вас есть папка, ожидающая перемещения',
       AppLang.ja: '移動待ちのフォルダがあります',
+      AppLang.zh: '有一个文件夹待移动',
     },
 
     // Tags
@@ -170,6 +183,7 @@ class TranslatesAlerts {
       AppLang.fr: 'Supprimer le tag',
       AppLang.ru: 'Удалить тег',
       AppLang.ja: 'タグを削除',
+      AppLang.zh: '删除标签',
     },
     'alertDeleteTagPermanent': {
       AppLang.es:
@@ -185,6 +199,7 @@ class TranslatesAlerts {
       AppLang.ru:
           'Вы уверены, что хотите навсегда удалить этот тег? Он будет удалён из всех заметок.',
       AppLang.ja: 'このタグを完全に削除してもよろしいですか？すべてのノートから削除されます。',
+      AppLang.zh: '确定要永久删除此标签吗？它将从所有笔记中移除。',
     },
     'alertDeleteTagSuccess': {
       AppLang.es: 'Etiqueta eliminada para siempre',
@@ -194,6 +209,7 @@ class TranslatesAlerts {
       AppLang.fr: 'Tag supprimé définitivement',
       AppLang.ru: 'Тег удалён навсегда',
       AppLang.ja: 'タグを完全に削除しました',
+      AppLang.zh: '标签已永久删除',
     },
     'alertDeleteTagError': {
       AppLang.es: 'Error al intentar borrar la etiqueta',
@@ -203,6 +219,7 @@ class TranslatesAlerts {
       AppLang.fr: 'Erreur lors de la suppression du tag',
       AppLang.ru: 'Ошибка при удалении тега',
       AppLang.ja: 'タグの削除中にエラーが発生しました',
+      AppLang.zh: '删除标签失败',
     },
 
     // Banners
@@ -214,6 +231,7 @@ class TranslatesAlerts {
       AppLang.fr: 'Vous avez une note en attente d’enregistrement',
       AppLang.ru: 'У вас есть заметка, которую нужно сохранить',
       AppLang.ja: '保存待ちのノートがあります',
+      AppLang.zh: '有一条笔记待保存',
     },
     'bannerNotMove': {
       AppLang.es: 'No mover',
@@ -223,6 +241,7 @@ class TranslatesAlerts {
       AppLang.fr: 'Ne pas déplacer',
       AppLang.ru: 'Не перемещать',
       AppLang.ja: '移動しない',
+      AppLang.zh: '不移动',
     },
     'discardAction': {
       AppLang.es: '¿Estás seguro de descartar la acción?',
@@ -232,6 +251,7 @@ class TranslatesAlerts {
       AppLang.fr: 'Êtes-vous sûr de vouloir ignorer l’action ?',
       AppLang.ru: 'Вы уверены, что хотите отменить действие?',
       AppLang.ja: 'この操作を破棄してもよろしいですか？',
+      AppLang.zh: '确定要放弃此操作吗？',
     },
     'alertDiscard': {
       AppLang.es: 'Descartar cambios',
@@ -241,6 +261,7 @@ class TranslatesAlerts {
       AppLang.fr: 'Ignorer les modifications',
       AppLang.ru: 'Отменить изменения',
       AppLang.ja: '変更を破棄',
+      AppLang.zh: '放弃更改',
     },
     'alertDiscardFormTitle': {
       AppLang.es: 'Falta el título. ¿Quieres descartarla?',
@@ -250,6 +271,7 @@ class TranslatesAlerts {
       AppLang.fr: 'Titre manquant. Voulez-vous l’ignorer ?',
       AppLang.ru: 'Отсутствует заголовок. Отменить?',
       AppLang.ja: 'タイトルがありません。破棄しますか？',
+      AppLang.zh: '缺少标题，要放弃吗？',
     },
   };
 }

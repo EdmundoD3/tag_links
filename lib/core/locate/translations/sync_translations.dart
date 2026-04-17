@@ -22,6 +22,7 @@ class TranslatesSync {
       AppLang.fr: 'État de synchronisation :',
       AppLang.ru: 'Статус синхронизации:',
       AppLang.ja: '同期状態：',
+      AppLang.zh: '同步状态：',
     },
     'lastSync': {
       AppLang.es: 'Última vez: ',
@@ -31,6 +32,7 @@ class TranslatesSync {
       AppLang.fr: 'Dernière synchronisation : ',
       AppLang.ru: 'Последняя синхронизация: ',
       AppLang.ja: '最終同期：',
+      AppLang.zh: '上次同步：',
     },
     'notSynced': {
       AppLang.es: 'No se ha sincronizado',
@@ -40,6 +42,7 @@ class TranslatesSync {
       AppLang.fr: 'Non synchronisé',
       AppLang.ru: 'Не синхронизировано',
       AppLang.ja: '未同期',
+      AppLang.zh: '未同步',
     },
     'syncNow': {
       AppLang.es: 'Sincronizar ahora',
@@ -49,6 +52,7 @@ class TranslatesSync {
       AppLang.fr: 'Synchroniser maintenant',
       AppLang.ru: 'Синхронизировать сейчас',
       AppLang.ja: '今すぐ同期',
+      AppLang.zh: '立即同步',
     },
     'driveSync': {
       AppLang.es: 'Sincronizando con Drive...',
@@ -58,6 +62,7 @@ class TranslatesSync {
       AppLang.fr: 'Synchronisation avec Drive...',
       AppLang.ru: 'Синхронизация с Drive...',
       AppLang.ja: 'Driveと同期中...',
+      AppLang.zh: '正在与 Drive 同步...',
     },
     'errorSync': {
       AppLang.es: 'Error al sincronizar',
@@ -67,6 +72,7 @@ class TranslatesSync {
       AppLang.fr: 'Erreur de synchronisation',
       AppLang.ru: 'Ошибка синхронизации',
       AppLang.ja: '同期エラー',
+      AppLang.zh: '同步错误',
     },
     'loginSync': {
       AppLang.es: 'Inicia sesión para sincronizar',
@@ -76,6 +82,7 @@ class TranslatesSync {
       AppLang.fr: 'Connectez-vous pour synchroniser',
       AppLang.ru: 'Войдите, чтобы синхронизировать',
       AppLang.ja: '同期するにはログインしてください',
+      AppLang.zh: '登录以同步',
     },
     'backUpTitle': {
       AppLang.es: 'Respaldo en la nube',
@@ -85,6 +92,7 @@ class TranslatesSync {
       AppLang.fr: 'Sauvegarde dans le cloud',
       AppLang.ru: 'Резервное копирование в облаке',
       AppLang.ja: 'クラウドバックアップ',
+      AppLang.zh: '云端备份',
     },
     'backUpMessage': {
       AppLang.es:
@@ -100,6 +108,7 @@ class TranslatesSync {
       AppLang.ru:
           'Чтобы ваши заметки были в безопасности и синхронизированы на всех устройствах, необходимо войти в Google Drive.',
       AppLang.ja: 'すべてのデバイスでノートを安全に同期するには、Google Driveにログインする必要があります。',
+      AppLang.zh: '为了在所有设备上安全同步你的笔记，你需要登录 Google Drive。',
     },
   };
 }
