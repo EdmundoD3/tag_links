@@ -27,6 +27,7 @@ class TranslatesActions {
       AppLang.de: 'Speichern',
       AppLang.pt: 'Salvar',
       AppLang.fr: 'Enregistrer',
+      AppLang.ru: 'Сохранить',
     },
     'close': {
       AppLang.es: 'Cerrar',
@@ -34,6 +35,7 @@ class TranslatesActions {
       AppLang.de: 'Schließen',
       AppLang.pt: 'Fechar',
       AppLang.fr: 'Fermer',
+      AppLang.ru: 'Закрыть',
     },
     'edit': {
       AppLang.es: 'Editar',
@@ -41,6 +43,7 @@ class TranslatesActions {
       AppLang.de: 'Bearbeiten',
       AppLang.pt: 'Editar',
       AppLang.fr: 'Modifier',
+      AppLang.ru: 'Редактировать',
     },
     'copyText': {
       AppLang.es: 'Copiar',
@@ -48,6 +51,7 @@ class TranslatesActions {
       AppLang.de: 'Kopieren',
       AppLang.pt: 'Copiar',
       AppLang.fr: 'Copier',
+      AppLang.ru: 'Копировать',
     },
     'copiedText': {
       AppLang.es: 'Texto copiado',
@@ -55,6 +59,7 @@ class TranslatesActions {
       AppLang.de: 'Text kopiert',
       AppLang.pt: 'Texto copiado',
       AppLang.fr: 'Texte copié',
+      AppLang.ru: 'Текст скопирован',
     },
     'delete': {
       AppLang.es: 'Eliminar',
@@ -62,6 +67,7 @@ class TranslatesActions {
       AppLang.de: 'Löschen',
       AppLang.pt: 'Excluir',
       AppLang.fr: 'Supprimer',
+      AppLang.ru: 'Удалить',
     },
     'accept': {
       AppLang.es: 'Aceptar',
@@ -69,6 +75,7 @@ class TranslatesActions {
       AppLang.de: 'Akzeptieren',
       AppLang.pt: 'Aceitar',
       AppLang.fr: 'Accepter',
+      AppLang.ru: 'Принять',
     },
     'cancel': {
       AppLang.es: 'Cancelar',
@@ -76,6 +83,7 @@ class TranslatesActions {
       AppLang.de: 'Abbrechen',
       AppLang.pt: 'Cancelar',
       AppLang.fr: 'Annuler',
+      AppLang.ru: 'Отмена',
     },
     'discard': {
       AppLang.es: 'Descartar',
@@ -83,6 +91,7 @@ class TranslatesActions {
       AppLang.de: 'Verwerfen',
       AppLang.pt: 'Descartar',
       AppLang.fr: 'Ignorer',
+      AppLang.ru: 'Отменить',
     },
     'notNow': {
       AppLang.es: "Ahora no",
@@ -90,6 +99,7 @@ class TranslatesActions {
       AppLang.de: 'Jetzt nicht',
       AppLang.pt: 'Agora não',
       AppLang.fr: 'Pas maintenant',
+      AppLang.ru: 'Не сейчас',
     },
     'store': {
       AppLang.es: 'Almacenar',
@@ -97,6 +107,7 @@ class TranslatesActions {
       AppLang.de: 'Speichern',
       AppLang.pt: 'Armazenar',
       AppLang.fr: 'Stocker',
+      AppLang.ru: 'Сохранить',
     },
     'editAndStore': {
       AppLang.es: 'Editar y almacenar',
@@ -104,6 +115,7 @@ class TranslatesActions {
       AppLang.de: 'Bearbeiten und speichern',
       AppLang.pt: 'Editar e armazenar',
       AppLang.fr: 'Modifier et enregistrer',
+      AppLang.ru: 'Редактировать и сохранить',
     },
     'moveDown': {
       AppLang.es: 'Mover',
@@ -111,6 +123,7 @@ class TranslatesActions {
       AppLang.de: 'Verschieben',
       AppLang.pt: 'Mover',
       AppLang.fr: 'Déplacer',
+      AppLang.ru: 'Переместить',
     },
     'openLink': {
       AppLang.es: 'Abrir enlace',
@@ -118,6 +131,7 @@ class TranslatesActions {
       AppLang.de: 'Link öffnen',
       AppLang.pt: 'Abrir link',
       AppLang.fr: 'Ouvrir le lien',
+      AppLang.ru: 'Открыть ссылку',
     },
     'copyLink': {
       AppLang.es: 'Copiar enlace',
@@ -125,6 +139,7 @@ class TranslatesActions {
       AppLang.de: 'Link kopieren',
       AppLang.pt: 'Copiar link',
       AppLang.fr: 'Copier le lien',
+      AppLang.ru: 'Копировать ссылку',
     },
   };
 }

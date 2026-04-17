@@ -15,6 +15,7 @@ class TranslatesPremium {
       AppLang.de: 'Premium',
       AppLang.pt: 'Premium',
       AppLang.fr: 'Premium',
+      AppLang.ru: 'Премиум',
     },
     'premiumBenefit': {
       AppLang.es: 'Sin anuncios.',
@@ -22,6 +23,7 @@ class TranslatesPremium {
       AppLang.de: 'Keine Werbung.',
       AppLang.pt: 'Sem anúncios.',
       AppLang.fr: 'Sans publicité.',
+      AppLang.ru: 'Без рекламы.',
     },
     'premiumMaybeLater': {
       AppLang.es: 'Quizás más tarde',
@@ -29,6 +31,7 @@ class TranslatesPremium {
       AppLang.de: 'Vielleicht später',
       AppLang.pt: 'Talvez mais tarde',
       AppLang.fr: 'Peut-être plus tard',
+      AppLang.ru: 'Возможно позже',
     },
     'premiumThanks': {
       AppLang.es: '¡Gracias por tu compra! Ya eres Premium.',
@@ -36,6 +39,7 @@ class TranslatesPremium {
       AppLang.de: 'Danke für deinen Kauf! Du bist jetzt Premium.',
       AppLang.pt: 'Obrigado pela sua compra! Agora você é Premium.',
       AppLang.fr: 'Merci pour votre achat ! Vous êtes maintenant Premium.',
+      AppLang.ru: 'Спасибо за покупку! Теперь у вас Премиум.',
     },
   };
 }

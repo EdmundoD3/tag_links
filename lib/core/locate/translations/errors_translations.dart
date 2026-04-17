@@ -13,6 +13,7 @@ class TranslatesErrors {
       AppLang.de: 'Keine App gefunden, um diesen Link zu öffnen',
       AppLang.pt: 'Nenhum aplicativo encontrado para abrir este link',
       AppLang.fr: "Aucune application trouvée pour ouvrir ce lien",
+      AppLang.ru: 'Не найдено приложение для открытия этой ссылки',
     },
     'errorOpenLink': {
       AppLang.es: 'URL no válida o mal formada',
@@ -20,6 +21,7 @@ class TranslatesErrors {
       AppLang.de: 'Ungültige oder fehlerhafte URL',
       AppLang.pt: 'URL inválida ou malformada',
       AppLang.fr: 'URL invalide ou mal formée',
+      AppLang.ru: 'Недействительный или некорректный URL',
     },
   };
 }

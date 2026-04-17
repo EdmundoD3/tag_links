@@ -20,6 +20,7 @@ class TranslatesSync {
       AppLang.de: 'Synchronisierungsstatus:',
       AppLang.pt: 'Estado de sincronização:',
       AppLang.fr: 'État de synchronisation :',
+      AppLang.ru: 'Статус синхронизации:',
     },
     'lastSync': {
       AppLang.es: 'Última vez: ',
@@ -27,6 +28,7 @@ class TranslatesSync {
       AppLang.de: 'Letzte Synchronisierung: ',
       AppLang.pt: 'Última sincronização: ',
       AppLang.fr: 'Dernière synchronisation : ',
+      AppLang.ru: 'Последняя синхронизация: ',
     },
     'notSynced': {
       AppLang.es: 'No se ha sincronizado',
@@ -34,6 +36,7 @@ class TranslatesSync {
       AppLang.de: 'Nicht synchronisiert',
       AppLang.pt: 'Não sincronizado',
       AppLang.fr: 'Non synchronisé',
+      AppLang.ru: 'Не синхронизировано',
     },
     'syncNow': {
       AppLang.es: 'Sincronizar ahora',
@@ -41,6 +44,7 @@ class TranslatesSync {
       AppLang.de: 'Jetzt synchronisieren',
       AppLang.pt: 'Sincronizar agora',
       AppLang.fr: 'Synchroniser maintenant',
+      AppLang.ru: 'Синхронизировать сейчас',
     },
     'driveSync': {
       AppLang.es: 'Sincronizando con Drive...',
@@ -48,6 +52,7 @@ class TranslatesSync {
       AppLang.de: 'Synchronisiere mit Drive...',
       AppLang.pt: 'Sincronizando com o Drive...',
       AppLang.fr: 'Synchronisation avec Drive...',
+      AppLang.ru: 'Синхронизация с Drive...',
     },
     'errorSync': {
       AppLang.es: 'Error al sincronizar',
@@ -55,6 +60,7 @@ class TranslatesSync {
       AppLang.de: 'Fehler bei der Synchronisierung',
       AppLang.pt: 'Erro de sincronização',
       AppLang.fr: 'Erreur de synchronisation',
+      AppLang.ru: 'Ошибка синхронизации',
     },
     'loginSync': {
       AppLang.es: 'Inicia sesión para sincronizar',
@@ -62,6 +68,7 @@ class TranslatesSync {
       AppLang.de: 'Melde dich an, um zu synchronisieren',
       AppLang.pt: 'Faça login para sincronizar',
       AppLang.fr: 'Connectez-vous pour synchroniser',
+      AppLang.ru: 'Войдите, чтобы синхронизировать',
     },
     'backUpTitle': {
       AppLang.es: 'Respaldo en la nube',
@@ -69,6 +76,7 @@ class TranslatesSync {
       AppLang.de: 'Cloud-Sicherung',
       AppLang.pt: 'Backup na nuvem',
       AppLang.fr: 'Sauvegarde dans le cloud',
+      AppLang.ru: 'Резервное копирование в облаке',
     },
     'backUpMessage': {
       AppLang.es:
@@ -81,6 +89,8 @@ class TranslatesSync {
           'Para manter suas notas seguras e sincronizadas em todos os seus dispositivos, você precisa fazer login com o Google Drive.',
       AppLang.fr:
           'Pour garder vos notes sécurisées et synchronisées sur tous vos appareils, vous devez vous connecter à Google Drive.',
+      AppLang.ru:
+          'Чтобы ваши заметки были в безопасности и синхронизированы на всех устройствах, необходимо войти в Google Drive.',
     },
   };
 }
