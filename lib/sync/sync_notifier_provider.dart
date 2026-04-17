@@ -106,11 +106,12 @@ class SyncNotifier extends AsyncNotifier<SyncState> {
     } catch (e) {
       debugPrint("Sync Error: $e");
       if (ref.mounted) {
-        state = AsyncData(
-          state.value!.copyWith(
+        final SyncState newState = state.value?.copyWith(
             status: SyncStatus.error,
             lastError: _mapErrorToHumanMessage(e),
-          ),
+          ) ?? SyncState(status: SyncStatus.error,lastError: _mapErrorToHumanMessage(e));
+        state = AsyncData(
+          newState,
         );
       }
     }
