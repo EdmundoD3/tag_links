@@ -12,12 +12,14 @@ class TranslatesErrors {
       AppLang.en: 'No app found to open this link',
       AppLang.de: 'Keine App gefunden, um diesen Link zu öffnen',
       AppLang.pt: 'Nenhum aplicativo encontrado para abrir este link',
+      AppLang.fr: "Aucune application trouvée pour ouvrir ce lien",
     },
     'errorOpenLink': {
       AppLang.es: 'URL no válida o mal formada',
       AppLang.en: 'Invalid or malformed URL',
       AppLang.de: 'Ungültige oder fehlerhafte URL',
       AppLang.pt: 'URL inválida ou malformada',
+      AppLang.fr: 'URL invalide ou mal formée',
     },
   };
 }

@@ -19,48 +19,56 @@ class TranslatesSync {
       AppLang.en: 'Sync state:',
       AppLang.de: 'Synchronisierungsstatus:',
       AppLang.pt: 'Estado de sincronização:',
+      AppLang.fr: 'État de synchronisation :',
     },
     'lastSync': {
       AppLang.es: 'Última vez: ',
       AppLang.en: 'Last sync: ',
       AppLang.de: 'Letzte Synchronisierung: ',
       AppLang.pt: 'Última sincronização: ',
+      AppLang.fr: 'Dernière synchronisation : ',
     },
     'notSynced': {
       AppLang.es: 'No se ha sincronizado',
       AppLang.en: 'Not synced',
       AppLang.de: 'Nicht synchronisiert',
       AppLang.pt: 'Não sincronizado',
+      AppLang.fr: 'Non synchronisé',
     },
     'syncNow': {
       AppLang.es: 'Sincronizar ahora',
       AppLang.en: 'Sync now',
       AppLang.de: 'Jetzt synchronisieren',
       AppLang.pt: 'Sincronizar agora',
+      AppLang.fr: 'Synchroniser maintenant',
     },
     'driveSync': {
       AppLang.es: 'Sincronizando con Drive...',
       AppLang.en: 'Syncing with Drive...',
       AppLang.de: 'Synchronisiere mit Drive...',
       AppLang.pt: 'Sincronizando com o Drive...',
+      AppLang.fr: 'Synchronisation avec Drive...',
     },
     'errorSync': {
       AppLang.es: 'Error al sincronizar',
       AppLang.en: 'Sync error',
       AppLang.de: 'Fehler bei der Synchronisierung',
       AppLang.pt: 'Erro de sincronização',
+      AppLang.fr: 'Erreur de synchronisation',
     },
     'loginSync': {
       AppLang.es: 'Inicia sesión para sincronizar',
       AppLang.en: 'Login to sync',
       AppLang.de: 'Melde dich an, um zu synchronisieren',
       AppLang.pt: 'Faça login para sincronizar',
+      AppLang.fr: 'Connectez-vous pour synchroniser',
     },
     'backUpTitle': {
       AppLang.es: 'Respaldo en la nube',
       AppLang.en: 'Back up in the cloud',
       AppLang.de: 'Cloud-Sicherung',
       AppLang.pt: 'Backup na nuvem',
+      AppLang.fr: 'Sauvegarde dans le cloud',
     },
     'backUpMessage': {
       AppLang.es:
@@ -71,6 +79,8 @@ class TranslatesSync {
           'Um deine Notizen sicher zu speichern und auf all deinen Geräten zu synchronisieren, musst du dich bei Google Drive anmelden.',
       AppLang.pt:
           'Para manter suas notas seguras e sincronizadas em todos os seus dispositivos, você precisa fazer login com o Google Drive.',
+      AppLang.fr:
+          'Pour garder vos notes sécurisées et synchronisées sur tous vos appareils, vous devez vous connecter à Google Drive.',
     },
   };
 }

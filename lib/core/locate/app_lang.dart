@@ -1,4 +1,4 @@
-enum AppLang { es, en, de, pt}
+enum AppLang { es, en, de, pt, fr}
 
 extension AppLangX on AppLang {
   // 1. El nombre que el usuario ve en la configuración
@@ -12,6 +12,8 @@ extension AppLangX on AppLang {
         return 'Deutsch';
       case AppLang.pt:
         return 'Português';
+      case AppLang.fr:
+        return 'Français';
     }
   }
 
@@ -26,8 +28,11 @@ extension AppLangX on AppLang {
         return 'de';
       case AppLang.pt:
         return 'pt';
+      case AppLang.fr:
+        return 'fr';
     }
   }
+
 
   // 3. Método estático para convertir un código de sistema a tu Enum
   static AppLang fromSystemCode(String code) {

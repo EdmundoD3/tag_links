@@ -15,73 +15,85 @@ class TranslatesAuth {
   final String confirmLogoutMessage = 'confirmLogoutMessage';
 
   static const Map<String, Map<AppLang, String>> translations = {
-  'loginWithGoogle': {
-    AppLang.es: 'Iniciar sesión con Google',
-    AppLang.en: 'Log in with Google',
-    AppLang.de: 'Mit Google anmelden',
-    AppLang.pt: 'Entrar com o Google',
-  },
-  'logOut': {
-    AppLang.es: 'Cerrar sesión',
-    AppLang.en: 'Log out',
-    AppLang.de: 'Abmelden',
-    AppLang.pt: 'Sair',
-  },
-  'syncLinks': {
-    AppLang.es: 'Sincroniza tus enlaces',
-    AppLang.en: 'Sync your links',
-    AppLang.de: 'Synchronisiere deine Links',
-    AppLang.pt: 'Sincronize seus links',
-  },
-  'syncWithGoogleDrive': {
-    AppLang.es:
-        'Utilizaremos Google Drive para mantener tus notas seguras y sincronizadas entre dispositivos.',
-    AppLang.en:
-        'We will use Google Drive to keep your notes secure and synchronized between devices',
-    AppLang.de:
-        'Wir verwenden Google Drive, um deine Notizen sicher zu speichern und zwischen Geräten zu synchronisieren.',
-    AppLang.pt:
-        'Usaremos o Google Drive para manter suas notas seguras e sincronizadas entre dispositivos.',
-  },
-  'continueWithGoogle': {
-    AppLang.es: 'Continuar con Google',
-    AppLang.en: 'Continue with Google',
-    AppLang.de: 'Mit Google fortfahren',
-    AppLang.pt: 'Continuar com o Google',
-  },
-  'authenticationError': {
-    AppLang.es: 'Error de autenticación',
-    AppLang.en: 'Authentication Error',
-    AppLang.de: 'Authentifizierungsfehler',
-    AppLang.pt: 'Erro de autenticação',
-  },
-  'skipNow': {
-    AppLang.es: 'Omitir por ahora',
-    AppLang.en: 'Skip for now',
-    AppLang.de: 'Jetzt überspringen',
-    AppLang.pt: 'Pular por agora',
-  },
-  'sessionExpired': {
-    AppLang.es: 'Sesión expirada',
-    AppLang.en: 'Session expired',
-    AppLang.de: 'Sitzung abgelaufen',
-    AppLang.pt: 'Sessão expirada',
-  },
-  'reconnectGoogle': {
-    AppLang.es:
-        'Tu conexión con Google Drive se ha perdido. Vuelve a iniciar sesión para sincronizar tus cambios.',
-    AppLang.en:
-        'Your Google Drive connection has been lost. Log in again to synchronize your changes.',
-    AppLang.de:
-        'Die Verbindung zu Google Drive wurde unterbrochen. Melde dich erneut an, um deine Änderungen zu synchronisieren.',
-    AppLang.pt:
-        'Sua conexão com o Google Drive foi perdida. Faça login novamente para sincronizar suas alterações.',
-  },
-  'confirmLogoutMessage': {
-    AppLang.es: '¿Estás seguro de que quieres cerrar sesión?',
-    AppLang.en: 'Are you sure you want to log out?',
-    AppLang.de: 'Möchtest du dich wirklich abmelden?',
-    AppLang.pt: 'Tem certeza de que deseja sair?',
-  },
-};
+    'loginWithGoogle': {
+      AppLang.es: 'Iniciar sesión con Google',
+      AppLang.en: 'Log in with Google',
+      AppLang.de: 'Mit Google anmelden',
+      AppLang.pt: 'Entrar com o Google',
+      AppLang.fr: 'Se connecter avec Google',
+    },
+    'logOut': {
+      AppLang.es: 'Cerrar sesión',
+      AppLang.en: 'Log out',
+      AppLang.de: 'Abmelden',
+      AppLang.pt: 'Sair',
+      AppLang.fr: 'Se déconnecter',
+    },
+    'syncLinks': {
+      AppLang.es: 'Sincroniza tus enlaces',
+      AppLang.en: 'Sync your links',
+      AppLang.de: 'Synchronisiere deine Links',
+      AppLang.pt: 'Sincronize seus links',
+      AppLang.fr: 'Synchronisez vos liens',
+    },
+    'syncWithGoogleDrive': {
+      AppLang.es:
+          'Utilizaremos Google Drive para mantener tus notas seguras y sincronizadas entre dispositivos.',
+      AppLang.en:
+          'We will use Google Drive to keep your notes secure and synchronized between devices',
+      AppLang.de:
+          'Wir verwenden Google Drive, um deine Notizen sicher zu speichern und zwischen Geräten zu synchronisieren.',
+      AppLang.pt:
+          'Usaremos o Google Drive para manter suas notas seguras e sincronizadas entre dispositivos.',
+      AppLang.fr:
+          'Nous utiliserons Google Drive pour garder vos notes sécurisées et synchronisées entre vos appareils.',
+    },
+    'continueWithGoogle': {
+      AppLang.es: 'Continuar con Google',
+      AppLang.en: 'Continue with Google',
+      AppLang.de: 'Mit Google fortfahren',
+      AppLang.pt: 'Continuar com o Google',
+      AppLang.fr: 'Continuer avec Google',
+    },
+    'authenticationError': {
+      AppLang.es: 'Error de autenticación',
+      AppLang.en: 'Authentication Error',
+      AppLang.de: 'Authentifizierungsfehler',
+      AppLang.pt: 'Erro de autenticação',
+      AppLang.fr: "Erreur d'authentification",
+    },
+    'skipNow': {
+      AppLang.es: 'Omitir por ahora',
+      AppLang.en: 'Skip for now',
+      AppLang.de: 'Jetzt überspringen',
+      AppLang.pt: 'Pular por agora',
+      AppLang.fr: 'Passer pour le moment',
+    },
+    'sessionExpired': {
+      AppLang.es: 'Sesión expirada',
+      AppLang.en: 'Session expired',
+      AppLang.de: 'Sitzung abgelaufen',
+      AppLang.pt: 'Sessão expirada',
+      AppLang.fr: 'Session expirée',
+    },
+    'reconnectGoogle': {
+      AppLang.es:
+          'Tu conexión con Google Drive se ha perdido. Vuelve a iniciar sesión para sincronizar tus cambios.',
+      AppLang.en:
+          'Your Google Drive connection has been lost. Log in again to synchronize your changes.',
+      AppLang.de:
+          'Die Verbindung zu Google Drive wurde unterbrochen. Melde dich erneut an, um deine Änderungen zu synchronisieren.',
+      AppLang.pt:
+          'Sua conexão com o Google Drive foi perdida. Faça login novamente para sincronizar suas alterações.',
+      AppLang.fr:
+          'Votre connexion à Google Drive a été perdue. Reconnectez-vous pour synchroniser vos modifications.',
+    },
+    'confirmLogoutMessage': {
+      AppLang.es: '¿Estás seguro de que quieres cerrar sesión?',
+      AppLang.en: 'Are you sure you want to log out?',
+      AppLang.de: 'Möchtest du dich wirklich abmelden?',
+      AppLang.pt: 'Tem certeza de que deseja sair?',
+      AppLang.fr: 'Êtes-vous sûr de vouloir vous déconnecter ?',
+    },
+  };
 }
