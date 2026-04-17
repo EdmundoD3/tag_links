@@ -48,6 +48,7 @@ class TranslatesAlerts {
       AppLang.pt: 'Excluir nota',
       AppLang.fr: 'Supprimer la note',
       AppLang.ru: 'Удалить заметку',
+      AppLang.ja: 'ノートを削除',
     },
     'alertDeleteNote': {
       AppLang.es: '¿Estás seguro de eliminar la nota?',
@@ -56,6 +57,7 @@ class TranslatesAlerts {
       AppLang.pt: 'Tem certeza de que deseja excluir a nota?',
       AppLang.fr: 'Êtes-vous sûr de vouloir supprimer la note ?',
       AppLang.ru: 'Вы уверены, что хотите удалить заметку?',
+      AppLang.ja: 'このノートを削除してもよろしいですか？',
     },
     'alertDeleteNoteSucces': {
       AppLang.es: 'Nota eliminada',
@@ -64,6 +66,7 @@ class TranslatesAlerts {
       AppLang.pt: 'Nota excluída',
       AppLang.fr: 'Note supprimée',
       AppLang.ru: 'Заметка удалена',
+      AppLang.ja: 'ノートを削除しました',
     },
     'alertDeleteNoteError': {
       AppLang.es: 'Error al eliminar',
@@ -72,6 +75,7 @@ class TranslatesAlerts {
       AppLang.pt: 'Erro ao excluir a nota',
       AppLang.fr: 'Erreur lors de la suppression',
       AppLang.ru: 'Ошибка при удалении',
+      AppLang.ja: '削除中にエラーが発生しました',
     },
     'alertMoveNoteTitle': {
       AppLang.es: 'Cambiar de carpeta',
@@ -80,6 +84,7 @@ class TranslatesAlerts {
       AppLang.pt: 'Mudar de pasta',
       AppLang.fr: 'Changer de dossier',
       AppLang.ru: 'Изменить папку',
+      AppLang.ja: 'フォルダを変更',
     },
     'alertMoveNote': {
       AppLang.es: '¿Estás seguro de mover la nota?',
@@ -88,6 +93,7 @@ class TranslatesAlerts {
       AppLang.pt: 'Tem certeza de que deseja mover a nota?',
       AppLang.fr: 'Êtes-vous sûr de vouloir déplacer la note ?',
       AppLang.ru: 'Вы уверены, что хотите переместить заметку?',
+      AppLang.ja: 'このノートを移動してもよろしいですか？',
     },
 
     // Folders
@@ -98,6 +104,7 @@ class TranslatesAlerts {
       AppLang.pt: 'Excluir pasta',
       AppLang.fr: 'Supprimer le dossier',
       AppLang.ru: 'Удалить папку',
+      AppLang.ja: 'フォルダを削除',
     },
     'alertDeleteFolder': {
       AppLang.es: '¿Estás seguro de eliminar la carpeta?',
@@ -106,6 +113,7 @@ class TranslatesAlerts {
       AppLang.pt: 'Tem certeza de que deseja excluir a pasta?',
       AppLang.fr: 'Êtes-vous sûr de vouloir supprimer le dossier ?',
       AppLang.ru: 'Вы уверены, что хотите удалить папку?',
+      AppLang.ja: 'このフォルダを削除してもよろしいですか？',
     },
     'alertDeleteFolderSucces': {
       AppLang.es: 'Carpeta eliminada',
@@ -114,6 +122,7 @@ class TranslatesAlerts {
       AppLang.pt: 'Pasta excluída',
       AppLang.fr: 'Dossier supprimé',
       AppLang.ru: 'Папка удалена',
+      AppLang.ja: 'フォルダを削除しました',
     },
     'alertDeleteFolderError': {
       AppLang.es: 'Error al eliminar',
@@ -122,6 +131,7 @@ class TranslatesAlerts {
       AppLang.pt: 'Erro ao excluir a pasta',
       AppLang.fr: 'Erreur lors de la suppression',
       AppLang.ru: 'Ошибка при удалении',
+      AppLang.ja: '削除中にエラーが発生しました',
     },
     'alertMoveFolder': {
       AppLang.es: '¿Estás seguro de mover la carpeta?',
@@ -130,6 +140,7 @@ class TranslatesAlerts {
       AppLang.pt: 'Tem certeza de que deseja mover a pasta?',
       AppLang.fr: 'Êtes-vous sûr de vouloir déplacer le dossier ?',
       AppLang.ru: 'Вы уверены, что хотите переместить папку?',
+      AppLang.ja: 'このフォルダを移動してもよろしいですか？',
     },
     'alertMoveFolderTitle': {
       AppLang.es: 'Cambiar de carpeta',
@@ -138,6 +149,7 @@ class TranslatesAlerts {
       AppLang.pt: 'Mudar de pasta',
       AppLang.fr: 'Changer de dossier',
       AppLang.ru: 'Изменить папку',
+      AppLang.ja: 'フォルダを変更',
     },
     'alertMovePendingFolder': {
       AppLang.es: 'Tienes una carpeta pendiente de mover',
@@ -146,6 +158,7 @@ class TranslatesAlerts {
       AppLang.pt: 'Você tem uma pasta pendente para mover',
       AppLang.fr: 'Vous avez un dossier en attente de déplacement',
       AppLang.ru: 'У вас есть папка, ожидающая перемещения',
+      AppLang.ja: '移動待ちのフォルダがあります',
     },
 
     // Tags
@@ -156,6 +169,7 @@ class TranslatesAlerts {
       AppLang.pt: 'Excluir etiqueta',
       AppLang.fr: 'Supprimer le tag',
       AppLang.ru: 'Удалить тег',
+      AppLang.ja: 'タグを削除',
     },
     'alertDeleteTagPermanent': {
       AppLang.es:
@@ -170,6 +184,7 @@ class TranslatesAlerts {
           'Êtes-vous sûr de vouloir supprimer définitivement ce tag ? Il sera retiré de toutes les notes.',
       AppLang.ru:
           'Вы уверены, что хотите навсегда удалить этот тег? Он будет удалён из всех заметок.',
+      AppLang.ja: 'このタグを完全に削除してもよろしいですか？すべてのノートから削除されます。',
     },
     'alertDeleteTagSuccess': {
       AppLang.es: 'Etiqueta eliminada para siempre',
@@ -178,6 +193,7 @@ class TranslatesAlerts {
       AppLang.pt: 'Etiqueta excluída permanentemente',
       AppLang.fr: 'Tag supprimé définitivement',
       AppLang.ru: 'Тег удалён навсегда',
+      AppLang.ja: 'タグを完全に削除しました',
     },
     'alertDeleteTagError': {
       AppLang.es: 'Error al intentar borrar la etiqueta',
@@ -186,6 +202,7 @@ class TranslatesAlerts {
       AppLang.pt: 'Erro ao excluir a etiqueta',
       AppLang.fr: 'Erreur lors de la suppression du tag',
       AppLang.ru: 'Ошибка при удалении тега',
+      AppLang.ja: 'タグの削除中にエラーが発生しました',
     },
 
     // Banners
@@ -196,6 +213,7 @@ class TranslatesAlerts {
       AppLang.pt: 'Você tem uma nota pendente para armazenar',
       AppLang.fr: 'Vous avez une note en attente d’enregistrement',
       AppLang.ru: 'У вас есть заметка, которую нужно сохранить',
+      AppLang.ja: '保存待ちのノートがあります',
     },
     'bannerNotMove': {
       AppLang.es: 'No mover',
@@ -204,6 +222,7 @@ class TranslatesAlerts {
       AppLang.pt: 'Não mover',
       AppLang.fr: 'Ne pas déplacer',
       AppLang.ru: 'Не перемещать',
+      AppLang.ja: '移動しない',
     },
     'discardAction': {
       AppLang.es: '¿Estás seguro de descartar la acción?',
@@ -212,46 +231,8 @@ class TranslatesAlerts {
       AppLang.pt: 'Tem certeza de que deseja descartar a ação?',
       AppLang.fr: 'Êtes-vous sûr de vouloir ignorer l’action ?',
       AppLang.ru: 'Вы уверены, что хотите отменить действие?',
+      AppLang.ja: 'この操作を破棄してもよろしいですか？',
     },
-    'alertMoveFolderErrorIsDeepFolder': {
-      AppLang.es: 'No puedes almacenar carpetas aquí, elije otra carpeta',
-      AppLang.en: 'You can\'t store folders here, choose another folder',
-      AppLang.de:
-          'Hier können keine Ordner gespeichert werden, wähle einen anderen Ordner',
-      AppLang.pt: 'Você não pode armazenar pastas aqui, escolha outra pasta',
-      AppLang.fr:
-          'Vous ne pouvez pas stocker de dossiers ici, choisissez un autre dossier',
-      AppLang.ru: 'Вы не можете сохранять папки здесь, выберите другую папку',
-    },
-    'alertMoveFolderErrorIsSameFolder': {
-      AppLang.es: 'No puedes mover una carpeta a sí misma',
-      AppLang.en: 'You can\'t move a folder to itself',
-      AppLang.de: 'Ein Ordner kann nicht in sich selbst verschoben werden',
-      AppLang.pt: 'Você não pode mover uma pasta para ela mesma',
-      AppLang.fr: 'Vous ne pouvez pas déplacer un dossier dans lui-même',
-      AppLang.ru: 'Нельзя переместить папку в саму себя',
-    },
-    'limitReached': {
-      AppLang.es: 'Límite de niveles',
-      AppLang.en: 'Limit reached',
-      AppLang.de: 'Limit erreicht',
-      AppLang.pt: 'Limite atingido',
-      AppLang.fr: 'Limite atteint',
-      AppLang.ru: 'Достигнут лимит',
-    },
-    'flattenMessage': {
-      AppLang.es: 'Esta carpeta tiene hijos. Se moverán a la raíz.',
-      AppLang.en: 'This folder has children. They will be moved to the root.',
-      AppLang.de:
-          'Dieser Ordner hat Unterordner. Sie werden ins Hauptverzeichnis verschoben.',
-      AppLang.pt: 'Esta pasta tem subpastas. Elas serão movidas para a raiz.',
-      AppLang.fr:
-          'Ce dossier contient des sous-dossiers. Ils seront déplacés à la racine.',
-      AppLang.ru:
-          'В этой папке есть вложенные элементы. Они будут перемещены в корень.',
-    },
-
-    // Form
     'alertDiscard': {
       AppLang.es: 'Descartar cambios',
       AppLang.en: 'Discard changes',
@@ -259,6 +240,7 @@ class TranslatesAlerts {
       AppLang.pt: 'Descartar alterações',
       AppLang.fr: 'Ignorer les modifications',
       AppLang.ru: 'Отменить изменения',
+      AppLang.ja: '変更を破棄',
     },
     'alertDiscardFormTitle': {
       AppLang.es: 'Falta el título. ¿Quieres descartarla?',
@@ -267,6 +249,7 @@ class TranslatesAlerts {
       AppLang.pt: 'Falta o título. Deseja descartá-la?',
       AppLang.fr: 'Titre manquant. Voulez-vous l’ignorer ?',
       AppLang.ru: 'Отсутствует заголовок. Отменить?',
+      AppLang.ja: 'タイトルがありません。破棄しますか？',
     },
   };
 }

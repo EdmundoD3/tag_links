@@ -25,6 +25,7 @@ class TranslatesPages {
       AppLang.pt: 'Tag Links',
       AppLang.fr: 'Tag Links',
       AppLang.ru: 'Tag Links',
+      AppLang.ja: 'Tag Links',
     },
 
     'pendingNotesTitle': {
@@ -34,6 +35,7 @@ class TranslatesPages {
       AppLang.pt: 'Escolha uma pasta onde armazenar a nota',
       AppLang.fr: 'Choisissez un dossier où enregistrer la note',
       AppLang.ru: 'Выберите папку для сохранения заметки',
+      AppLang.ja: 'ノートを保存するフォルダを選択してください',
     },
     'pendingNotesConfirmTitle': {
       AppLang.es: 'No almacenar la nota',
@@ -42,6 +44,7 @@ class TranslatesPages {
       AppLang.pt: 'Não armazenar a nota',
       AppLang.fr: 'Ne pas enregistrer la note',
       AppLang.ru: 'Не сохранять заметку',
+      AppLang.ja: 'ノートを保存しない',
     },
     'pendingNotesConfirmMessage': {
       AppLang.es: '¿Estás seguro de descartar la nota?',
@@ -50,6 +53,7 @@ class TranslatesPages {
       AppLang.pt: 'Tem certeza de que deseja descartar a nota?',
       AppLang.fr: 'Êtes-vous sûr de vouloir ignorer la note ?',
       AppLang.ru: 'Вы уверены, что хотите удалить заметку?',
+      AppLang.ja: 'このノートを破棄してもよろしいですか？',
     },
 
     'settingsTitle': {
@@ -59,6 +63,7 @@ class TranslatesPages {
       AppLang.pt: 'Configurações',
       AppLang.fr: 'Paramètres',
       AppLang.ru: 'Настройки',
+      AppLang.ja: '設定',
     },
     'settingsTheme': {
       AppLang.es: 'Tema',
@@ -67,6 +72,7 @@ class TranslatesPages {
       AppLang.pt: 'Tema',
       AppLang.fr: 'Thème',
       AppLang.ru: 'Тема',
+      AppLang.ja: 'テーマ',
     },
     'settingsLanguage': {
       AppLang.es: 'Idioma',
@@ -75,6 +81,7 @@ class TranslatesPages {
       AppLang.pt: 'Idioma',
       AppLang.fr: 'Langue',
       AppLang.ru: 'Язык',
+      AppLang.ja: '言語',
     },
   };
 }

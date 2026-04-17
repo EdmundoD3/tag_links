@@ -36,6 +36,7 @@ class TranslatesAds {
       AppLang.pt: 'Obrigado!',
       AppLang.fr: 'Merci !',
       AppLang.ru: 'Спасибо!',
+      AppLang.ja: 'ありがとうございます！',
     },
     'errorForRewardedAd': {
       AppLang.es: 'Error al mostrar el anuncio, inténtalo de nuevo más tarde.',
@@ -46,6 +47,7 @@ class TranslatesAds {
       AppLang.fr:
           "Erreur lors de l'affichage de la publicité, réessayez plus tard.",
       AppLang.ru: 'Ошибка при показе рекламы. Попробуйте позже.',
+      AppLang.ja: '広告の表示中にエラーが発生しました。後でもう一度お試しください。',
     },
     'modalDisableAdsTitle': {
       AppLang.es: '¿Quieres quitar la publicidad?',
@@ -54,6 +56,7 @@ class TranslatesAds {
       AppLang.pt: 'Quer remover os anúncios?',
       AppLang.fr: 'Voulez-vous supprimer les publicités ?',
       AppLang.ru: 'Хотите убрать рекламу?',
+      AppLang.ja: '広告を削除しますか？',
     },
     'modalDisableAdsSubtitle': {
       AppLang.es:
@@ -68,6 +71,7 @@ class TranslatesAds {
           'Vous pouvez supprimer les publicités en regardant une vidéo ou en soutenant le projet.',
       AppLang.ru:
           'Вы можете убрать рекламу, посмотрев видео или поддержав проект.',
+      AppLang.ja: '短い動画を視聴するか、プロジェクトをサポートすることで広告を削除できます。',
     },
     'removeAds24h': {
       AppLang.es: 'Quitar anuncios por 24h',
@@ -76,6 +80,7 @@ class TranslatesAds {
       AppLang.pt: 'Remover anúncios por 24h',
       AppLang.fr: 'Supprimer les publicités pendant 24 h',
       AppLang.ru: 'Убрать рекламу на 24 часа',
+      AppLang.ja: '24時間広告を削除',
     },
     'maybeLater': {
       AppLang.es: 'Tal vez luego',
@@ -84,6 +89,7 @@ class TranslatesAds {
       AppLang.pt: 'Talvez depois',
       AppLang.fr: 'Peut-être plus tard',
       AppLang.ru: 'Возможно позже',
+      AppLang.ja: '後で',
     },
     'supportProject': {
       AppLang.es: '¿Te gusta la app? \n Compártela o apóyanos',
@@ -92,6 +98,7 @@ class TranslatesAds {
       AppLang.pt: 'Gostando do app?\nCompartilhe ou nos apoie',
       AppLang.fr: "Vous aimez l'application ?\nPartagez-la ou soutenez-nous",
       AppLang.ru: 'Нравится приложение?\nПоделитесь им или поддержите нас',
+      AppLang.ja: 'アプリを気に入っていますか？\n共有するかサポートしてください',
     },
     'viewLargeAd': {
       AppLang.es: 'Ver un anuncio grande',
@@ -100,6 +107,7 @@ class TranslatesAds {
       AppLang.pt: 'Ver um anúncio grande',
       AppLang.fr: 'Voir une grande publicité',
       AppLang.ru: 'Посмотреть большое объявление',
+      AppLang.ja: '大きな広告を見る',
     },
     'disableAdsForOneDay': {
       AppLang.es: 'Se desactivará por un día la publicidad',
@@ -108,6 +116,7 @@ class TranslatesAds {
       AppLang.pt: 'Os anúncios serão desativados por um dia',
       AppLang.fr: 'Les publicités seront désactivées pendant une journée',
       AppLang.ru: 'Реклама будет отключена на один день',
+      AppLang.ja: '広告は1日間無効になります',
     },
     'thanksForUsingApp': {
       AppLang.es: '¡Gracias por usar la App!',
@@ -116,6 +125,7 @@ class TranslatesAds {
       AppLang.pt: 'Obrigado por usar o app!',
       AppLang.fr: "Merci d'utiliser l'application !",
       AppLang.ru: 'Спасибо за использование приложения!',
+      AppLang.ja: 'アプリをご利用いただきありがとうございます！',
     },
     'buyMeCoffee': {
       AppLang.es: 'Invítame un café',
@@ -124,6 +134,7 @@ class TranslatesAds {
       AppLang.pt: 'Me pague um café',
       AppLang.fr: 'Offrez-moi un café',
       AppLang.ru: 'Купите мне кофе',
+      AppLang.ja: 'コーヒーをおごってください',
     },
     'buyMeCoffeeDescription': {
       AppLang.es:
@@ -138,6 +149,7 @@ class TranslatesAds {
           "Si vous aimez l'application, offrez-moi un café pour soutenir le projet.",
       AppLang.ru:
           'Если вам нравится приложение, купите мне кофе, чтобы поддержать проект.',
+      AppLang.ja: 'アプリを気に入っていただけたら、プロジェクトを支援するためにコーヒーをご馳走してください。',
     },
   };
 }

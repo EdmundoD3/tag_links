@@ -27,6 +27,7 @@ class TranslatesForms {
       AppLang.pt: 'Nome da pasta',
       AppLang.fr: 'Nom du dossier',
       AppLang.ru: 'Название папки',
+      AppLang.ja: 'フォルダ名',
     },
     'formFolderTitleRequired': {
       AppLang.es: 'El título es obligatorio',
@@ -35,6 +36,7 @@ class TranslatesForms {
       AppLang.pt: 'O título é obrigatório',
       AppLang.fr: 'Le titre est obligatoire',
       AppLang.ru: 'Название обязательно',
+      AppLang.ja: 'タイトルは必須です',
     },
     'formFolderDescription': {
       AppLang.es: 'Descripción',
@@ -43,6 +45,7 @@ class TranslatesForms {
       AppLang.pt: 'Descrição',
       AppLang.fr: 'Description',
       AppLang.ru: 'Описание',
+      AppLang.ja: '説明',
     },
     'moveToFolder': {
       AppLang.es: 'Mover',
@@ -51,6 +54,7 @@ class TranslatesForms {
       AppLang.pt: 'Mover',
       AppLang.fr: 'Déplacer',
       AppLang.ru: 'Переместить',
+      AppLang.ja: '移動',
     },
     'newFolder': {
       AppLang.es: 'Nueva carpeta',
@@ -59,6 +63,7 @@ class TranslatesForms {
       AppLang.pt: 'Nova pasta',
       AppLang.fr: 'Nouveau dossier',
       AppLang.ru: 'Новая папка',
+      AppLang.ja: '新しいフォルダ',
     },
     'editFolder': {
       AppLang.es: 'Editar carpeta',
@@ -67,6 +72,7 @@ class TranslatesForms {
       AppLang.pt: 'Editar pasta',
       AppLang.fr: 'Modifier le dossier',
       AppLang.ru: 'Редактировать папку',
+      AppLang.ja: 'フォルダを編集',
     },
 
     // Note Form
@@ -77,6 +83,7 @@ class TranslatesForms {
       AppLang.pt: 'Nova nota',
       AppLang.fr: 'Nouvelle note',
       AppLang.ru: 'Новая заметка',
+      AppLang.ja: '新しいノート',
     },
     'fastNote': {
       AppLang.es: 'Nota rápida',
@@ -85,6 +92,7 @@ class TranslatesForms {
       AppLang.pt: 'Nota rápida',
       AppLang.fr: 'Note rapide',
       AppLang.ru: 'Быстрая заметка',
+      AppLang.ja: 'クイックノート',
     },
     'hiddenFastNote': {
       AppLang.es: 'Ocultar',
@@ -93,6 +101,7 @@ class TranslatesForms {
       AppLang.pt: 'Ocultar',
       AppLang.fr: 'Masquer',
       AppLang.ru: 'Скрыть',
+      AppLang.ja: '非表示',
     },
     'content': {
       AppLang.es: 'Contenido',
@@ -101,6 +110,7 @@ class TranslatesForms {
       AppLang.pt: 'Conteúdo',
       AppLang.fr: 'Contenu',
       AppLang.ru: 'Содержимое',
+      AppLang.ja: '内容',
     },
     'title': {
       AppLang.es: 'Título',
@@ -109,6 +119,7 @@ class TranslatesForms {
       AppLang.pt: 'Título',
       AppLang.fr: 'Titre',
       AppLang.ru: 'Заголовок',
+      AppLang.ja: 'タイトル',
     },
   };
 }

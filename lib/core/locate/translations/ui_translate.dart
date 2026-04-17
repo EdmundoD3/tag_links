@@ -29,6 +29,7 @@ class TranslatesUI {
       AppLang.pt: 'Buscar...',
       AppLang.fr: 'Rechercher...',
       AppLang.ru: 'Поиск...',
+      AppLang.ja: '検索...',
     },
     'noFolders': {
       AppLang.es: 'No hay carpetas',
@@ -37,6 +38,7 @@ class TranslatesUI {
       AppLang.pt: 'Nenhuma pasta',
       AppLang.fr: 'Aucun dossier',
       AppLang.ru: 'Нет папок',
+      AppLang.ja: 'フォルダがありません',
     },
     'emptyNotes': {
       AppLang.es: 'No hay notas',
@@ -45,6 +47,7 @@ class TranslatesUI {
       AppLang.pt: 'Nenhuma nota',
       AppLang.fr: 'Aucune note',
       AppLang.ru: 'Нет заметок',
+      AppLang.ja: 'ノートがありません',
     },
     'goToFolder': {
       AppLang.es: 'Ir a la carpeta',
@@ -53,6 +56,7 @@ class TranslatesUI {
       AppLang.pt: 'Ir para a pasta',
       AppLang.fr: 'Aller au dossier',
       AppLang.ru: 'Перейти в папку',
+      AppLang.ja: 'フォルダへ移動',
     },
     'markAsFavorite': {
       AppLang.es: 'Marcar como favorito',
@@ -61,6 +65,7 @@ class TranslatesUI {
       AppLang.pt: 'Marcar como favorito',
       AppLang.fr: 'Marquer comme favori',
       AppLang.ru: 'Добавить в избранное',
+      AppLang.ja: 'お気に入りに追加',
     },
     'switchFolder': {
       AppLang.es: 'Carpetas',
@@ -69,6 +74,7 @@ class TranslatesUI {
       AppLang.pt: 'Pastas',
       AppLang.fr: 'Dossiers',
       AppLang.ru: 'Папки',
+      AppLang.ja: 'フォルダ',
     },
     'switchNote': {
       AppLang.es: 'Notas',
@@ -77,6 +83,7 @@ class TranslatesUI {
       AppLang.pt: 'Notas',
       AppLang.fr: 'Notes',
       AppLang.ru: 'Заметки',
+      AppLang.ja: 'ノート',
     },
     'fabAddNote': {
       AppLang.es: 'Agregar nota',
@@ -85,6 +92,7 @@ class TranslatesUI {
       AppLang.pt: 'Adicionar nota',
       AppLang.fr: 'Ajouter une note',
       AppLang.ru: 'Добавить заметку',
+      AppLang.ja: 'ノートを追加',
     },
     'fabAddFolder': {
       AppLang.es: 'Agregar carpeta',
@@ -93,6 +101,7 @@ class TranslatesUI {
       AppLang.pt: 'Adicionar pasta',
       AppLang.fr: 'Ajouter un dossier',
       AppLang.ru: 'Добавить папку',
+      AppLang.ja: 'フォルダを追加',
     },
     'createFolder': {
       AppLang.es: 'Crear carpeta',
@@ -101,6 +110,7 @@ class TranslatesUI {
       AppLang.pt: 'Criar pasta',
       AppLang.fr: 'Créer un dossier',
       AppLang.ru: 'Создать папку',
+      AppLang.ja: 'フォルダ作成',
     },
     'readMore': {
       AppLang.es: 'ver más...',
@@ -109,6 +119,7 @@ class TranslatesUI {
       AppLang.pt: 'ver mais...',
       AppLang.fr: 'voir plus...',
       AppLang.ru: 'показать больше...',
+      AppLang.ja: 'もっと見る...',
     },
     'readLess': {
       AppLang.es: 'ver menos...',
@@ -117,6 +128,7 @@ class TranslatesUI {
       AppLang.pt: 'ver menos...',
       AppLang.fr: 'voir moins...',
       AppLang.ru: 'показать меньше...',
+      AppLang.ja: '閉じる...',
     },
     'noTagsFound': {
       AppLang.es: 'No se encontraron etiquetas',
@@ -125,6 +137,7 @@ class TranslatesUI {
       AppLang.pt: 'Nenhuma tag encontrada',
       AppLang.fr: 'Aucun tag trouvé',
       AppLang.ru: 'Теги не найдены',
+      AppLang.ja: 'タグが見つかりません',
     },
     'viewAll': {
       AppLang.es: 'Ver todo',
@@ -133,6 +146,7 @@ class TranslatesUI {
       AppLang.pt: 'Ver tudo',
       AppLang.fr: 'Voir tout',
       AppLang.ru: 'Показать всё',
+      AppLang.ja: 'すべて表示',
     },
     'viewOnlyFavorites': {
       AppLang.es: 'Ver solo favoritos',
@@ -141,6 +155,7 @@ class TranslatesUI {
       AppLang.pt: 'Ver apenas favoritos',
       AppLang.fr: 'Voir uniquement les favoris',
       AppLang.ru: 'Показать только избранное',
+      AppLang.ja: 'お気に入りのみ表示',
     },
   };
 }

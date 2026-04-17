@@ -19,6 +19,7 @@ class TranslatesTags {
       AppLang.pt: 'Tags',
       AppLang.fr: 'Tags',
       AppLang.ru: 'Теги',
+      AppLang.ja: 'タグ',
     },
     'tagName': {
       AppLang.es: 'Nombre del tag',
@@ -27,6 +28,7 @@ class TranslatesTags {
       AppLang.pt: 'Nome da tag',
       AppLang.fr: 'Nom du tag',
       AppLang.ru: 'Название тега',
+      AppLang.ja: 'タグ名',
     },
     'createTag': {
       AppLang.es: 'Nuevo tag',
@@ -35,6 +37,7 @@ class TranslatesTags {
       AppLang.pt: 'Nova tag',
       AppLang.fr: 'Nouveau tag',
       AppLang.ru: 'Новый тег',
+      AppLang.ja: '新しいタグ',
     },
     'deleteTag': {
       AppLang.es: 'Eliminar tag',
@@ -43,6 +46,7 @@ class TranslatesTags {
       AppLang.pt: 'Excluir tag',
       AppLang.fr: 'Supprimer le tag',
       AppLang.ru: 'Удалить тег',
+      AppLang.ja: 'タグを削除',
     },
     'editTag': {
       AppLang.es: 'Editar tag',
@@ -51,6 +55,7 @@ class TranslatesTags {
       AppLang.pt: 'Editar tag',
       AppLang.fr: 'Modifier le tag',
       AppLang.ru: 'Редактировать тег',
+      AppLang.ja: 'タグを編集',
     },
     'tags': {
       AppLang.es: 'Etiquetas',
@@ -59,6 +64,7 @@ class TranslatesTags {
       AppLang.pt: 'Tags',
       AppLang.fr: 'Tags',
       AppLang.ru: 'Теги',
+      AppLang.ja: 'タグ',
     },
   };
 }

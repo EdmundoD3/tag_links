@@ -28,6 +28,7 @@ class TranslatesActions {
       AppLang.pt: 'Salvar',
       AppLang.fr: 'Enregistrer',
       AppLang.ru: 'Сохранить',
+      AppLang.ja: '保存',
     },
     'close': {
       AppLang.es: 'Cerrar',
@@ -36,6 +37,7 @@ class TranslatesActions {
       AppLang.pt: 'Fechar',
       AppLang.fr: 'Fermer',
       AppLang.ru: 'Закрыть',
+      AppLang.ja: '閉じる',
     },
     'edit': {
       AppLang.es: 'Editar',
@@ -44,6 +46,7 @@ class TranslatesActions {
       AppLang.pt: 'Editar',
       AppLang.fr: 'Modifier',
       AppLang.ru: 'Редактировать',
+      AppLang.ja: '編集',
     },
     'copyText': {
       AppLang.es: 'Copiar',
@@ -52,6 +55,7 @@ class TranslatesActions {
       AppLang.pt: 'Copiar',
       AppLang.fr: 'Copier',
       AppLang.ru: 'Копировать',
+      AppLang.ja: 'コピー',
     },
     'copiedText': {
       AppLang.es: 'Texto copiado',
@@ -60,6 +64,7 @@ class TranslatesActions {
       AppLang.pt: 'Texto copiado',
       AppLang.fr: 'Texte copié',
       AppLang.ru: 'Текст скопирован',
+      AppLang.ja: 'コピーしました',
     },
     'delete': {
       AppLang.es: 'Eliminar',
@@ -68,6 +73,7 @@ class TranslatesActions {
       AppLang.pt: 'Excluir',
       AppLang.fr: 'Supprimer',
       AppLang.ru: 'Удалить',
+      AppLang.ja: '削除',
     },
     'accept': {
       AppLang.es: 'Aceptar',
@@ -76,6 +82,7 @@ class TranslatesActions {
       AppLang.pt: 'Aceitar',
       AppLang.fr: 'Accepter',
       AppLang.ru: 'Принять',
+      AppLang.ja: '同意',
     },
     'cancel': {
       AppLang.es: 'Cancelar',
@@ -84,6 +91,7 @@ class TranslatesActions {
       AppLang.pt: 'Cancelar',
       AppLang.fr: 'Annuler',
       AppLang.ru: 'Отмена',
+      AppLang.ja: 'キャンセル',
     },
     'discard': {
       AppLang.es: 'Descartar',
@@ -92,6 +100,7 @@ class TranslatesActions {
       AppLang.pt: 'Descartar',
       AppLang.fr: 'Ignorer',
       AppLang.ru: 'Отменить',
+      AppLang.ja: '破棄',
     },
     'notNow': {
       AppLang.es: "Ahora no",
@@ -100,6 +109,7 @@ class TranslatesActions {
       AppLang.pt: 'Agora não',
       AppLang.fr: 'Pas maintenant',
       AppLang.ru: 'Не сейчас',
+      AppLang.ja: '今はしない',
     },
     'store': {
       AppLang.es: 'Almacenar',
@@ -108,6 +118,7 @@ class TranslatesActions {
       AppLang.pt: 'Armazenar',
       AppLang.fr: 'Stocker',
       AppLang.ru: 'Сохранить',
+      AppLang.ja: '保存',
     },
     'editAndStore': {
       AppLang.es: 'Editar y almacenar',
@@ -116,6 +127,7 @@ class TranslatesActions {
       AppLang.pt: 'Editar e armazenar',
       AppLang.fr: 'Modifier et enregistrer',
       AppLang.ru: 'Редактировать и сохранить',
+      AppLang.ja: '編集して保存',
     },
     'moveDown': {
       AppLang.es: 'Mover',
@@ -124,6 +136,7 @@ class TranslatesActions {
       AppLang.pt: 'Mover',
       AppLang.fr: 'Déplacer',
       AppLang.ru: 'Переместить',
+      AppLang.ja: '移動',
     },
     'openLink': {
       AppLang.es: 'Abrir enlace',
@@ -132,6 +145,7 @@ class TranslatesActions {
       AppLang.pt: 'Abrir link',
       AppLang.fr: 'Ouvrir le lien',
       AppLang.ru: 'Открыть ссылку',
+      AppLang.ja: 'リンクを開く',
     },
     'copyLink': {
       AppLang.es: 'Copiar enlace',
@@ -140,6 +154,7 @@ class TranslatesActions {
       AppLang.pt: 'Copiar link',
       AppLang.fr: 'Copier le lien',
       AppLang.ru: 'Копировать ссылку',
+      AppLang.ja: 'リンクをコピー',
     },
   };
 }
