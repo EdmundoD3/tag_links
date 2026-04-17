@@ -1,4 +1,4 @@
-enum AppLang { es, en, de }
+enum AppLang { es, en, de, pt}
 
 extension AppLangX on AppLang {
   // 1. El nombre que el usuario ve en la configuración
@@ -10,6 +10,8 @@ extension AppLangX on AppLang {
         return 'English';
       case AppLang.de:
         return 'Deutsch';
+      case AppLang.pt:
+        return 'Português';
     }
   }
 
@@ -22,6 +24,8 @@ extension AppLangX on AppLang {
         return 'en';
       case AppLang.de:
         return 'de';
+      case AppLang.pt:
+        return 'pt';
     }
   }
 
