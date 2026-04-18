@@ -187,7 +187,7 @@ class LocalSyncQueueDao {
     required TypeQueue tableType,
   }) async {
     final String tName = tableType.tableName;
-    final int limit = LocalSyncConfig.limit;
+    final int limit = LocalSyncConfig.getLimit(tableType);
 
     final List<Map<String, dynamic>> res = await executor.rawQuery(
       '''

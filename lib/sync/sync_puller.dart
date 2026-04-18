@@ -16,6 +16,7 @@ import 'package:tag_links/sync/models/local_sync_queue.dart';
 import 'package:tag_links/sync/models/notes_file.dart';
 import 'package:tag_links/sync/models/pull_result.dart';
 import 'package:tag_links/sync/models/tags_file.dart';
+import 'package:tag_links/utils/cortesy_delay.dart';
 
 /// Se encarga exclusivamente de transformar lo que hay en Drive hacia SQLite.
 class SyncPuller {
@@ -76,9 +77,13 @@ class SyncPuller {
     List<String> deleteTagsIds = [];
     bool hadError = false;
 
+    final  pacer = SyncPacer();
+
     for (var file in porEliminar) {
       try {
         if (file.driveFileId == null) continue;
+        // PAUSA DE CORTESÍA ESTRATÉGICA
+        await pacer.step(porEliminar.length);
 
         final List<DeleteFile> remoteFiles = await _driveDataService
             .downloadArray<DeleteFile>(
@@ -160,6 +165,7 @@ class SyncPuller {
       {'items': remote.folders, 'type': TypeQueue.folders},
       {'items': remote.notes, 'type': TypeQueue.notes},
     ];
+    final  pacer = SyncPacer();
 
     for (var cat in allCategories) {
       final type = cat['type'] as TypeQueue;
@@ -171,6 +177,9 @@ class SyncPuller {
       for (var file in itemsToDownload) {
         try {
           if (file.driveFileId == null) continue;
+          // PAUSA DE CORTESÍA ESTRATÉGICA
+          // Si la lista de esta categoría es grande, pausamos a partir del décimo
+          await pacer.step(itemsToDownload.length);
 
           if (type == TypeQueue.tags) {
             final res = await _driveDataService.downloadArray<TagsFile>(
@@ -264,6 +273,8 @@ class SyncPuller {
     );
   }
 }
+
+
 
 final syncPullerProvider = Provider<SyncPuller?>((ref) {
   final auth = ref.watch(authProvider);
