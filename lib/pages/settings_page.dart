@@ -48,7 +48,9 @@ class SupportProjectPage extends ConsumerWidget {
     
     return [
       ThemeSelector(),
+      const SizedBox(height: 15),
       LangSelector(),
+      const SizedBox(height: 15),
 
       // Si ya decidió (es true o false), liberamos las opciones de apoyo
       if (adsActive != null) ...[

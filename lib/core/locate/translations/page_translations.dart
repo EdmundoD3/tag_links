@@ -1,4 +1,6 @@
 // lib/core/locate/modules/pages_translate.dart
+import 'package:tag_links/config/name_of_app.dart';
+
 import '../app_lang.dart';
 
 class TranslatesPages {
@@ -19,14 +21,14 @@ class TranslatesPages {
   static const Map<String, Map<AppLang, String>> translations = {
     // -------------------- Pages --------------------
     'appName': {
-      AppLang.es: 'Tag Links',
-      AppLang.en: 'Tag Links',
-      AppLang.de: 'Tag Links',
-      AppLang.pt: 'Tag Links',
-      AppLang.fr: 'Tag Links',
-      AppLang.ru: 'Tag Links',
-      AppLang.ja: 'Tag Links',
-      AppLang.zh: 'Tag Links',
+      AppLang.es: NameOfApp.upperCase,
+      AppLang.en: NameOfApp.upperCase,
+      AppLang.de: NameOfApp.upperCase,
+      AppLang.pt: NameOfApp.upperCase,
+      AppLang.fr: NameOfApp.upperCase,
+      AppLang.ru: NameOfApp.upperCase,
+      AppLang.ja: NameOfApp.upperCase,
+      AppLang.zh: NameOfApp.upperCase,
     },
 
     'pendingNotesTitle': {
