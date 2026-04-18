@@ -136,10 +136,12 @@ class ManualSyncButton extends ConsumerWidget {
           ),
         ),
         actions: [
+          // TODO corregir colores  para que no paresca que estan desactivados
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: Text(ref.tr(TKeys.actions.notNow, fallback: "Ahora no")),
           ),
+          // TODO corregir colores  para que no paresca que estan desactivados
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
             child: Text(

@@ -64,7 +64,9 @@ class _GoogleLoginButton extends ConsumerWidget {
               child: CircularProgressIndicator(strokeWidth: 2),
             )
           : const Icon(Icons.cloud_upload),
+      // TODO corregir colores  para que no paresca que estan desactivados
       label: Text(ref.tr(TKeys.auth.loginWithGoogle)),
+      // TODO corregir colores  para que no paresca que estan desactivados
       style: ElevatedButton.styleFrom(
         minimumSize: const Size(
           double.infinity,
@@ -98,7 +100,7 @@ class _UserInfoTile extends ConsumerWidget {
         onPressed: () async {
           // 🎯 Llamamos al diálogo de confirmación
           final confirm = await ConfirmDialog.logout(context, ref);
-          
+
           // Si el usuario aceptó (true), ejecutamos el logout
           if (confirm == true) {
             onLogout();
