@@ -5,6 +5,7 @@ import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/state/tags_provider.dart';
 import 'package:tag_links/sync/db/local_sync_queue_repository.dart';
 import 'package:tag_links/sync/models/local_sync_queue.dart';
+import 'package:tag_links/ui/button/action_button.dart';
 import 'package:tag_links/ui/tags/input_tag_widgets.dart';
 import 'package:uuid/uuid.dart';
 
@@ -49,7 +50,7 @@ Future<Tag?> showCreateTagModal({
 
             Align(
               alignment: Alignment.centerRight,
-              child: ActionButtonModal(
+              child: ActionButtonFilled(
                 onPressed: () async => await _submit(
                   context: context,
                   controller: controller,

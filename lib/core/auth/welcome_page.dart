@@ -81,8 +81,8 @@ class WelcomePage extends ConsumerWidget {
                 child: Text(
                   ref.tr(TKeys.auth.skipForNow, fallback: "Omitir por ahora"),
                   style: TextStyle(
-                    decoration: TextDecoration.underline,
-                    color: isLoading ? Colors.grey : null,
+                    decoration: TextDecoration.none,
+                    color: isLoading ? Color(0xFF9E80D1) : null,
                   ),
                 ),
               ),

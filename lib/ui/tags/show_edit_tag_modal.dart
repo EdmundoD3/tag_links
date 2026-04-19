@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/models/tag.dart';
+import 'package:tag_links/ui/button/action_button.dart';
 import 'package:tag_links/ui/tags/input_tag_widgets.dart';
 
 class EditedTag {
@@ -73,13 +74,13 @@ Future<EditedTag?> showEditTagModal(
                 // Botones de acción (Guardar / Cancelar)
                 Row(
                   children: [
-                    ActionButtonModal(
+                    ActionButtonFilled(
                       onPressed: () =>
                           Navigator.pop(context), // Retorna null (Cancelar)
                       label: ref.tr(TKeys.actions.cancel, fallback: 'Cancelar'),
                     ),
                     const Spacer(),
-                    ActionButtonModal(
+                    ActionButtonFilled(
                       onPressed: () {
                         // Retornamos el objeto con isDeleted en false
                         Navigator.pop(

@@ -4,6 +4,8 @@ import 'package:tag_links/core/google/auth_provider.dart';
 import 'package:tag_links/core/google/models/auth_state_model.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/sync/sync_notifier_provider.dart';
+import 'package:tag_links/ui/alerts/text_dialog.dart';
+import 'package:tag_links/ui/button/action_button.dart';
 
 class ManualSyncButton extends ConsumerWidget {
   const ManualSyncButton({super.key});
@@ -97,7 +99,10 @@ class ManualSyncButton extends ConsumerWidget {
         // 🟢 Estado Verde: Todo al día
         return const Icon(Icons.cloud_done, color: Colors.green);
       default:
-        return Icon(Icons.sync_outlined, color: Theme.of(context).iconTheme.color,);
+        return Icon(
+          Icons.sync_outlined,
+          color: Theme.of(context).iconTheme.color,
+        );
     }
   }
 
@@ -122,30 +127,35 @@ class ManualSyncButton extends ConsumerWidget {
   }
 
   Future<bool?> _showLoginInvitation(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(
-          ref.tr(TKeys.sync.backUpTitle, fallback: "Respaldo en la nube"),
+        backgroundColor: theme.cardColor,
+        title: TextDialogTitle(
+          title: ref.tr(
+            TKeys.sync.backUpTitle,
+            fallback: "Respaldo en la nube",
+          ),
+          fontSize: 18,
         ),
-        content: Text(
-          ref.tr(
+        content: TextDialogContent(
+          text: ref.tr(
             TKeys.sync.backUpMessage,
             fallback:
                 "Para mantener tus notas seguras y sincronizadas en todos tus dispositivos, necesitas iniciar sesión con Google Drive.",
           ),
         ),
         actions: [
-          // TODO corregir colores  para que no paresca que estan desactivados
-          TextButton(
+          ActionTextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text(ref.tr(TKeys.actions.notNow, fallback: "Ahora no")),
+            label: ref.tr(TKeys.actions.notNow, fallback: "Ahora no"),
           ),
-          // TODO corregir colores  para que no paresca que estan desactivados
-          FilledButton(
+          ActionButtonFilled(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(
-              ref.tr(TKeys.auth.loginWithGoogle, fallback: "Iniciar sesión"),
+            label: ref.tr(
+              TKeys.auth.loginWithGoogle,
+              fallback: "Iniciar sesión",
             ),
           ),
         ],

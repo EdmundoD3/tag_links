@@ -38,23 +38,4 @@ class InputTitleTag extends StatelessWidget {
   }
 }
 
-class ActionButtonModal extends StatelessWidget {
-  final String label;
-  final void Function() onPressed;
 
-  const ActionButtonModal({
-    super.key,
-    required this.label,
-    required this.onPressed,
-  });
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return FilledButton(
-      onPressed: onPressed, // Retorna null (Cancelar)
-      style: FilledButton.styleFrom( backgroundColor: theme.appBarTheme.backgroundColor, 
-      foregroundColor: theme.textTheme.titleLarge?.color),
-      child: Text(label),
-    );
-  }
-}

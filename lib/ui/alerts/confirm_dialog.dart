@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
+import 'package:tag_links/ui/alerts/text_dialog.dart';
 import 'package:tag_links/ui/alerts/feedback_alert_confirm.dart';
 
 class ConfirmDialog {
@@ -190,11 +191,10 @@ Future<bool?> showConfirmDialog(
     builder: (context) {
       return AlertDialog(
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
-        title: Text(title, style: theme.textTheme.titleLarge),
+        title: TextDialogTitle(title: title),
         content: message != null
-            ? Text(
-                message,
-                style: TextStyle(color: theme.textTheme.bodySmall?.color),
+            ? TextDialogContent(
+                text: message,
               )
             : null,
         actions: [

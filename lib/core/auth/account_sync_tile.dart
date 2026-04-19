@@ -63,10 +63,11 @@ class _GoogleLoginButton extends ConsumerWidget {
               height: 20,
               child: CircularProgressIndicator(strokeWidth: 2),
             )
-          : const Icon(Icons.cloud_upload),
-      // TODO corregir colores  para que no paresca que estan desactivados
-      label: Text(ref.tr(TKeys.auth.loginWithGoogle)),
-      // TODO corregir colores  para que no paresca que estan desactivados
+          : const Icon(Icons.cloud_upload, color: Color(0xFF7E57C2)),
+      label: Text(
+        ref.tr(TKeys.auth.loginWithGoogle),
+        style: TextStyle(color: Color(0xFF9E80D1)),
+      ),
       style: ElevatedButton.styleFrom(
         minimumSize: const Size(
           double.infinity,

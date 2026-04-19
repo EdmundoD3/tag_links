@@ -234,6 +234,7 @@ ThemeData _generatePalette({
       unselectedIconTheme: IconThemeData(color: badge),
 
       selectedItemColor: thirdTextColor,
+
       selectedIconTheme: IconThemeData(color: thirdTextColor),
     ),
 
