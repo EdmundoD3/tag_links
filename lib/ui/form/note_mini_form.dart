@@ -186,12 +186,13 @@ class _NoteMiniFormState extends ConsumerState<NoteMiniForm> {
   }
 
   Widget _titleTextField() {
+    final theme = Theme.of(context);
     return TextFormField(
       controller: _titleCtrl,
       onChanged: (_) => setState(() {}),
       maxLength: LimitAppConfig.titleMaxLength,
       maxLines: 1,
-      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+      style:  TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: theme.hintColor),
       decoration: InputDecoration(
         hintText: ref.tr(TKeys.forms.title, fallback: 'Título'),
         border: InputBorder.none,
@@ -203,10 +204,12 @@ class _NoteMiniFormState extends ConsumerState<NoteMiniForm> {
   }
 
   Widget _contentTextField() {
+      final theme = Theme.of(context);
     return TextField(
       controller: _textController,
       maxLines: 3,
       onChanged: (_) => setState(() {}),
+      style:  TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: theme.hintColor),
       decoration: InputDecoration(
         hintText: ref.tr(TKeys.forms.content, fallback: 'Contenido'),
         border: InputBorder.none,
@@ -218,7 +221,7 @@ class _NoteMiniFormState extends ConsumerState<NoteMiniForm> {
   }
 
   Widget _sutilDivider() {
-    return Divider(height: 8, thickness: 0.5, color: Colors.grey.withAlpha(84));
+    return Divider(height: 8, thickness: 0.5, color: Colors.grey.withAlpha(90));
   }
 
   Widget _contraibleButton() {
@@ -227,7 +230,7 @@ class _NoteMiniFormState extends ConsumerState<NoteMiniForm> {
     // Colores dinámicos basados en tu tema
     final Color activeColor = theme.cardColor;
     final Color expandedColor = theme.primaryColor.withAlpha(200);
-    final Color textColor = _isHidden ? theme.primaryColor : Colors.white;
+    final Color? textColor = _isHidden ? theme.bottomNavigationBarTheme.selectedIconTheme?.color : Colors.white;
 
     return Align(
       alignment: Alignment.centerRight,
@@ -285,7 +288,7 @@ class _NoteMiniFormState extends ConsumerState<NoteMiniForm> {
                             fallback: 'Ocultar',
                           ),
                     style: TextStyle(
-                      color: _isHidden ? Colors.grey : Colors.white,
+                      color: _isHidden ? theme.bottomNavigationBarTheme.unselectedItemColor : Colors.white,
                       fontSize: 13,
                       fontWeight: _isHidden
                           ? FontWeight.normal
