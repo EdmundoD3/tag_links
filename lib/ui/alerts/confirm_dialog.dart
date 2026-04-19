@@ -190,7 +190,7 @@ Future<bool?> showConfirmDialog(
     barrierDismissible: false, // obliga a elegir opción
     builder: (context) {
       return AlertDialog(
-        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        backgroundColor: Theme.of(context).cardColor,
         title: TextDialogTitle(title: title),
         content: message != null
             ? TextDialogContent(
