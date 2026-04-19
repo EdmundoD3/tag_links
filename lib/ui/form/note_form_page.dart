@@ -15,6 +15,7 @@ import 'package:tag_links/sync/sync_notifier_provider.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
 import 'package:tag_links/ui/form/app_bar_form.dart';
 import 'package:tag_links/ui/form/body_form.dart';
+import 'package:tag_links/ui/form/content_form_controller.dart';
 import 'package:tag_links/ui/form/form_auto_save_controller.dart';
 import 'package:tag_links/ui/form/move_to_folder_button.dart';
 import 'package:tag_links/ui/link/link_preview_form.dart';
@@ -219,14 +220,14 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
         ),
         onChange: () => _onUserChange(),
       ),
-      const SizedBox(height: 16),
+      const SizedBox(height: 20),
       LinkPreviewForm(
         noteId: _id,
         initialLink: _linkPreview,
         onLinkChanged: _onLinkChanged,
       ),
-      const SizedBox(height: 16),
-      _ContentController(
+      const SizedBox(height: 10),
+      ContentController(
         contentCtrl: _contentCtrl,
         label: ref.tr(TKeys.forms.content, fallback: 'Contenido'),
         onChange: () => _onUserChange(),
@@ -330,41 +331,3 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
   }
 }
 
-class _ContentController extends StatelessWidget {
-  final TextEditingController contentCtrl;
-  final String label;
-  final VoidCallback onChange;
-  const _ContentController({
-    required this.contentCtrl,
-    required this.label,
-    required this.onChange,
-  });
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return TextFormField(
-      cursorColor: theme.appBarTheme.backgroundColor,
-      style: TextStyle(color: theme.textTheme.bodyMedium?.color),
-      controller: contentCtrl,
-      maxLength: LimitAppConfig.contentMaxLength,
-      maxLines: null, // Permite que crezca infinitamente según el texto
-      minLines: 10, // Altura inicial (puedes ajustarlo a tu gusto)
-      keyboardType: TextInputType.multiline,
-      onChanged: (_) => onChange(),
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: theme.inputDecorationTheme.fillColor?.withAlpha(60),
-        labelText: label,
-        alignLabelWithHint: true,
-        border: const OutlineInputBorder(),
-        labelStyle: TextStyle(color: theme.hintColor),
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: theme.focusColor, width: 1),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: theme.focusColor, width: 2),
-        ),
-      ),
-    );
-  }
-}
