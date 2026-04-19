@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/config/limit_config.dart';
 import 'package:tag_links/core/ads/ads_service_provider.dart';
 import 'package:tag_links/core/ads/interstitial_ads_provider.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
@@ -226,7 +225,7 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
         initialLink: _linkPreview,
         onLinkChanged: _onLinkChanged,
       ),
-      const SizedBox(height: 10),
+      const SizedBox(height: 16),
       ContentController(
         contentCtrl: _contentCtrl,
         label: ref.tr(TKeys.forms.content, fallback: 'Contenido'),

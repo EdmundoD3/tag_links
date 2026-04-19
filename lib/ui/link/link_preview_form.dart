@@ -107,7 +107,6 @@ class _LinkPreviewFormState extends State<LinkPreviewForm> {
           maxLines: 1, // Las URLs suelen ser de una sola línea
           decoration: InputDecoration(
             filled: true,
-            // Alpha 40 para que resalte un poco más que el fondo de la nota
             fillColor: theme.inputDecorationTheme.fillColor?.withAlpha(50),
             labelText: 'URL',
             labelStyle: TextStyle(color: theme.hintColor),

@@ -52,7 +52,7 @@ class ContentController extends StatelessWidget {
         labelText: label,
         alignLabelWithHint: true,
         filled: true,
-        fillColor: theme.colorScheme.onSurface.withAlpha(20),
+        fillColor: theme.inputDecorationTheme.fillColor?.withAlpha(50),
         contentPadding: const EdgeInsets.all(22),
 
         // --- AQUÍ METEMOS LOS BOTONES ---
@@ -125,7 +125,7 @@ class _FormatButton extends StatelessWidget {
         constraints: const BoxConstraints(),
         padding: const EdgeInsets.all(6),
         visualDensity: VisualDensity.compact,
-        color: theme.colorScheme.primary.withAlpha(200),
+        color:theme.textTheme.titleLarge?.color,
       ),
     );
   }
