@@ -19,28 +19,48 @@ class TitleFormController extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return TextFormField(
-      cursorColor: theme.appBarTheme.backgroundColor,
-      style: TextStyle(color: theme.textTheme.bodyMedium?.color),
       controller: titleCtrl,
       maxLength: LimitAppConfig.titleMaxLength,
+      style: TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        color: theme.textTheme.bodyLarge?.color,
+      ),
       decoration: InputDecoration(
-        filled: true,
-        fillColor: theme.inputDecorationTheme.fillColor?.withAlpha(60),
         labelText: label,
-        border: OutlineInputBorder(),
         labelStyle: TextStyle(color: theme.hintColor),
+        // floatingLabelBehavior: FloatingLabelBehavior.never,
+        hintText: '',
+        filled: true,
+        // Usamos alpha 30 para un fondo muy sutil
+        fillColor: theme.inputDecorationTheme.fillColor?.withAlpha(50),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 16,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
         enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: theme.hintColor, width: 1),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(
+            color: theme.focusColor.withAlpha(20),
+            width: 1,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: theme.hintColor, width: 2),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: theme.focusColor.withAlpha(100),
+            width: 2,
+          ),
         ),
+        counterText: "",
       ),
       onChanged: (value) => onChange?.call(),
       validator: (value) {
-        if (value == null || value.trim().isEmpty) {
-          return validatorMsg;
-        }
+        if (value == null || value.trim().isEmpty) return validatorMsg;
         return null;
       },
     );

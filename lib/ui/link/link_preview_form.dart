@@ -93,45 +93,93 @@ class _LinkPreviewFormState extends State<LinkPreviewForm> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         TextFormField(
-          style: TextStyle(color: theme.textTheme.bodyMedium?.color),
+          style: TextStyle(
+            color: theme.textTheme.bodyMedium?.color,
+            fontSize: 15,
+          ),
           controller: _urlCtrl,
           maxLength: LimitAppConfig.urlMaxLength,
-          maxLines: LimitAppConfig.urlMaxLine,
+          maxLines: 1, // Las URLs suelen ser de una sola línea
           decoration: InputDecoration(
             filled: true,
-            fillColor: theme.inputDecorationTheme.fillColor?.withAlpha(60),
+            fillColor: theme.inputDecorationTheme.fillColor?.withAlpha(50),
             labelText: 'URL',
-            prefixIcon: const Icon(Icons.link),
-            hintText: 'https://...',
-            border: const OutlineInputBorder(),
             labelStyle: TextStyle(color: theme.hintColor),
+            hintText: 'https://...',
+            hintStyle: TextStyle(color: theme.hintColor.withAlpha(150)),
+            prefixIcon: Icon(
+              Icons
+                  .link_rounded, // Usamos la versión rounded para el estilo neutro
+              color: theme.colorScheme.primary,
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
+            ),
             enabledBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: theme.focusColor, width: 1),
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(
+                color: theme.focusColor.withAlpha(20),
+                width: 1,
+              ),
             ),
             focusedBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: theme.focusColor, width: 2),
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: theme.focusColor.withAlpha(100),
+                width: 2,
+              ),
             ),
+            counterText: "", // Limpieza visual
           ),
           keyboardType: TextInputType.url,
           textInputAction: TextInputAction.done,
           onChanged: _onUrlChanged,
         ),
         if (_isLoading) ...[
-          const SizedBox(height: 12),
-          const LinearProgressIndicator(),
-        ] else if (_preview != null) ...[
-          const SizedBox(height: 12),
-          Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade300),
-              borderRadius: BorderRadius.circular(8),
+          const SizedBox(height: 16),
+          // Un indicador de progreso más fino y elegante
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: LinearProgressIndicator(
+              backgroundColor: theme.colorScheme.primary.withAlpha(30),
+              color: theme.colorScheme.primary.withAlpha(200),
+              minHeight: 4,
             ),
-            padding: const EdgeInsets.all(8),
-            child: LinkPreviewWidget(preview: _preview!),
+          ),
+        ] else if (_preview != null) ...[
+          const SizedBox(height: 16),
+          // Card de previsualización mejorada
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: theme.shadowColor.withAlpha(15),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+              border: Border.all(color: theme.dividerColor.withAlpha(30)),
+            ),
+            padding: const EdgeInsets.all(
+              4,
+            ), // Espacio interno para que el widget respire
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: LinkPreviewWidget(preview: _preview!),
+            ),
           ),
         ],
       ],
