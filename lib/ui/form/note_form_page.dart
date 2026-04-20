@@ -219,17 +219,17 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
         ),
         onChange: () => _onUserChange(),
       ),
-      const SizedBox(height: 20),
-      LinkPreviewForm(
-        noteId: _id,
-        initialLink: _linkPreview,
-        onLinkChanged: _onLinkChanged,
-      ),
-      const SizedBox(height: 16),
+      const SizedBox(height: 8),
       ContentController(
         contentCtrl: _contentCtrl,
         label: ref.tr(TKeys.forms.content, fallback: 'Contenido'),
         onChange: () => _onUserChange(),
+      ),
+      const SizedBox(height: 8),
+      LinkPreviewForm(
+        noteId: _id,
+        initialLink: _linkPreview,
+        onLinkChanged: _onLinkChanged,
       ),
       const SizedBox(height: 16),
       TagsSelectorMenu(

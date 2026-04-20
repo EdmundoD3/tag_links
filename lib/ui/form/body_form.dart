@@ -25,7 +25,7 @@ class BodyForm extends StatelessWidget {
         body: Form(
           key: formKey,
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(8, 8, 8, 16),
+            padding: const EdgeInsets.fromLTRB(8, 16, 8, 16),
             // Al ser un ListView, el GestureDetector de arriba detectará
             // los toques en los espacios vacíos entre widgets.
             children: children,

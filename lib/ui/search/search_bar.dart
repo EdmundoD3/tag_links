@@ -11,6 +11,7 @@ class SearchListBar<T> extends StatefulWidget {
   final Widget? iconLeftBtn;
   final Function(String text)? addIconBtnCtrl;
   final SuggestionListBuilder<T> suggestionBuilder;
+  final Widget? counterWidget;
   final bool enabled;
 
   const SearchListBar({
@@ -22,6 +23,7 @@ class SearchListBar<T> extends StatefulWidget {
     this.iconLeftBtn,
     this.addIconBtnCtrl,
     required this.suggestionBuilder,
+    this.counterWidget,
     this.enabled = true,
   });
 
@@ -92,6 +94,7 @@ class _SearchListBarState<T> extends State<SearchListBar<T>> {
           onChangeText: _onChangeText,
           iconLeftButton: widget.iconLeftBtn,
           sufixRightIconBtnCtrl: widget.addIconBtnCtrl,
+          counterWidget: widget.counterWidget,
         ),
         const SizedBox(height: 8),
         if (showSuggestions)
@@ -107,6 +110,7 @@ class _SearchInput extends ConsumerWidget {
   final Widget? iconLeftButton;
   final void Function(String text)? sufixRightIconBtnCtrl;
   final void Function(String value) onChangeText;
+  final Widget? counterWidget;
   final bool enabled;
 
 
@@ -117,6 +121,7 @@ class _SearchInput extends ConsumerWidget {
     this.iconLeftButton,
     required this.sufixRightIconBtnCtrl,
     required this.enabled,
+    this.counterWidget,
   });
 
   @override
@@ -132,6 +137,7 @@ class _SearchInput extends ConsumerWidget {
           cursorColor: theme.appBarTheme.backgroundColor,
           decoration: InputDecoration(
             fillColor: theme.inputDecorationTheme.fillColor,
+            counter: counterWidget,
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(30),
               borderSide: BorderSide(color: theme.focusColor, width: 2),

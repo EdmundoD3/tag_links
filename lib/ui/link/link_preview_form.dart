@@ -5,6 +5,7 @@ import 'package:tag_links/config/limit_config.dart';
 import 'package:tag_links/models/link_preview.dart';
 import 'package:tag_links/service/link_preview_service.dart';
 import 'package:tag_links/ui/link/link_preview_widget.dart';
+import 'package:tag_links/ui/style/input_style_form.dart';
 
 class LinkPreviewForm extends StatefulWidget {
   final String noteId;
@@ -105,42 +106,11 @@ class _LinkPreviewFormState extends State<LinkPreviewForm> {
           controller: _urlCtrl,
           maxLength: LimitAppConfig.urlMaxLength,
           maxLines: 1, // Las URLs suelen ser de una sola línea
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: theme.inputDecorationTheme.fillColor?.withAlpha(50),
-            labelText: 'URL',
-            labelStyle: TextStyle(color: theme.hintColor),
-            hintText: 'https://...',
-            hintStyle: TextStyle(color: theme.hintColor.withAlpha(150)),
-            prefixIcon: Icon(
-              Icons
-                  .link_rounded, // Usamos la versión rounded para el estilo neutro
-              color: theme.colorScheme.primary,
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 12,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(
-                color: theme.focusColor.withAlpha(20),
-                width: 1,
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: theme.focusColor.withAlpha(100),
-                width: 2,
-              ),
-            ),
-            counterText: "", // Limpieza visual
-          ),
+          decoration: InputStyleForm.inputDecoration(
+            theme: theme,
+            label: 'URL',
+            counterText: '',
+          ).copyWith(hintText: 'https://...',),
           keyboardType: TextInputType.url,
           textInputAction: TextInputAction.done,
           onChanged: _onUrlChanged,

@@ -1,6 +1,4 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 /// ─────────────────────────────────────────────────────────────
 /// MODELOS
@@ -30,11 +28,11 @@ enum TokenType {
 
 final RegExp _tokenRegex = RegExp(
   r'(?<escape>\\.)|'
-  r'(?<bold>\*\*.*?\*\*|\*.*?\*)|'
-  r'(?<underline>__.*?__)|'
-  r'(?<italic>_.*?_)|'
-  r'(?<strike>~.*?~)|'
-  r'(?<code>`.*?`)|'
+  r'(?<bold>\*\*.*?\*\*)|' //** 
+  r'(?<underline>__.*?__)|' //__
+  r'(?<italic>_.*?_)|' //_
+  r'(?<strike>~.*?~)|' //~
+  r'(?<code>`.*?`)|' //`
   r'(?<link>https?:\/\/[^\s]+)|'
   r'(?<mention>@\w+)|'
   r'(?<hashtag>#\w+)',
@@ -44,7 +42,7 @@ final RegExp _tokenRegex = RegExp(
 const Map<TokenType, TextRule> _styleRules = {
   TokenType.bold: TextRule(
     style: TextStyle(fontWeight: FontWeight.bold),
-    offset: 1,
+    offset: 2, // Corregido a 2 por el uso de **
   ),
   TokenType.italic: TextRule(
     style: TextStyle(fontStyle: FontStyle.italic),
@@ -78,7 +76,7 @@ class DecoratedText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final matches = _tokenRegex.allMatches(text);
+    final matches = _tokenRegex.allMatches(text).toList();
     final onlyEmojis = RegExp(
       r'^[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\s]+$',
       unicode: true,
@@ -90,7 +88,7 @@ class DecoratedText extends StatelessWidget {
           color: theme.textTheme.bodyMedium?.color,
           fontSize: onlyEmojis ? 32 : 14,
         ),
-        children: _buildSpans(matches),
+        children: _buildSpans(context, matches),
       ),
     );
   }
@@ -99,7 +97,10 @@ class DecoratedText extends StatelessWidget {
   /// PARSER
   /// ───────────────────────────────────────────────────────────
 
-  List<TextSpan> _buildSpans(Iterable<RegExpMatch> matches) {
+  List<TextSpan> _buildSpans(
+    BuildContext context,
+    Iterable<RegExpMatch> matches,
+  ) {
     final List<TextSpan> spans = [];
     int lastIndex = 0;
 
@@ -111,6 +112,12 @@ class DecoratedText extends StatelessWidget {
       final matchText = match.group(0)!;
       final type = _resolveType(match);
 
+      if (type == null) {
+        spans.add(TextSpan(text: matchText));
+        lastIndex = match.end;
+        continue;
+      }
+
       switch (type) {
         case TokenType.escape:
           spans.add(TextSpan(text: matchText.substring(1)));
@@ -119,13 +126,13 @@ class DecoratedText extends StatelessWidget {
         case TokenType.link:
           spans.add(
             TextSpan(
-              text: matchText,
+              text: matchText.length > 60
+                  ? '${matchText.substring(0, 60)}...'
+                  : matchText,
               style: const TextStyle(
                 color: Colors.blue,
                 decoration: TextDecoration.underline,
               ),
-              recognizer: TapGestureRecognizer()
-                ..onTap = () => launchUrl(Uri.parse(matchText)),
             ),
           );
           break;
@@ -146,16 +153,18 @@ class DecoratedText extends StatelessWidget {
 
         default:
           if (_styleRules.containsKey(type)) {
-            final rule = _styleRules[type]!;
-            spans.add(
-              TextSpan(
-                text: matchText.substring(
-                  rule.offset,
-                  matchText.length - rule.offset,
+            final rule = _styleRules[type];
+            if (rule != null) {
+              spans.add(
+                TextSpan(
+                  text: matchText.substring(
+                    rule.offset,
+                    matchText.length - rule.offset,
+                  ),
+                  style: DefaultTextStyle.of(context).style.merge(rule.style),
                 ),
-                style: rule.style,
-              ),
-            );
+              );
+            }
           }
       }
 

@@ -72,17 +72,7 @@ Widget build(BuildContext context, WidgetRef ref) {
                     if (newTag != null) onTagSelected(newTag);
                   }
                 : null,
-          ),
-        ),
-      ),
-
-      // 2. Contador integrado (ya no necesita el texto de error abajo)
-      Padding(
-        padding: const EdgeInsets.only(top: 4, right: 12),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Text(
+                counterWidget: Text(
               "${tags.length}/${LimitAppConfig.maxTagsPerItem}",
               style: TextStyle(
                 fontSize: 12,
@@ -90,7 +80,7 @@ Widget build(BuildContext context, WidgetRef ref) {
                 fontWeight: canAddMoreTags ? FontWeight.normal : FontWeight.bold,
               ),
             ),
-          ],
+          ),
         ),
       ),
 
