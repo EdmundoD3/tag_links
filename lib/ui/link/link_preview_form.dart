@@ -110,7 +110,7 @@ class _LinkPreviewFormState extends State<LinkPreviewForm> {
             theme: theme,
             label: 'URL',
             counterText: '',
-          ).copyWith(hintText: 'https://...',),
+          ).copyWith(hintText: 'https://...', hintStyle: TextStyle(color: theme.hintColor)),
           keyboardType: TextInputType.url,
           textInputAction: TextInputAction.done,
           onChanged: _onUrlChanged,

@@ -10,20 +10,7 @@ Una solución robusta para la gestión de enlaces y notas, construida con **Flut
 ### 1. Variables de API (Inyección en Compilación)
 Para mantener la seguridad y flexibilidad entre entornos (Desarrollo vs. Producción), la URL del servidor se inyecta mediante `--dart-define`.
 
-#### **Configuración en VS Code (`.vscode/launch.json`)**
-Para depurar sin escribir comandos largos, agrega esto a tu configuración de lanzamiento:
-
-```json
-{
-  "name": "TagLinks Debug",
-  "request": "launch",
-  "type": "dart",
-  "toolArgs": [
-    "--dart-define",
-    "API_BASE_URL=https://tu-servidor-local.com/api"
-  ]
-}
-```
+agregar en android/app/google-services.json
 
 ### 2. Google AdMob (Android)
 La publicidad está integrada mediante el SDK oficial. Debes configurar el ID de aplicación en el manifiesto de Android.

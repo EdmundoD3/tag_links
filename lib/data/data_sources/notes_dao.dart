@@ -561,7 +561,7 @@ Future<void> upsertAll(List<Note> rawNotes) async {
     );
 
     final notes = unverifyNotes.map((n) {
-      return (n.fileId == null || n.fileId.isEmpty)
+      return (n.fileId.isEmpty)
           ? n.copyWith(fileId: sharedFileId)
           : n;
     }).toList();

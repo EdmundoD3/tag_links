@@ -8,6 +8,7 @@ class LinkPreview {
   final String? description;
   final String? image;
   final String? siteName;
+  final int? lastUpdate;
 
   LinkPreview({
     required this.id,
@@ -17,6 +18,7 @@ class LinkPreview {
     this.description,
     this.image,
     this.siteName,
+    this.lastUpdate,
   });
 
   bool get hasMetadata =>
@@ -65,6 +67,7 @@ class LinkPreview {
     String? description,
     String? image,
     String? siteName,
+    int? lastUpdate,
   }) {
     return LinkPreview(
       id: id ?? this.id,
@@ -74,6 +77,7 @@ class LinkPreview {
       description: description ?? this.description,
       image: image ?? this.image,
       siteName: siteName ?? this.siteName,
+      lastUpdate: lastUpdate ?? this.lastUpdate,
     );
   }
 
@@ -86,15 +90,21 @@ class LinkPreview {
       'description': description,
       'image': image,
       'siteName': siteName,
+      'lastUpdate': lastUpdate,
     };
   }
 
-  Map<String, String> toMiniMap() {
-    return {'id': id, 'url': url};
-  }
-
-  static LinkPreview fromMiniMap(Map<String, dynamic> map, String noteId) {
-    return LinkPreview(id: map['id'], noteId: map['noteId']?? noteId, url: map['url']);
+  static LinkPreview fromMap(Map<String, dynamic> map, {String? noteId}) {
+    return LinkPreview(
+      id: map['id'],
+      noteId: noteId ?? map['noteId'],
+      url: map['url'],
+      title: map['title'],
+      description: map['description'],
+      image: map['image'],
+      siteName: map['siteName'],
+      lastUpdate: map['lastUpdate'], // <--- Crucial
+    );
   }
 
   bool _isValidUrl(String url) {
@@ -122,6 +132,7 @@ String linkPreviewTable = '''
             description TEXT,
             image TEXT,
             siteName TEXT,
+            lastUpdate INTEGER default null,
             FOREIGN KEY (noteId) REFERENCES notes(id) ON DELETE CASCADE
           );
 ''';

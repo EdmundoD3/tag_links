@@ -72,35 +72,55 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
     return _fetchPage(reset: true);
   }
 
-  Future<List<Note>> _fetchPage({bool reset = false}) async {
-    final pagination = PaginatedByDate(
-      page: _page,
-      pageSize: _pageSize,
-      order: OrderDate.updatedDesc,
-    );
-    final newItems = await _repo.getByFolder(folderId, pagination: pagination);
+Future<List<Note>> _fetchPage({bool reset = false}) async {
+  final pagination = PaginatedByDate(
+    page: _page,
+    pageSize: _pageSize,
+    order: OrderDate.updatedDesc,
+  );
 
-    if (newItems.length < _pageSize) {
-      _hasMore = false;
-    }
+  final List<Note> newItems = await _repo.getByFolder(
+    folderId,
+    pagination: pagination,
+  );
 
-    //revisar
-    final linksToEnrich = newItems
-        .map((n) => n.link)
-        .whereType<LinkPreview>()
-        .where((l) => !l.hasMetadata)
-        .fold<Map<String, LinkPreview>>({}, (map, link) {
-          map[link.url] = link;
-          return map;
-        })
-        .values
-        .toList();
-    if (linksToEnrich.isNotEmpty) {
-      unawaited(_enrichLinks(linksToEnrich));
-    }
-
-    return reset ? newItems : [...state.value ?? [], ...newItems];
+  if (newItems.length < _pageSize) {
+    _hasMore = false;
   }
+
+  // Definimos el umbral de tiempo (ej. 24 horas)
+  final now = DateTime.now().millisecondsSinceEpoch;
+  const halfHourInMs = 30 * 60 * 1000;
+
+  final List<LinkPreview> linksToEnrich = newItems
+      .map((n) => n.link)
+      .whereType<LinkPreview>()
+      .where((l) {
+        // 1. Si ya tiene metadata, no necesitamos enriquecerlo.
+        if (l.hasMetadata) return false;
+
+        // 2. Si nunca se ha intentado (lastUpdate es null), lo incluimos.
+        if (l.lastUpdate == null) return true;
+
+        // 3. Si falló antes, solo reintentamos si pasaron más de 30 minutos.
+        final targetTime = l.lastUpdate! + halfHourInMs;
+        return now > targetTime;
+      })
+      .fold<Map<String, LinkPreview>>({}, (map, link) {
+        // Deduplicamos por URL para no procesar lo mismo varias veces
+        map[link.url] = link;
+        return map;
+      })
+      .values
+      .toList();
+
+  if (linksToEnrich.isNotEmpty) {
+    // Lanzamos el proceso en segundo plano sin bloquear la UI
+    unawaited(_enrichLinks(linksToEnrich));
+  }
+
+  return reset ? newItems : [...state.value ?? [], ...newItems];
+}
 
   bool get hasMore => _hasMore;
   bool get isLoadingMore => _isLoadingMore;
@@ -193,27 +213,40 @@ class NotesNotifier extends AsyncNotifier<List<Note>> {
   // Fuera de la clase o como variable privada
   final Set<String> _processingUrls = {};
 
-  Future<void> _enrichLinks(List<LinkPreview> links) async {
+Future<void> _enrichLinks(List<LinkPreview> links) async {
+  // 1. Identificamos qué vamos a procesar
+  final toProcess = links
+      .where((l) => !_processingUrls.contains(l.url))
+      .toList();
 
-    // Filtramos las que ya se están procesando para no repetir peticiones
-    final toProcess = links
-        .where((l) => !_processingUrls.contains(l.url))
-        .toList();
-    _processingUrls.addAll(toProcess.map((l) => l.url));
+  if (toProcess.isEmpty) return;
 
-    try {
-      for (final link in toProcess) {
+  // 2. Registramos las URLs que esta instancia va a manejar
+  final urlsToHandle = toProcess.map((l) => l.url).toList();
+  _processingUrls.addAll(urlsToHandle);
+
+  try {
+    for (final link in toProcess) {
+      try {
         final updated = await LinkPreviewService.prepareForSave(link);
+        
         if (updated != null && updated.hasMetadata) {
+          // Guardamos en persistencia local
           await _repoLinkPreview.replace(updated);
-          // En lugar de invalidateSelf, actualiza solo la nota en el state actual
+          // Actualizamos el estado de Riverpod de forma granular
           _updateLocalNoteWithMetadata(updated);
         }
+      } catch (e) {
+        debugPrint("NotesNotifier._enrichLinks (Individual): $e");
       }
-    } finally {
-      // Opcional: limpiar después de un tiempo o dejarlo para evitar re-procesar
     }
+  } catch (e) {
+    debugPrint("NotesNotifier._enrichLinks (Global): $e");
+  } finally {
+    // 3. Limpiamos solo lo que nosotros marcamos como "en proceso"
+    _processingUrls.removeAll(urlsToHandle);
   }
+}
 
   void _updateLocalNoteWithMetadata(LinkPreview enrichedLink) {
     state.whenData((notes) {

@@ -4,7 +4,7 @@ import 'package:tag_links/models/link_preview.dart';
 
 class LinkPreviewWidget extends StatelessWidget {
   const LinkPreviewWidget({super.key, required this.preview});
-
+  
   final LinkPreview preview;
 
   @override

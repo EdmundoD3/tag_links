@@ -8,6 +8,8 @@ class InputStyleForm {
     EdgeInsetsGeometry? contentPadding,
   }) => InputDecoration(
     labelText: label,
+    labelStyle: TextStyle(
+      color: theme.hintColor),
     alignLabelWithHint: true,
     filled: true,
     fillColor: theme.inputDecorationTheme.fillColor?.withAlpha(50),

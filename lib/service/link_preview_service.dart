@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' show parse;
@@ -8,13 +7,23 @@ import 'package:tag_links/models/link_preview.dart';
 class LinkPreviewService {
   static Future<LinkPreview?> prepareForSave(LinkPreview? link) async {
     if (link == null) return null;
+    
+    // Si ya tiene metadata, no hacemos nada (a menos que quieras forzar un refresco)
     if (link.hasMetadata) return link;
 
     try {
       final enriched = await _fetchMetadata(link);
-      return enriched ?? link;
+      
+      // Si enriched es null (falló el scraping), devolvemos el link original 
+      // pero con el lastUpdate actualizado para no reintentar de inmediato.
+      return (enriched ?? link).copyWith(
+        lastUpdate: DateTime.now().millisecondsSinceEpoch,
+      );
     } catch (_) {
-      return link;
+      // En caso de error catastrófico, marcamos el intento igual
+      return link.copyWith(
+        lastUpdate: DateTime.now().millisecondsSinceEpoch,
+      );
     }
   }
 
@@ -35,7 +44,6 @@ class LinkPreviewService {
 
       if (response.statusCode != 200) return null;
 
-      // 1. Decodificar correctamente para evitar problemas con acentos/eñes
       final document = parse(
         utf8.decode(response.bodyBytes, allowMalformed: true),
       );
@@ -43,7 +51,6 @@ class LinkPreviewService {
       String? meta(String selector, [String attr = 'content']) =>
           document.querySelector(selector)?.attributes[attr];
 
-      // 2. Priorizar etiquetas Open Graph
       String? title =
           meta('meta[property="og:title"]') ??
           document.querySelector('title')?.text;
@@ -52,11 +59,12 @@ class LinkPreviewService {
           meta('meta[name="description"]');
       String? img = meta('meta[property="og:image"]');
 
-      // 3. Validar URL de imagen
       if (img != null && img.startsWith('/')) {
         img = "${uri.scheme}://${uri.host}$img";
       }
 
+      // IMPORTANTE: Aquí no ponemos el lastUpdate todavía, 
+      // dejamos que prepareForSave lo haga para centralizar la lógica.
       return link.copyWith(
         title: title?.trim(),
         description: desc?.trim(),
@@ -65,7 +73,7 @@ class LinkPreviewService {
       );
     } catch (e) {
       debugPrint("Error en scraping de ${link.url}: $e");
-      return null;
+      return null; // El try-catch de prepareForSave se encargará del resto
     }
   }
 }

@@ -58,7 +58,7 @@ class NotesToFile {
       // Guardamos el objeto Tag completo (es ligero y útil)
       'tags': note.tags.map((t) => t.toMap()).toList(),
       // Del Link solo guardamos lo mínimo (ID y URL)
-      'link': note.link?.toMiniMap(),
+      'link': note.link?.toMap(),
     };
   }
 
@@ -84,7 +84,7 @@ class NotesToFile {
           .map((t) => Tag.fromMap(Map<String, dynamic>.from(t)))
           .toList(),
       link: map['link'] != null
-          ? LinkPreview.fromMiniMap(map['link'], noteId)
+          ? LinkPreview.fromMap(map['link'], noteId: noteId)
           : null,
     );
   }
