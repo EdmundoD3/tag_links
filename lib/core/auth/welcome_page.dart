@@ -4,6 +4,7 @@ import 'package:tag_links/core/auth/account_sync_tile.dart';
 import 'package:tag_links/core/google/auth_provider.dart';
 import 'package:tag_links/core/locate/lang_selector.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
+import 'package:tag_links/ui/button/action_button.dart';
 
 class WelcomePage extends ConsumerWidget {
   // Añadimos el parámetro opcional
@@ -26,10 +27,11 @@ class WelcomePage extends ConsumerWidget {
           padding: const EdgeInsets.all(24.0),
           child: Column(
             children: [
-              // Align(
-              //   alignment: Alignment.topRight,
-              //   child: const LangSelector(),
-              // ),
+              Align(
+                alignment: Alignment.topRight,
+                child: const LangSelector(),
+              ),
+              const SizedBox(height: 32),
               
               const Spacer(),
 
@@ -74,18 +76,13 @@ class WelcomePage extends ConsumerWidget {
 
               // --- BOTÓN OMITIR ---
               // Lo deshabilitamos si está intentando loguear
-              TextButton(
+              ActionTextButton(
                 onPressed: isLoading 
                   ? null 
                   : () => ref.read(authProvider.notifier).skipLogin(),
-                child: Text(
+                label: 
                   ref.tr(TKeys.auth.skipForNow, fallback: "Omitir por ahora"),
-                  style: TextStyle(
-                    decoration: TextDecoration.none,
-                    color: isLoading ? Color(0xFF9E80D1) : null,
-                  ),
                 ),
-              ),
 
               const Spacer(flex: 2),
             ],

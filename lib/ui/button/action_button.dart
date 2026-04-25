@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class ActionButtonFilled extends StatelessWidget {
   final String label;
-  final void Function() onPressed;
+  final void Function()? onPressed;
 
   const ActionButtonFilled({
     super.key,
@@ -23,7 +23,7 @@ class ActionButtonFilled extends StatelessWidget {
 
 class ActionTextButton extends StatelessWidget {
   final String label;
-  final void Function() onPressed;
+  final void Function()? onPressed;
 
   const ActionTextButton({
     super.key,

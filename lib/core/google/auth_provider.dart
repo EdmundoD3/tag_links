@@ -50,7 +50,7 @@ class AuthNotifier extends Notifier<AuthState> {
   /// Proceso centralizado para crear el DriveApi y actualizar el estado de un solo golpe
   Future<bool> initSilentLogin() async {
     final hasSkipped = ref.read(skipedAuthProvider);
-    if (hasSkipped == true) {
+    if (hasSkipped == true || hasSkipped == null) {
       state = AuthState(
         user: null,
         driveApi: null,

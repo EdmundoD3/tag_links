@@ -17,7 +17,7 @@ class LangSelector extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.all(16),
           child: Text(
-            ref.tr(TKeys.pages.language, fallback: 'Idioma'),
+            ref.tr(TKeys.pages.languageTitle, fallback: 'Idioma'),
             style: TextStyle(
               fontWeight: FontWeight.bold,
               color: theme.textTheme.titleLarge?.color,
@@ -25,27 +25,6 @@ class LangSelector extends ConsumerWidget {
             ),
           ),
         ),
-        // RadioGroup<AppLang>(
-        //   groupValue: current,
-        //   onChanged: (val) {
-        //     if (val != null) {
-        //       ref.read(langProvider.notifier).set(val);
-        //     }
-        //   },
-        //   child: Column(
-        //     children: AppLang.values.map((lang) {
-        //       return RadioListTile<AppLang>(
-        //         selectedTileColor: theme.textTheme.titleSmall?.color,
-        //         activeColor: theme.textTheme.titleSmall?.color,
-        //         title: Text(
-        //           lang.label,
-        //           style: TextStyle(color: theme.textTheme.bodyMedium?.color),
-        //         ),
-        //         value: lang,
-        //       );
-        //     }).toList(),
-        //   ),
-        // ),
         GridView.builder(
           padding: EdgeInsets.symmetric(horizontal: 10),
           shrinkWrap: true, // Importante para que funcione dentro de un scroll

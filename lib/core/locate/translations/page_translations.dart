@@ -17,6 +17,7 @@ class TranslatesPages {
   final String settingsTitle = 'settingsTitle';
   final String theme = 'settingsTheme';
   final String language = 'settingsLanguage';
+  final String languageTitle = 'languageTitle';
 
   static const Map<String, Map<AppLang, String>> translations = {
     // -------------------- Pages --------------------
@@ -91,6 +92,16 @@ class TranslatesPages {
       AppLang.ru: 'Язык',
       AppLang.ja: '言語',
       AppLang.zh: '语言',
+    },
+    'languageTitle': {
+      AppLang.es: 'Selecciona un idioma',
+      AppLang.en: 'Select language',
+      AppLang.de: 'Sprache auswählen',
+      AppLang.pt: 'Selecionar idioma',
+      AppLang.fr: 'Choisir la langue',
+      AppLang.ru: 'Выберите язык',
+      AppLang.ja: '言語を選択',
+      AppLang.zh: '选择语言',
     },
   };
 }
