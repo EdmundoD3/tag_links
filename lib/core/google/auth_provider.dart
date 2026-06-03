@@ -21,31 +21,33 @@ class AuthNotifier extends Notifier<AuthState> {
     return AuthState(isLoading: false);
   }
 
-  Future<void> _updateStateWithNewAuth(
-    GoogleSignInAccount user, {
-    bool interactive = false,
-  }) async {
-    // Forzamos la obtención de headers frescos.
-    // Si 'interactive' es true, el AuthManager debería forzar el refresco interno.
-    final authHeaders = await _authManager.getHeaders(
-      user,
-      forcePrompt: interactive,
-    );
+Future<void> _updateStateWithNewAuth(
+  GoogleSignInAccount user, {
+  bool interactive = false,
+}) async {
+  
+  // Si no es interactivo y requiere UI, getHeaders() ahora retornará null de inmediato
+  // sin dar oportunidad a que el SDK nativo congele tu aplicación.
+  final authHeaders = await _authManager.getHeaders(
+    user,
+    forcePrompt: interactive,
+  );
 
-    if (authHeaders == null) {
-      throw DrivePermissionDeniedException();
-    }
-
-    final newClient = GoogleHttpClient(authHeaders);
-    final newDriveApi = drive.DriveApi(newClient);
-
-    state = AuthState(
-      user: user,
-      driveApi: newDriveApi,
-      isLoading: false,
-      lastResult: SilentLoginResult.success,
-    );
+  if (authHeaders == null) {
+    // Lanza la excepción controlada que atrapará el catch de tu initSilentLogin
+    throw DrivePermissionDeniedException(); 
   }
+
+  final newClient = GoogleHttpClient(authHeaders);
+  final newDriveApi = drive.DriveApi(newClient);
+
+  state = AuthState(
+    user: user,
+    driveApi: newDriveApi,
+    isLoading: false,
+    lastResult: SilentLoginResult.success,
+  );
+}
 
   /// Proceso centralizado para crear el DriveApi y actualizar el estado de un solo golpe
   Future<bool> initSilentLogin() async {

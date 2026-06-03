@@ -11,8 +11,6 @@ import 'package:tag_links/config/google_sign_in_config.dart';
 import 'package:tag_links/core/ads/ads_disable_provider.dart';
 import 'package:tag_links/core/ads/ads_service_provider.dart';
 import 'package:tag_links/core/app_purchases/premium_provider.dart';
-import 'package:tag_links/core/auth/skiped_auth_provider.dart';
-import 'package:tag_links/core/auth/welcome_page.dart';
 import 'package:tag_links/core/google/auth_provider.dart';
 import 'package:tag_links/core/theme/theme_provider.dart';
 import 'package:tag_links/data/database.dart';
@@ -127,13 +125,7 @@ class MainPageRouter extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Escuchamos ambos para reaccionar a cambios de sesión o de saltos
-    ref.watch(authProvider); 
-    final hasSkipped = ref.watch(skipedAuthProvider);
-
-    // 🎯 La única condición de salida es ser un usuario totalmente nuevo
-    if (hasSkipped == null) {
-      return const WelcomePage();
-    }
+    ref.watch(authProvider);
 
     // Para todo lo demás (Logueado, Omitido, Error, Offline): Home.
     return const HomePage(folder: null);
