@@ -14,20 +14,8 @@ class AuthManager {
 
   // 1. Intento silencioso: Solo devuelve el usuario si ya existe y NO requiere interfaz
   Future<GoogleSignInAccount?> getSilentUser() async {
-    final bool requiereUI = _googleSignIn.authorizationRequiresUserInteraction();
-    
-    if (requiereUI) {
-      debugPrint("⛔ [SilentUser] El sistema indica que se requiere interacción del usuario. Abortando.");
-      return null;
-    }
-
-    try {
-      final cuenta = await _googleSignIn.attemptLightweightAuthentication();
-      return cuenta;
-    } catch (e) {
-      debugPrint("⚠️ [SilentUser] Error en autenticación ligera: $e");
-      return null;
-    }
+    //ahora no verificaremos si es posible hacerlo silencioso
+    return await _googleSignIn.attemptLightweightAuthentication();
   }
 
   // 2. Login interactivo: Abre la ventanita de forma intencional
@@ -40,13 +28,15 @@ class AuthManager {
     GoogleSignInAccount user, {
     bool forcePrompt = false,
   }) async {
-    
     // 🛡️ ESCUDO IMPRESCINDIBLE: Si no estamos forzando la interfaz, comprobamos
     // si el llavero nativo va a necesitar levantar un modal para refrescar scopes.
     if (!forcePrompt) {
-      final bool requiereUI = _googleSignIn.authorizationRequiresUserInteraction();
+      final bool requiereUI = _googleSignIn
+          .authorizationRequiresUserInteraction();
       if (requiereUI) {
-        debugPrint("⛔ [getHeaders] Se detectó que renovar tokens requerirá UI. Abortando en silencio.");
+        debugPrint(
+          "⛔ [getHeaders] Se detectó que renovar tokens requerirá UI. Abortando en silencio.",
+        );
         return null; // Devolver null obligará a arrojar DrivePermissionDeniedException de forma segura
       }
     }
