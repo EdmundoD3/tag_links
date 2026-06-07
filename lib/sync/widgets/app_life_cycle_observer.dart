@@ -36,6 +36,7 @@ class _AppLifecycleObserverState extends ConsumerState<AppLifecycleObserver>
       // 1. Evitamos disparar inmediatamente para dejar que la UI respire
       Future.delayed(const Duration(seconds: 3), () {
         // 2. Verificamos que el usuario siga en la app y esté autenticado
+        // no necesitamos forzar iniciar sesion
         final auth = ref.read(authProvider);
         
         if (auth.isAuthenticated) {

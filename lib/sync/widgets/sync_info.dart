@@ -10,7 +10,7 @@ class BuildSyncInfo extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final lastSync = ref.watch(lastSyncTimestampProvider);
+    final lastSync = ref.watch(lastSyncProvider).lastPulledAt;
     final syncedStatus = lastSync == null
         ? ref.tr(TKeys.sync.notSynced)
         : "${ref.tr(TKeys.sync.lastSync)} ${ref.fmt(lastSync)}";

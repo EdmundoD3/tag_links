@@ -10,44 +10,60 @@ import 'package:tag_links/core/google/models/silent_login_result.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:tag_links/core/google/google_http_client.dart';
+import 'package:tag_links/sync/last_sync_storage.dart';
 
 class AuthNotifier extends Notifier<AuthState> {
   AuthManager get _authManager => ref.read(authManagerProvider);
 
   @override
   AuthState build() {
-    // 🎯 Usamos microtask para no interferir con la creación del Provider
-    Future.microtask(() => initSilentLogin());
     return AuthState(isLoading: false);
   }
 
-Future<void> _updateStateWithNewAuth(
-  GoogleSignInAccount user, {
-  bool interactive = false,
-}) async {
-  
-  // Si no es interactivo y requiere UI, getHeaders() ahora retornará null de inmediato
-  // sin dar oportunidad a que el SDK nativo congele tu aplicación.
-  final authHeaders = await _authManager.getHeaders(
-    user,
-    forcePrompt: interactive,
-  );
+  Future<void> _updateStateWithNewAuth(
+    GoogleSignInAccount user, {
+    bool interactive = false,
+    bool ignorarConflicto =
+        false, // Permite saltarse la aduana si el usuario ya aceptó
+  }) async {
+    // 🛡️ ADUANA DE CORREOS: Verificamos si hay conflicto con SharedPreferences
+    if (!ignorarConflicto) {
+      final syncInfo = ref.read(lastSyncProvider);
+      final emailViejo = syncInfo.lastLoggedEmail;
+      final emailNuevo = user.email;
 
-  if (authHeaders == null) {
-    // Lanza la excepción controlada que atrapará el catch de tu initSilentLogin
-    throw DrivePermissionDeniedException(); 
+      if (emailViejo != null && emailViejo != emailNuevo) {
+        // Frenamos el flujo y lanzamos la alerta hacia el catch
+        throw AccountConflictException(
+          emailViejo: emailViejo,
+          emailNuevo: emailNuevo,
+          userIntruso: user,
+        );
+      }
+    }
+
+    final authHeaders = await _authManager.getHeaders(
+      user,
+      forcePrompt: interactive,
+    );
+
+    if (authHeaders == null) {
+      throw DrivePermissionDeniedException();
+    }
+
+    final newClient = GoogleHttpClient(authHeaders);
+    final newDriveApi = drive.DriveApi(newClient);
+
+    // Si todo sale bien y no hubo conflicto (o se ignoró), guardamos/actualizamos el correo actual
+    ref.read(lastSyncProvider.notifier).update(email: user.email, lastPulledAt: DateTime.now().microsecondsSinceEpoch);
+
+    state = AuthState(
+      user: user,
+      driveApi: newDriveApi,
+      isLoading: false,
+      lastResult: SilentLoginResult.success,
+    );
   }
-
-  final newClient = GoogleHttpClient(authHeaders);
-  final newDriveApi = drive.DriveApi(newClient);
-
-  state = AuthState(
-    user: user,
-    driveApi: newDriveApi,
-    isLoading: false,
-    lastResult: SilentLoginResult.success,
-  );
-}
 
   /// Proceso centralizado para crear el DriveApi y actualizar el estado de un solo golpe
   Future<bool> initSilentLogin() async {
@@ -78,25 +94,30 @@ Future<void> _updateStateWithNewAuth(
         return false;
       }
 
-      // 🎯 Refrescamos headers para evitar el error 401 inmediato
       await _updateStateWithNewAuth(user);
-
       await ref.read(skipedAuthProvider.notifier).saveHasSkippedAuth(false);
       return true;
     } catch (e) {
       debugPrint("⚠️ Error en silent login: $e");
 
+      // Si en el inicio silencioso hay conflicto de cuenta, cerramos sesión de forma segura
+      if (e is AccountConflictException) {
+        debugPrint(
+          "🚫 Conflicto detectado en segundo plano. Abortando sesión intrusa.",
+        );
+        await logout();
+        return false;
+      }
+
       final isAuthErr =
           e.toString().contains("401") ||
           e.toString().contains("AUTH_401") ||
           e is DrivePermissionDeniedException;
-
       state = AuthState(
         isLoading: false,
         lastResult: isAuthErr
             ? SilentLoginResult.expired
             : _mapErrorToResult(e),
-        // Mantenemos al usuario aunque esté expirado para poder intentar login(interactivo) después
         user: state.user,
       );
       return false;
@@ -107,7 +128,6 @@ Future<void> _updateStateWithNewAuth(
     state = AuthState(isLoading: true);
     try {
       final user = await _authManager.getInteractiveUser();
-
       if (user == null) {
         state = AuthState(
           isLoading: false,
@@ -115,20 +135,32 @@ Future<void> _updateStateWithNewAuth(
         );
         return false;
       }
-
-      // forcePrompt: true asegura que se pidan los permisos/headers de nuevo
       await _updateStateWithNewAuth(user, interactive: true);
       await ref.read(skipedAuthProvider.notifier).saveHasSkippedAuth(false);
       return true;
     } catch (e) {
-      debugPrint("❌ Error en Login Manual: $e");
+      // 🎯 AQUÍ CAPTURAMOS EL CONFLICTO EN EL LOGIN MANUAL
+      if (e is AccountConflictException) {
+        state = AuthState(
+          isLoading: false,
+          user: e
+              .userIntruso, // Guardamos temporalmente el usuario para poder usarlo si deciden fusionar
+          lastResult: SilentLoginResult
+              .error, // O una propiedad personalizada si la tienes en tu enum
+        );
+        // Re-lanzamos el error para que la vista (.catchError o try/catch en el botón) abra el Diálogo
+        rethrow;
+      }
+
+      debugPrint("AutNotifier: ❌ Error en Login Manual: $e");
       state = AuthState(isLoading: false, lastResult: SilentLoginResult.error);
       return false;
     }
   }
 
   Future<bool> attemptSessionRepair() async {
-    if (state.isAuthenticated && state.lastResult == SilentLoginResult.success) {
+    if (state.isAuthenticated &&
+        state.lastResult == SilentLoginResult.success) {
       return true;
     }
     if (state.isLoading) return false;
@@ -178,6 +210,20 @@ Future<void> _updateStateWithNewAuth(
     } catch (e) {
       debugPrint("❌ Error al saltar login: $e");
       state = AuthState(isLoading: false);
+    }
+  }
+
+  /// Método público para cuando el usuario presione "SÍ, FUSIONAR" en tu diálogo
+  Future<void> forzarFusionDeCuenta(GoogleSignInAccount user) async {
+    state = AuthState(isLoading: true);
+    try {
+      await _updateStateWithNewAuth(
+        user,
+        ignorarConflicto: true,
+        interactive: true,
+      );
+    } catch (e) {
+      state = AuthState(isLoading: false, lastResult: SilentLoginResult.error);
     }
   }
 

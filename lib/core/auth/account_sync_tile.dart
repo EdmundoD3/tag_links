@@ -1,11 +1,9 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:tag_links/core/google/auth_provider.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
-import 'package:tag_links/sync/sync_notifier_provider.dart';
+import 'package:tag_links/sync/sync_fowder_handler.dart';
 import 'package:tag_links/ui/alerts/confirm_dialog.dart';
 
 class AccountSyncTile extends ConsumerWidget {
@@ -42,19 +40,19 @@ class _GoogleLoginButton extends ConsumerWidget {
       onPressed: isLoading
           ? null
           : () async {
-              // 1. Ejecutamos el login
-              await ref.read(authProvider.notifier).login();
+              // 🎯 1. Invocamos al manejador interactivo unificado pasándole el contexto fresco
+              await SyncFlowHandler.handleInteractiveLogin(context, ref);
+              
+              // 🛡️ 2. Cláusula de guardia: Si el usuario tardó mucho y cerró la pantalla de ajustes,
+              // evitamos cualquier debugPrint posterior.
+              if (!context.mounted) return;
 
-              // 2. Verificamos si el login fue exitoso
+              // 3. Verificamos el resultado final para tu log de control
               final auth = ref.read(authProvider);
               if (auth.isAuthenticated) {
                 debugPrint(
-                  "🎯 Login exitoso: Disparando sincronización inicial.",
+                  "🎯 Login exitoso desde Ajustes: Todo sincronizado correctamente.",
                 );
-
-                // Disparamos el sync.
-                // Usamos synchronize() para que respete el cooldown si ya hubiera uno.
-                unawaited(ref.read(syncProvider.notifier).synchronize());
               }
             },
       icon: isLoading
@@ -66,13 +64,13 @@ class _GoogleLoginButton extends ConsumerWidget {
           : const Icon(Icons.cloud_upload, color: Color(0xFF7E57C2)),
       label: Text(
         ref.tr(TKeys.auth.loginWithGoogle),
-        style: TextStyle(color: Color(0xFF9E80D1)),
+        style: const TextStyle(color: Color(0xFF9E80D1)),
       ),
       style: ElevatedButton.styleFrom(
         minimumSize: const Size(
           double.infinity,
           48,
-        ), // Botón ancho para Ajustes
+        ),
       ),
     );
   }

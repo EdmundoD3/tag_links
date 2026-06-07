@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/google/auth_provider.dart';
 import 'package:tag_links/core/google/models/auth_state_model.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
+import 'package:tag_links/sync/last_sync_storage.dart';
+import 'package:tag_links/sync/sync_fowder_handler.dart';
 import 'package:tag_links/sync/sync_notifier_provider.dart';
 import 'package:tag_links/ui/alerts/text_dialog.dart';
 import 'package:tag_links/ui/button/action_button.dart';
@@ -45,35 +47,77 @@ class ManualSyncButton extends ConsumerWidget {
     required SyncState state,
   }) async {
     final syncNotifier = ref.read(syncProvider.notifier);
-    final authNotifier = ref.read(authProvider.notifier);
 
-    // 1. Caso: Gris / No autenticado -> Invitación (El reparador manual de conexión)
+    // 1. Caso: No autenticado en el estado actual de la app
     if (!authState.isAuthenticated) {
-      final bool? wantLogin = await _showLoginInvitation(context, ref);
-      if (wantLogin == true) {
-        final success = await authNotifier.login();
-        if (success) syncNotifier.forceSynchronize();
+      // 💾 Revisamos si existe algún historial de sincronización previo
+      final lastSync = ref.read(lastSyncProvider);
+      // o la condición que use tu provider para saber si es válido
+      final bool hasPreviousAccount = lastSync.lastLoggedEmail != null;
+
+      if (hasPreviousAccount) {
+        debugPrint(
+          "🔄 Usuario previo detectado. Intentando reconexión silenciosa por debajo...",
+        );
+
+        // Intentamos parchar la sesión sin molestar al usuario
+        await SyncFlowHandler.handleSilentSyncCheck(context, ref);
+
+        if (!context.mounted) return;
+
+        // Si el login silencioso falló (el token murió por completo), escalamos al interactivo sin mostrar el diálogo de invitación
+        if (!ref.read(authProvider).isAuthenticated) {
+          debugPrint(
+            "⚠️ Login silencioso insuficiente. Escalando a interactivo...",
+          );
+          await SyncFlowHandler.handleInteractiveLogin(context, ref);
+          if (!context.mounted) return;
+        }
+      } else {
+        // 🆕 Es un usuario completamente nuevo: Le mostramos la invitación formal
+        final bool? wantLogin = await _showLoginInvitation(context, ref);
+        if (!context.mounted) return;
+
+        if (wantLogin == true) {
+          await SyncFlowHandler.handleInteractiveLogin(context, ref);
+          if (!context.mounted) return;
+        }
+      }
+
+      // Si cualquiera de las dos rutas anteriores logró recuperar la sesión con éxito, forzamos sync
+      if (ref.read(authProvider).isAuthenticated) {
+        syncNotifier.forceSynchronize();
       }
       return;
     }
 
-    // 2. Caso: Error 401 (El reparador manual de credenciales)
+    // 2. Caso: Error 401 (El usuario figura como autenticado pero Drive rechaza el token)
     final isAuthError =
         state.status == SyncStatus.error &&
         (state.lastError?.contains("401") == true ||
             state.lastError == "AUTH_401");
 
     if (isAuthError) {
-      debugPrint("🔧 Reparando sesión...");
-      bool success = await authNotifier.initSilentLogin();
-      if (!success) success = await authNotifier.login();
+      debugPrint("🔧 Reparando sesión 401 desde botón manual...");
 
-      if (success) syncNotifier.forceSynchronize();
+      await SyncFlowHandler.handleSilentSyncCheck(context, ref);
+      if (!context.mounted) return;
+
+      if (!ref.read(authProvider).isAuthenticated) {
+        await SyncFlowHandler.handleInteractiveLogin(context, ref);
+        if (!context.mounted) return;
+      }
+
+      if (ref.read(authProvider).isAuthenticated) {
+        syncNotifier.forceSynchronize();
+      }
       return;
     }
 
-    // 3. Estado normal
+    // 3. Estado normal: Si ya está sincronizando, ignoramos clics dobles
     if (state.status == SyncStatus.syncing) return;
+
+    // Si todo está sano, ejecutamos la sincronización manual limpia
     syncNotifier.forceSynchronize();
   }
 

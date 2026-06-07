@@ -65,7 +65,11 @@ class HomePage extends ConsumerWidget {
           ).unfocus(), // <--- Quita el foco de cualquier TextField
           child: Scaffold(
             backgroundColor: theme.scaffoldBackgroundColor,
-            appBar: _appBar(showFolders, preference, ref),
+            appBar: _appBar(
+              ref: ref,
+              showFolders: showFolders,
+              preference: preference,
+            ),
             body: SafeArea(
               // 1. Usamos el Stack como base del cuerpo
               child: Stack(
@@ -131,25 +135,21 @@ class HomePage extends ConsumerWidget {
     );
   }
 
-  PreferredSizeWidget _appBar(
-    bool showFolders,
-    FolderDefaultView preference,
-    WidgetRef ref,
-  ) {
-    if (_isRoot) {
-      return AppBarPages(
-        title: ref.tr(TKeys.pages.appName, fallback: 'Tag Links'),
-        actions: [
-          if (kDebugMode) GoDebugPageButon(),
-          const ManualSyncButton(),
-          const GoSettingsButton(),
-          _creationButton(showFolders),
-        ],
-      );
-    }
+  PreferredSizeWidget _appBar({
+    required bool showFolders,
+    required FolderDefaultView preference,
+    required WidgetRef ref,
+  }) {
     return AppBarPages(
-      title: folder!.title,
-      actions: [_creationButton(showFolders)],
+      title: _isRoot
+          ? ref.tr(TKeys.pages.appName, fallback: 'Tag Links')
+          : folder!.title,
+      actions: [
+        if (kDebugMode) GoDebugPageButon(),
+        if (_isRoot) const ManualSyncButton(),
+        if (_isRoot) const GoSettingsButton(),
+        _creationButton(showFolders: showFolders),
+      ],
     );
   }
 
@@ -161,7 +161,7 @@ class HomePage extends ConsumerWidget {
   }
 
   /// ➕ FAB dinámico
-  Widget _creationButton(bool showFolders) {
+  Widget _creationButton({required bool showFolders}) {
     return showFolders
         ? CreateNewFolderButton(parentFolderId: folder?.id)
         : CreateNewNoteButton(folderId: folder?.id);

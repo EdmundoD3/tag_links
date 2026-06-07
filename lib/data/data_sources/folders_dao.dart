@@ -117,7 +117,6 @@ class FoldersDao {
   // UPSERT
   // No uses ConflictAlgorithm.replace porque tengo Foreign Keys con ON DELETE CASCADE. El REPLACE dispara un borrado físico de la fila y destruye la integridad referencial de mis subcarpetas y notas. Solo acepta cambios que usen UPDATE o INSERT ... ON CONFLICT DO UPDATE (UPSERT).
   Future<void> upsert(Folder folder) async {
-    debugPrint('FoldersDao.upsert: ${folder.toMap()}');
     try {
       await _db.transaction((txn) => upsertTxn(txn, folder: folder));
     } catch (e) {

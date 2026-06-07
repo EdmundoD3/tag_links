@@ -44,8 +44,8 @@ class SyncNotifier extends AsyncNotifier<SyncState> {
   @override
   Future<SyncState> build() async {
     // USA ESTO: Lee el valor una sola vez sin suscribirte
-    final storage = ref.read(lastSyncTimestampProvider.notifier);
-    final lastTime = storage.state ?? 0;
+    final storage = ref.read(lastSyncProvider.notifier);
+    final lastTime = storage.state.lastPulledAt ?? 0;
 
     return SyncState(lastSyncTimestamp: lastTime);
   }
@@ -139,7 +139,7 @@ Future<void> _realSyncLogic() async {
 
   // A partir de aquí, remoteData ya no es nulo y es seguro usarlo
   final idManager = ref.read(localIdManagerProvider);
-  final storage = ref.read(lastSyncTimestampProvider.notifier);
+  final storage = ref.read(lastSyncProvider.notifier);
   final lastPulled = state.value?.lastSyncTimestamp ?? 0;
 
   if (_syncPuller == null) return;
@@ -188,7 +188,7 @@ Future<void> _realSyncLogic() async {
       );
 
   await configManager.updateRemoteConfig(remoteData.fileId, finalConfig);
-  storage.updateTimestamp(now);
+  storage.update(lastPulledAt: now);
 }
 
   String _mapErrorToHumanMessage(Object e) {

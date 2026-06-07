@@ -77,7 +77,7 @@ class SyncPuller {
     List<String> deleteTagsIds = [];
     bool hadError = false;
 
-    final  pacer = SyncPacer();
+    final pacer = SyncPacer();
 
     for (var file in porEliminar) {
       try {
@@ -165,7 +165,7 @@ class SyncPuller {
       {'items': remote.folders, 'type': TypeQueue.folders},
       {'items': remote.notes, 'type': TypeQueue.notes},
     ];
-    final  pacer = SyncPacer();
+    final pacer = SyncPacer();
 
     for (var cat in allCategories) {
       final type = cat['type'] as TypeQueue;
@@ -273,8 +273,6 @@ class SyncPuller {
     );
   }
 }
-
-
 
 final syncPullerProvider = Provider<SyncPuller?>((ref) {
   final auth = ref.watch(authProvider);

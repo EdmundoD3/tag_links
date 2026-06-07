@@ -7,48 +7,56 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:share_handler/share_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite/sqflite.dart';
 import 'package:tag_links/config/google_sign_in_config.dart';
 import 'package:tag_links/core/ads/ads_disable_provider.dart';
 import 'package:tag_links/core/ads/ads_service_provider.dart';
 import 'package:tag_links/core/app_purchases/premium_provider.dart';
-import 'package:tag_links/core/google/auth_provider.dart';
+import 'package:tag_links/core/google/auth_manager.dart';
 import 'package:tag_links/core/theme/theme_provider.dart';
 import 'package:tag_links/data/database.dart';
 import 'package:tag_links/pages/home_page.dart';
 import 'package:tag_links/data/shared_prefs_provider.dart';
 import 'package:tag_links/state/url_provider.dart';
 import 'package:tag_links/core/theme/app_theme.dart';
+import 'package:tag_links/sync/last_sync_storage.dart';
+import 'package:tag_links/sync/sync_fowder_handler.dart';
 import 'package:tag_links/sync/widgets/app_life_cycle_observer.dart';
 import 'package:tag_links/core/media_in_coming/handle_media_in_coming_url.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting();
-  await GoogleSignIn.instance.initialize(
-    // El ID de cliente web es necesario para Drive en Android
+  
+  // 1. Obtener la instancia del Singleton
+  final googleSignIn = GoogleSignIn.instance;
+  
+  // 2. Configurar el cliente nativo para los Backups de Drive
+  await googleSignIn.initialize(
     serverClientId: GoogleSignInAppConfig.clientId,
   );
-  // Cargamos ambos motores en paralelo para ganar velocidad
+  
+  // 3. Carga en paralelo de DB y SharedPreferences (¡Excelente optimización!)
   final results = await Future.wait([
     AppDatabase().database,
     SharedPreferences.getInstance(),
   ]);
 
-  final db = results[0] as dynamic; // Tu instancia de DB
+  final db = results[0] as Database; 
   final prefs = results[1] as SharedPreferences;
 
   runApp(
     ProviderScope(
       overrides: [
-        // Inyectamos globalmente
         databaseProvider.overrideWithValue(db),
         sharedPrefsProvider.overrideWithValue(prefs),
+        // Aquí ocurre la magia: Inyectas la instancia perfectamente configurada
+        googleSignInProvider.overrideWithValue(googleSignIn),
       ],
       child: const MyApp(),
     ),
   );
 }
-
 class MyApp extends ConsumerStatefulWidget {
   const MyApp({super.key});
 
@@ -124,10 +132,10 @@ class MainPageRouter extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Escuchamos ambos para reaccionar a cambios de sesión o de saltos
-    ref.watch(authProvider);
+    final syncInfo = ref.watch(lastSyncProvider);
+    SyncFlowHandler.silentInitLogin(context, ref, syncInfo);
 
-    // Para todo lo demás (Logueado, Omitido, Error, Offline): Home.
+    // Acceso inmediato a la Home
     return const HomePage(folder: null);
   }
 }
