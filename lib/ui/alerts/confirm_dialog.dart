@@ -70,7 +70,8 @@ class ConfirmDialog {
       // Mensaje específico para advertir la permanencia
       message: ref.tr(
         TKeys.alerts.deleteTagPermanent,
-        fallback: '¿Estás seguro de eliminar permanentemente esta etiqueta? Se quitará de todas las notas.',
+        fallback:
+            '¿Estás seguro de eliminar permanentemente esta etiqueta? Se quitará de todas las notas.',
       ),
       succesText: ref.tr(
         TKeys.alerts.deleteTagSuccess,
@@ -128,22 +129,68 @@ class ConfirmDialog {
       context,
       ref: ref,
       title: ref.tr(TKeys.alerts.limitReached, fallback: 'Límite de niveles'),
-      message:ref.tr(TKeys.alerts.limitReachedMessage,
+      message: ref.tr(
+        TKeys.alerts.limitReachedMessage,
         fallback: "Esta carpeta tiene hijos. Se moverán a la raíz.",
       ),
     );
   }
+
   static Future<bool?> logout(BuildContext context, WidgetRef ref) async {
-  return showConfirmDialog(
-    context,
-    title: ref.tr(TKeys.auth.logOut, fallback: 'Cerrar sesión'),
-    message: ref.tr(
-      TKeys.auth.confirmLogoutMessage, // Asegúrate de tener esta llave o usa fallback
-      fallback: '¿Estás seguro de que quieres cerrar sesión?',
-    ),
-    ref: ref,
-  );
-}
+    return showConfirmDialog(
+      context,
+      title: ref.tr(TKeys.auth.logOut, fallback: 'Cerrar sesión'),
+      message: ref.tr(
+        TKeys
+            .auth
+            .confirmLogoutMessage, // Asegúrate de tener esta llave o usa fallback
+        fallback: '¿Estás seguro de que quieres cerrar sesión?',
+      ),
+      ref: ref,
+    );
+  }
+  static Future<bool> accountConflict(
+    {required BuildContext context,
+    required WidgetRef ref,
+    required String emailViejo,
+    required String emailNuevo,}
+  )async {
+
+    final resultado = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false, // Obliga al usuario a tomar una decisión
+      builder: (context) {
+        return AlertDialog(
+          title:  Row(
+            children: [
+              const Icon(Icons.swap_horizontal_circle, color: Colors.orange),
+              const SizedBox(width: 10),
+              Text(ref.tr(TKeys.auth.cambiarCuenta,fallback: "¿Cambiar de cuenta?")),
+            ],
+          ),
+          content: Text(
+            ref.tr(TKeys.auth.accountConflictMsg)
+      .replaceAll('{emailViejo}', emailViejo)
+      .replaceAll('{emailNuevo}', emailNuevo),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false), // NO
+              child: Text(ref.tr(TKeys.actions.cancel, fallback: 'Cancelar'), style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true), // SÍ
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+              child: Text(ref.tr(TKeys.auth.siFusionar,fallback: "SÍ, FUSIONAR")),
+            ),
+          ],
+        );
+      },
+    );
+
+    return resultado ?? false;
+  }
+  
 }
 
 Future<void> _deleteAction(
@@ -175,7 +222,6 @@ Future<void> _deleteAction(
       backgroundColor: Colors.deepOrangeAccent,
     );
   }
-  
 }
 
 Future<bool?> showConfirmDialog(
@@ -192,11 +238,7 @@ Future<bool?> showConfirmDialog(
       return AlertDialog(
         backgroundColor: Theme.of(context).cardColor,
         title: TextDialogTitle(title: title),
-        content: message != null
-            ? TextDialogContent(
-                text: message,
-              )
-            : null,
+        content: message != null ? TextDialogContent(text: message) : null,
         actions: [
           TextButton(
             style: TextButton.styleFrom(

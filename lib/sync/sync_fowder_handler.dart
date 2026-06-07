@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/core/google/account_conflict_dialog.dart';
 import 'package:tag_links/core/google/auth_provider.dart';
 import 'package:tag_links/core/google/models/auth_exeptions.dart';
 import 'package:tag_links/core/google/models/silent_login_result.dart';
 import 'package:tag_links/sync/last_sync_storage.dart';
 import 'package:tag_links/sync/sync_notifier_provider.dart';
 import 'dart:async';
+
+import 'package:tag_links/ui/alerts/confirm_dialog.dart';
 
 class SyncFlowHandler {
   static Future<void> silentInitLogin(
@@ -55,8 +56,9 @@ class SyncFlowHandler {
     } catch (e) {
       if (e is AccountConflictException) {
         if(!context.mounted) return;
-        final quiereFusionar = await AccountConflictDialog.show(
+        final quiereFusionar = await ConfirmDialog.accountConflict(
           context: context,
+          ref: ref,
           emailViejo: e.emailViejo,
           emailNuevo: e.emailNuevo,
         );
@@ -99,8 +101,9 @@ class SyncFlowHandler {
     } catch (e) {
       if (e is AccountConflictException) {
         if(!context.mounted) return;
-        final quiereFusionar = await AccountConflictDialog.show(
+        final quiereFusionar = await ConfirmDialog.accountConflict(
           context: context,
+          ref: ref,
           emailViejo: e.emailViejo,
           emailNuevo: e.emailNuevo,
         );

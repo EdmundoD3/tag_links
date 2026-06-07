@@ -71,7 +71,7 @@ class SyncPusher {
           existingFileId: fileMeta.driveFileId,
         );
 
-        if (driveId == null || driveId.isEmpty) {
+        if ( driveId.isEmpty) {
           throw Exception("Drive no devolvió un ID válido");
         }
 

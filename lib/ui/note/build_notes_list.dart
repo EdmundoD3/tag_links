@@ -66,7 +66,7 @@ class BuildNotesList extends ConsumerWidget {
                 }
               },
               actionsItems: [
-                if (actionsItems != null) ...actionsItems!,
+                ...?actionsItems,
                 if (goFolder != null)
                   ActionMenuItem(
                     icon: Icons.drive_folder_upload,

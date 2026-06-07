@@ -13,6 +13,9 @@ class TranslatesAuth {
   final String sessionExpired = 'sessionExpired';
   final String reconnectGoogle = 'reconnectGoogle';
   final String confirmLogoutMessage = 'confirmLogoutMessage';
+  final String accountConflictMsg = 'accountConflictMsg';
+  final String cambiarCuenta = 'cambiarCuenta';
+  final String siFusionar = 'siFusionar';
 
   static const Map<String, Map<AppLang, String>> translations = {
     'loginWithGoogle': {
@@ -127,5 +130,18 @@ class TranslatesAuth {
       AppLang.ja: 'ログアウトしてもよろしいですか？',
       AppLang.zh: '确定要退出登录吗？',
     },
+    //Conflict
+    'accountConflictMsg':{
+      AppLang.es: """Has iniciado sesión con una cuenta diferente.\n\n
+            • Cuenta anterior: {emailViejo}\n
+            • Cuenta nueva: {emailNuevo}\n\n
+            Si continúas, las notas de este dispositivo se fusionarán con la nueva cuenta en Google Drive.""",
+    },
+    'cambiarCuenta': {
+      AppLang.es: "¿Cambiar de cuenta?"
+    },
+    'siFusionar':{
+      AppLang.es: "SÍ, FUSIONAR"
+    }
   };
 }
