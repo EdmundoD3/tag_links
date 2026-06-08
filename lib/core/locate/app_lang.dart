@@ -1,7 +1,15 @@
-enum AppLang { es, en, de, pt, fr, ru, ja, zh }
+enum AppLang {
+  es,
+  en,
+  de,
+  pt,
+  fr,
+  ru,
+  ja,
+  zh,
+}
 
 extension AppLangX on AppLang {
-  // 1. El nombre que el usuario ve en la configuración
   String get label {
     switch (this) {
       case AppLang.es:
@@ -19,11 +27,10 @@ extension AppLangX on AppLang {
       case AppLang.ja:
         return '日本語';
       case AppLang.zh:
-        return '中文'; // Chino
+        return '中文';
     }
   }
 
-  // 2. El código ISO que devuelve el sistema (Android/iOS)
   String get isoCode {
     switch (this) {
       case AppLang.es:
@@ -41,18 +48,37 @@ extension AppLangX on AppLang {
       case AppLang.ja:
         return 'ja';
       case AppLang.zh:
-        return 'zh'; // Chino (simplificado por defecto)
+        return 'zh';
     }
   }
 
-  // 3. Método estático para convertir un código de sistema a tu Enum
+  String get emoji {
+    switch (this) {
+      case AppLang.es:
+        return '🇪🇸';
+      case AppLang.en:
+        return '🇺🇸';
+      case AppLang.de:
+        return '🇩🇪';
+      case AppLang.pt:
+        return '🇧🇷';
+      case AppLang.fr:
+        return '🇫🇷';
+      case AppLang.ru:
+        return '🇷🇺';
+      case AppLang.ja:
+        return '🇯🇵';
+      case AppLang.zh:
+        return '🇨🇳';
+    }
+  }
+
   static AppLang fromSystemCode(String code) {
-    // Tomamos solo los primeros 2 caracteres por si viene 'es_MX' o 'en_US'
     final cleanCode = code.split('_')[0].toLowerCase();
 
     return AppLang.values.firstWhere(
       (lang) => lang.isoCode == cleanCode,
-      orElse: () => AppLang.en, // Idioma por defecto si no lo soportas
+      orElse: () => AppLang.en,
     );
   }
 }

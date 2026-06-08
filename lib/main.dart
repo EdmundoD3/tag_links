@@ -27,22 +27,20 @@ import 'package:tag_links/core/media_in_coming/handle_media_in_coming_url.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting();
-  
+
   // 1. Obtener la instancia del Singleton
   final googleSignIn = GoogleSignIn.instance;
-  
+
   // 2. Configurar el cliente nativo para los Backups de Drive
-  await googleSignIn.initialize(
-    serverClientId: GoogleSignInAppConfig.clientId,
-  );
-  
+  await googleSignIn.initialize(serverClientId: GoogleSignInAppConfig.clientId);
+
   // 3. Carga en paralelo de DB y SharedPreferences (¡Excelente optimización!)
   final results = await Future.wait([
     AppDatabase().database,
     SharedPreferences.getInstance(),
   ]);
 
-  final db = results[0] as Database; 
+  final db = results[0] as Database;
   final prefs = results[1] as SharedPreferences;
 
   runApp(
@@ -57,6 +55,7 @@ void main() async {
     ),
   );
 }
+
 class MyApp extends ConsumerStatefulWidget {
   const MyApp({super.key});
 
@@ -127,15 +126,33 @@ class _MyAppState extends ConsumerState<MyApp> {
   }
 }
 
-class MainPageRouter extends ConsumerWidget {
+class MainPageRouter extends ConsumerStatefulWidget {
   const MainPageRouter({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final syncInfo = ref.watch(lastSyncProvider);
-    SyncFlowHandler.silentInitLogin(context, ref, syncInfo);
+  ConsumerState<MainPageRouter> createState() => _MainPageRouterState();
+}
 
-    // Acceso inmediato a la Home
+class _MainPageRouterState extends ConsumerState<MainPageRouter> {
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final syncInfo = ref.read(lastSyncProvider);
+
+      final ahora = DateTime.now().millisecondsSinceEpoch;
+      const veinticuatroHoras = 24 * 60 * 60 * 1000;
+
+      if (ahora - (syncInfo.lastPulledAt ?? ahora) >= veinticuatroHoras) {
+        SyncFlowHandler.handleSilentSyncCheck(context, ref);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return const HomePage(folder: null);
   }
 }

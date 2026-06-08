@@ -14,6 +14,20 @@ class AuthState {
     this.isLoading = false,
     this.lastResult,
   });
+  AuthState copyWith({
+       GoogleSignInAccount? user,
+   DriveApi? driveApi,
+   bool? isLoading,
+   SilentLoginResult? lastResult,
+  }){
+    return AuthState(
+      user: user?? this.user,
+      driveApi: driveApi ?? this.driveApi,
+      isLoading: isLoading ?? this.isLoading,
+      lastResult: lastResult?? this.lastResult,
+    )
+    ;
+  }
 
   bool get isAuthenticated => user != null && driveApi != null;
   bool get isSessionExpired => lastResult == SilentLoginResult.expired;

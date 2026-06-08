@@ -47,9 +47,9 @@ class SupportProjectPage extends ConsumerWidget {
     final theme = Theme.of(context);
     
     return [
-      ThemeSelector(),
+      const ThemeSelector(),
       const SizedBox(height: 15),
-      LangSelector(),
+      const LangSelector(),
       const SizedBox(height: 15),
 
       // Si ya decidió (es true o false), liberamos las opciones de apoyo

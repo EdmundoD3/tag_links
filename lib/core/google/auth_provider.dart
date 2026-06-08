@@ -55,7 +55,12 @@ class AuthNotifier extends Notifier<AuthState> {
     final newDriveApi = drive.DriveApi(newClient);
 
     // Si todo sale bien y no hubo conflicto (o se ignoró), guardamos/actualizamos el correo actual
-    ref.read(lastSyncProvider.notifier).update(email: user.email, lastPulledAt: DateTime.now().microsecondsSinceEpoch);
+    ref
+        .read(lastSyncProvider.notifier)
+        .update(
+          email: user.email,
+          lastPulledAt: DateTime.now().millisecondsSinceEpoch,
+        );
 
     state = AuthState(
       user: user,
@@ -67,6 +72,13 @@ class AuthNotifier extends Notifier<AuthState> {
 
   /// Proceso centralizado para crear el DriveApi y actualizar el estado de un solo golpe
   Future<bool> initSilentLogin() async {
+    if (state.isAuthenticated) {
+      return true;
+    }
+
+    if (state.isLoading) {
+      return false;
+    }
     final hasSkipped = ref.read(skipedAuthProvider);
     if (hasSkipped == true || hasSkipped == null) {
       state = AuthState(
@@ -78,7 +90,7 @@ class AuthNotifier extends Notifier<AuthState> {
       return false;
     }
 
-    state = AuthState(isLoading: true);
+    state = state.copyWith(isLoading: true);
 
     try {
       final user = await _authManager.getSilentUser().timeout(
@@ -125,7 +137,14 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   Future<bool> login() async {
-    state = AuthState(isLoading: true);
+    if (state.isAuthenticated) {
+      return true;
+    }
+
+    if (state.isLoading) {
+      return false;
+    }
+    state = state.copyWith(isLoading: true);
     try {
       final user = await _authManager.getInteractiveUser();
       if (user == null) {
@@ -186,7 +205,7 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   Future<void> logout() async {
-    state = AuthState(isLoading: true);
+    state = state.copyWith(isLoading: true);
 
     // 1. Limpiamos en Google
     await _authManager.signOut();
@@ -215,7 +234,7 @@ class AuthNotifier extends Notifier<AuthState> {
 
   /// Método público para cuando el usuario presione "SÍ, FUSIONAR" en tu diálogo
   Future<void> forzarFusionDeCuenta(GoogleSignInAccount user) async {
-    state = AuthState(isLoading: true);
+    state = state.copyWith(isLoading: true);
     try {
       await _updateStateWithNewAuth(
         user,
