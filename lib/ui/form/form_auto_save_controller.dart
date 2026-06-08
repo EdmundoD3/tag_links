@@ -11,7 +11,6 @@ class FormAutoSaveController<T> {
   String? _lastSavedHash;
   Future<void>? _currentProcess;
   int _retryCount = 0;
-    // Future<void> _flushProcess; // Para evitar múltiples flushes paralelos
   static const maxRetries = 3;
 
   // 🔥 NUEVO MÉTODO SYNC
@@ -39,7 +38,7 @@ class FormAutoSaveController<T> {
   Future<void> _process() async {
     try {
       while (_pending != null) {
-        final T current = _pending!;
+        final T current = _pending as T;
         _pending = null;
 
         try {
