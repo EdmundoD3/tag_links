@@ -17,8 +17,8 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
 
-# Build Number (+7): JAMÁS puede repetirse. Siempre debe ser mayor al anterior. Si la última vez subiste el 1, ahora toca el 2, luego el 3, y así hasta el infinito.
-version: 1.0.1+7
+# Build Number (+8): JAMÁS puede repetirse. Siempre debe ser mayor al anterior. Si la última vez subiste el 1, ahora toca el 2, luego el 3, y así hasta el infinito.
+version: 1.0.1+8
 
 environment:
   sdk: ^3.10.4
