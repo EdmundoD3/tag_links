@@ -149,7 +149,9 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
       debugPrint("Error en guardado final: $e");
     }
 
-    unawaited(ref.read(syncProvider.notifier).synchronize());
+    unawaited(ref.read(syncProvider.notifier).synchronize(
+      delay: const Duration(minutes: 1, seconds: 10)
+    ));
 
     // Continuar con los anuncios y cerrar...
     final adService = ref.read(adServiceProvider);

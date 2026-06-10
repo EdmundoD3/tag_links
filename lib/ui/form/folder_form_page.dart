@@ -232,7 +232,9 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
     try {
       await _autoSave.flush(folder);
 
-        unawaited(ref.read(syncProvider.notifier).synchronize());
+        unawaited(ref.read(syncProvider.notifier).synchronize(
+          delay: const Duration(minutes: 1, seconds: 10)
+        ));
       
 
       final adService = ref.read(adServiceProvider);
