@@ -20,6 +20,22 @@ class FolderPreference {
 }
 
 enum FolderDefaultView { folders, notes }
+extension FolderDefaultViewX on FolderDefaultView {
+  int get pageIndex {
+    switch (this) {
+      case FolderDefaultView.folders:
+        return 0;
+      case FolderDefaultView.notes:
+        return 1;
+    }
+  }
+
+  static FolderDefaultView fromPage(int page) {
+    return page == 0
+        ? FolderDefaultView.folders
+        : FolderDefaultView.notes;
+  }
+}
 
 const String folderPreferencesTable = """
 CREATE TABLE folder_preferences (

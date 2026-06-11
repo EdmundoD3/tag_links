@@ -27,7 +27,6 @@ import 'package:tag_links/utils/paginated_utils.dart';
 class HomePage extends ConsumerWidget {
   final Folder? folder;
   final String? highlightNoteId;
-
   final PaginatedByDate? paginated;
 
   const HomePage({
@@ -37,16 +36,17 @@ class HomePage extends ConsumerWidget {
     this.highlightNoteId,
   });
 
-  AsyncNotifierProvider<FolderPreferenceNotifier, FolderDefaultView>
-  get _foldersPreferenceProvider => folderPreferenceProvider(folder?.id);
-
   bool get _isRoot => folder == null;
   bool get _isLimitFolder => folder?.parentId != null;
+
+  AsyncNotifierProvider<FolderPreferenceNotifier, FolderDefaultView>
+      get _foldersPreferenceProvider => folderPreferenceProvider(folder?.id);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final preferenceAsync = ref.watch(_foldersPreferenceProvider);
     final theme = Theme.of(context);
+
     return preferenceAsync.when(
       loading: () => const ScaffoldLoading(),
       error: (err, _) {
@@ -54,27 +54,17 @@ class HomePage extends ConsumerWidget {
         return const Scaffold(body: Center(child: Text('Error: preferences')));
       },
       data: (preference) {
-        final showFolders = _isLimitFolder
-            ? false
-            : preference == FolderDefaultView.folders;
+        final showFolders =
+            preference == FolderDefaultView.folders && !_isLimitFolder;
 
-        // --- ENVOLVEMOS EL SCAFFOLD AQUÍ ---
         return GestureDetector(
-          onTap: () => FocusScope.of(
-            context,
-          ).unfocus(), // <--- Quita el foco de cualquier TextField
+          onTap: () => FocusScope.of(context).unfocus(),
           child: Scaffold(
             backgroundColor: theme.scaffoldBackgroundColor,
-            appBar: _appBar(
-              ref: ref,
-              showFolders: showFolders,
-              preference: preference,
-            ),
+            appBar: _appBar(ref: ref, showFolders: showFolders),
             body: SafeArea(
-              // 1. Usamos el Stack como base del cuerpo
               child: Stack(
                 children: [
-                  // 2. El contenido principal en una Column (Banners + Buscador + Lista)
                   Column(
                     children: [
                       BannerPendingNote(
@@ -93,22 +83,23 @@ class HomePage extends ConsumerWidget {
                       if (_isRoot) const RootSearchSection(),
 
                       Expanded(
-                        child: showFolders
-                            ? FoldersSection(parentId: folder?.id)
-                            : NotesSection(
+                        child: _isLimitFolder
+                            ? NotesSection(
                                 folderId: folder?.id,
                                 highlightNoteId: highlightNoteId,
+                              )
+                            : HomeSwipeableBody(
+                                folder: folder,
+                                highlightNoteId: highlightNoteId,
+                                preference: preference,
                               ),
                       ),
                     ],
                   ),
 
-                  // 3. El MiniForm posicionado de forma absoluta
-                  // Ahora sí, el Positioned es hijo directo del Stack
                   if (!showFolders)
                     Positioned(
-                      bottom:
-                          10, // Un poco separado del fondo o del banner de anuncios
+                      bottom: 10,
                       right: 0,
                       left: 0,
                       child: NoteMiniForm(folderId: folder?.id),
@@ -136,9 +127,8 @@ class HomePage extends ConsumerWidget {
   }
 
   PreferredSizeWidget _appBar({
-    required bool showFolders,
-    required FolderDefaultView preference,
     required WidgetRef ref,
+    required bool showFolders,
   }) {
     return AppBarPages(
       title: _isRoot
@@ -148,22 +138,106 @@ class HomePage extends ConsumerWidget {
         if (kDebugMode) GoDebugPageButon(),
         if (_isRoot) const ManualSyncButton(),
         if (_isRoot) const GoSettingsButton(),
-        _creationButton(showFolders: showFolders),
+        _buildCreationButton(showFolders),
       ],
     );
   }
 
-  /// 🔁 Cambiar vista y guardar preferencia
+  /// 🔁 Cambiar vista (Guardando preferencia desde los botones)
   Future<void> _selectView(FolderDefaultView select, WidgetRef ref) async {
-    return await ref
+    await ref
         .read(_foldersPreferenceProvider.notifier)
         .updatePreference(select);
   }
 
   /// ➕ FAB dinámico
-  Widget _creationButton({required bool showFolders}) {
+  Widget _buildCreationButton(bool showFolders) {
     return showFolders
         ? CreateNewFolderButton(parentFolderId: folder?.id)
         : CreateNewNoteButton(folderId: folder?.id);
+  }
+}
+
+class HomeSwipeableBody extends ConsumerStatefulWidget {
+  final Folder? folder;
+  final String? highlightNoteId;
+  final FolderDefaultView preference;
+
+  const HomeSwipeableBody({
+    super.key,
+    required this.folder,
+    required this.highlightNoteId,
+    required this.preference,
+  });
+
+  @override
+  ConsumerState<HomeSwipeableBody> createState() => _HomeSwipeableBodyState();
+}
+
+class _HomeSwipeableBodyState extends ConsumerState<HomeSwipeableBody> {
+  late final PageController _pageController;
+  // 🔑 Guardamos localmente el índice real de la página para desempatar eventos
+  late int _localPageIndex;
+
+  AsyncNotifierProvider<FolderPreferenceNotifier, FolderDefaultView>
+      get _preferenceProvider => folderPreferenceProvider(widget.folder?.id);
+
+  @override
+  void initState() {
+    super.initState();
+    _localPageIndex = widget.preference.pageIndex;
+    _pageController = PageController(initialPage: _localPageIndex);
+  }
+
+  @override
+  void didUpdateWidget(HomeSwipeableBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    
+    // 🛡️ Solo saltamos de página si la preferencia externa cambió 
+    // Y no coincide con la página que el usuario ya está viendo localmente.
+    if (oldWidget.preference != widget.preference &&
+        widget.preference.pageIndex != _localPageIndex &&
+        _pageController.hasClients) {
+      
+      _localPageIndex = widget.preference.pageIndex;
+      
+      // Usamos jumpToPage de forma segura tras el post-frame para evitar colisiones estéticas
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_pageController.hasClients) {
+          _pageController.jumpToPage(_localPageIndex);
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PageView(
+      controller: _pageController,
+      onPageChanged: (index) async {
+        // Actualizamos la posición local de inmediato
+        _localPageIndex = index;
+        
+        final view = FolderDefaultViewX.fromPage(index);
+        if (view == widget.preference) return;
+
+        await ref
+            .read(_preferenceProvider.notifier)
+            .updatePreference(view);
+      },
+      children: [
+        FoldersSection(parentId: widget.folder?.id),
+        NotesSection(
+          folderId: widget.folder?.id,
+          highlightNoteId: widget.highlightNoteId,
+        ),
+      ],
+    );
   }
 }

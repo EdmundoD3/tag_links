@@ -24,10 +24,8 @@ class FolderPreferenceNotifier extends AsyncNotifier<FolderDefaultView> {
   @override
   Future<FolderDefaultView> build() async {
     ref.onDispose(_debouncer.dispose);
-
-    if(_isRoot) return FolderDefaultView.folders;
-
-    return _repo.getPreference(folderId!);
+    //TODO revisar
+    return _repo.getPreference(folderId??"root");
   }
 
   Future<void> updatePreference(FolderDefaultView value) async {
