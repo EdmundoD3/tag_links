@@ -21,6 +21,7 @@ import 'package:tag_links/ui/link/link_preview_form.dart';
 import 'package:tag_links/ui/tags/tags_selector_menu.dart';
 import 'package:tag_links/ui/form/title_form_controller.dart';
 import 'package:tag_links/utils/debouncer.dart';
+import 'package:tag_links/utils/decorated_color_themes.dart';
 import 'package:uuid/uuid.dart';
 
 class NoteFormPage extends ConsumerStatefulWidget {
@@ -50,6 +51,7 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
   late TextEditingController _contentCtrl;
   late final FormAutoSaveController<Note> _autoSave;
   late final Debouncer _debouncer;
+  late DecorateColor? _decorateColor;
 
   List<Tag> _tags = [];
 
@@ -69,6 +71,7 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
     _contentCtrl = TextEditingController(text: widget.note?.content ?? '');
     _isFavorite = widget.note?.isFavorite ?? false;
     _linkPreview = widget.note?.link;
+    _decorateColor = DecorateColor.fromCode(widget.note?.color);
     _id = widget.note?.id ?? const Uuid().v4();
 
     _debouncer = Debouncer(milliseconds: 500);
@@ -118,7 +121,7 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
       createdAt: widget.note?.createdAt ?? now,
       updatedAt: now,
       isFavorite: _isFavorite,
-      color: widget.note?.color, //cambiar cuando se pueda agregar colores
+      color: _decorateColor?.code, //cambiar cuando se pueda agregar colores
     );
     return note;
   }
@@ -149,9 +152,11 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
       debugPrint("Error en guardado final: $e");
     }
 
-    unawaited(ref.read(syncProvider.notifier).synchronize(
-      delay: const Duration(minutes: 1, seconds: 10)
-    ));
+    unawaited(
+      ref
+          .read(syncProvider.notifier)
+          .synchronize(delay: const Duration(minutes: 1, seconds: 10)),
+    );
 
     // Continuar con los anuncios y cerrar...
     final adService = ref.read(adServiceProvider);
@@ -212,6 +217,16 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
 
   List<Widget> _body() {
     return [
+      ColorPicker(
+        selectedColor: _decorateColor?.code,
+        onChanged: (value) {
+          if(value == _decorateColor?.code) return;
+          setState(() {
+            _decorateColor = DecorateColor.fromCode(value);
+          });
+          _onUserChange();
+        },
+      ),
       TitleFormController(
         titleCtrl: _titleCtrl,
         label: ref.tr(TKeys.forms.title, fallback: 'Título'),
@@ -331,4 +346,3 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
     return note.title.trim().isNotEmpty;
   }
 }
-

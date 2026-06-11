@@ -28,7 +28,7 @@ class PendingNoteNotifier extends Notifier<TypeNoteMove?> {
 
   Future<void> _enrichNewNote(Note note, TypeMove type) async {
     // 1. Validaciones iniciales
-    if (note.link == null || note.link!.hasMetadata) return;
+    if (note.link == null || note.link!.hasThumbnail) return;
     if (type != TypeMove.newNote || note.title != 'New Note') return;
 
     try {

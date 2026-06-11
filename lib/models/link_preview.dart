@@ -21,8 +21,15 @@ class LinkPreview {
     this.lastUpdate,
   });
 
-  bool get hasMetadata =>
-      title != null || description != null || image != null || siteName != null;
+bool get hasThumbnail => image != null;
+
+bool get hasPreviewData =>
+    title != null ||
+    description != null ||
+    image != null ||
+    siteName != null;
+
+    bool get shouldRefreshThumbnail => image == null;
 
   factory LinkPreview.create({required String noteId, required String url}) {
     return LinkPreview(id: const Uuid().v4(), noteId: noteId, url: url);

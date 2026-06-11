@@ -16,6 +16,18 @@ class LinkPreviewDao {
     }
   }
 
+Future<void> invalidatePreviewImage(String id) async {
+  await _db.update(
+    _tableName,
+    {
+      'image': null,
+      'lastUpdate': DateTime.now().millisecondsSinceEpoch,
+    },
+    where: 'id = ?',
+    whereArgs: [id],
+  );
+}
+
   // 2. Operaciones Inmediatas
   static Future<void> upsert(
     DatabaseExecutor db, {

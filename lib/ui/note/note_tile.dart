@@ -5,6 +5,7 @@ import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/core/locate/time/format_time.dart';
 import 'package:tag_links/models/note.dart';
 import 'package:tag_links/models/tag.dart';
+import 'package:tag_links/repository/link_preview_repository.dart';
 import 'package:tag_links/ui/container/bouncing_widget.dart';
 import 'package:tag_links/ui/container/tile_container.dart';
 import 'package:tag_links/ui/link/link_preview_widget.dart';
@@ -12,7 +13,7 @@ import 'package:tag_links/ui/menu/menu_container.dart';
 import 'package:tag_links/ui/form/note_form_page.dart';
 import 'package:tag_links/ui/text/visual_expandable_text.dart';
 import 'package:tag_links/ui/utils/page_buil.dart';
-import 'package:tag_links/utils/color_utils.dart';
+import 'package:tag_links/utils/decorated_color_themes.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:math' as math;
 
@@ -53,7 +54,9 @@ class _NoteTileState extends ConsumerState<NoteTile> {
       onTap: () {
         FocusScope.of(context).unfocus();
         // si no esta expandido, lo hacemos expandido
-        if(!_isNoteExpanded) setState(() => _isNoteExpanded = !_isNoteExpanded); 
+        if (!_isNoteExpanded) {
+          setState(() => _isNoteExpanded = !_isNoteExpanded);
+        }
       },
       isExpanded: _isNoteExpanded,
       onLineCountCheck: (exceeds) {
@@ -65,6 +68,15 @@ class _NoteTileState extends ConsumerState<NoteTile> {
       // menu
       onShowMenu: (position) =>
           _actionsMenu(context: context, ref: ref, position: position),
+
+      clearLinkPreview: () async {
+        final preview = widget.note.link;
+        if(preview != null) {
+          ref
+          .read(linkPreviewRepositoryProvider)
+          .invalidatePreviewImage(preview);
+          
+        }},
     );
   }
 
@@ -203,6 +215,7 @@ class _NoteTileCard extends StatelessWidget {
   final bool isExpanded;
   final void Function() onTap;
   final Function(bool)? onLineCountCheck;
+  final Future<void> Function()? clearLinkPreview;
   final bool showReadMore;
   final String updatedAt;
 
@@ -215,10 +228,13 @@ class _NoteTileCard extends StatelessWidget {
     required this.onLineCountCheck,
     required this.showReadMore,
     required this.updatedAt,
+    required this.clearLinkPreview,
   });
+  DecorateColor? get _decorateColor => DecorateColor.fromCode(note.color);
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     return BouncingButton(
       key: tileKey, // Asociamos la GlobalKey al contenedor que rebota
       onTap: onTap,
@@ -226,22 +242,24 @@ class _NoteTileCard extends StatelessWidget {
       trailing: Trailing(
         top: 12,
         right: 10,
-        child: MoreVertButton(
-          onPressed: () => onShowMenu(null),
-          
-        ),
+        child: MoreVertButton(onPressed: () => onShowMenu(null)),
       ),
       child: TileContainer(
-        cardColor: theme.cardColor,
+        cardColor: _decorateColor?.light ?? theme.cardColor,
         borderRadius: BorderRadius.circular(5),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _titleWidget(theme, note),
-            _lineColorDecorator(note.color),
+            _lineColorDecorator(),
+            const SizedBox(height: 6),
             ..._linkPreviewWidget(theme, note),
             const SizedBox(height: 10),
-            VisualExpandableText(text: note.content, isExpanded: isExpanded),
+            VisualExpandableText(
+              text: note.content,
+              isExpanded: isExpanded,
+              decorateColor: _decorateColor,
+            ),
             // Ya no necesitas el "if (showReadMore)" porque el widget visual
             // se encarga de mostrar la flecha solo cuando no está expandido.
             const SizedBox(height: 8),
@@ -252,11 +270,18 @@ class _NoteTileCard extends StatelessWidget {
     );
   }
 
-  Widget _lineColorDecorator(String? color) {
-    final lineColor = FolderColorUtils.resolveColor(color);
-    return Divider(
-      color: lineColor, // Color de la línea
-      thickness: 1, // Grosor de la línea
+  Container _lineColorDecorator() {
+    return Container(
+      height: 2,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            _decorateColor?.strong ?? Colors.black87,
+            (_decorateColor?.strong ?? Colors.black87).withValues(alpha: 0.3),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(999),
+      ),
     );
   }
 
@@ -270,6 +295,7 @@ class _NoteTileCard extends StatelessWidget {
             note.title,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w600,
+              color: _decorateColor?.text,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -287,14 +313,12 @@ class _NoteTileCard extends StatelessWidget {
   List<Widget> _linkPreviewWidget(ThemeData theme, Note note) {
     if (note.link == null) return [];
     return [
-      const SizedBox(height: 4),
-      LinkPreviewWidget(preview: note.link!),
-      const Divider(
-        color: Colors.grey, // Color de la línea
-        thickness: 1, // Grosor de la líneasa
-        indent: 0, // Espacio vacío al inicio (izquierda)
-        endIndent: 0, // Espacio vacío al final (derecha)
+      LinkPreviewWidget(
+        preview: note.link!,
+        clearLinkPreview: clearLinkPreview,
       ),
+      const SizedBox(height: 6),
+      _lineColorDecorator(),
     ];
   }
 
@@ -313,7 +337,9 @@ class _NoteTileCard extends StatelessWidget {
   Widget _dateWidget({required ThemeData theme, required String date}) {
     return Text(
       date,
-      style: theme.textTheme.labelSmall?.copyWith(color: theme.hintColor),
+      style: theme.textTheme.labelSmall?.copyWith(
+        color: _decorateColor?.strong,
+      ),
       textAlign: TextAlign.right,
     );
   }
@@ -323,7 +349,9 @@ class _NoteTileCard extends StatelessWidget {
 
     return Text(
       resultado,
-      style: theme.textTheme.labelMedium,
+      style: theme.textTheme.labelMedium?.copyWith(
+        color: _decorateColor?.strong,
+      ),
       textAlign: TextAlign.left,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,

@@ -71,7 +71,7 @@ class _LinkPreviewFormState extends State<LinkPreviewForm> {
     }
 
     // 🔹 Mismo link y ya tiene metadata → no refetch
-    if (_preview != null && _preview!.url == trimmed && _preview!.hasMetadata) {
+    if (_preview != null && _preview!.url == trimmed && _preview!.hasThumbnail) {
       return;
     }
 

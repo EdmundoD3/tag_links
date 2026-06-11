@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:tag_links/ui/text/decorated_text.dart';
+import 'package:tag_links/utils/decorated_color_themes.dart';
 
 class VisualExpandableText extends StatelessWidget {
   final String text;
   final bool isExpanded;
   final double maxHeight; // El límite para decidir si mostrar el "ver más"
+  final DecorateColor? decorateColor;
 
   const VisualExpandableText({
     super.key,
     required this.text,
     required this.isExpanded,
+    required this.decorateColor,
     this.maxHeight = 120.0, // Altura máxima antes de colapsar
   });
 
@@ -30,6 +33,7 @@ class VisualExpandableText extends StatelessWidget {
             text: text,
             style: TextStyle(
               fontSize: onlyEmojis ? 32 : 14,
+              color: decorateColor?.text
             ), // Sincronizado con DecoratedText
           ),
           textDirection: TextDirection.ltr,
@@ -37,7 +41,7 @@ class VisualExpandableText extends StatelessWidget {
 
         final bool exceeds = tp.height > maxHeight;
 
-        final textWidget = DecoratedText(text: text);
+        final textWidget = DecoratedText(text: text,decorateColor: decorateColor,);
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,

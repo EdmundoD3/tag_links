@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tag_links/utils/decorated_color_themes.dart';
 
 /// ─────────────────────────────────────────────────────────────
 /// MODELOS
@@ -71,7 +72,8 @@ const Map<TokenType, TextRule> _styleRules = {
 
 class DecoratedText extends StatelessWidget {
   final String text;
-  const DecoratedText({super.key, required this.text});
+  final DecorateColor? decorateColor;
+  const DecoratedText({super.key, required this.text, required this.decorateColor});
 
   @override
   Widget build(BuildContext context) {
@@ -85,7 +87,7 @@ class DecoratedText extends StatelessWidget {
     return RichText(
       text: TextSpan(
         style: TextStyle(
-          color: theme.textTheme.bodyMedium?.color,
+          color: decorateColor?.text?? theme.textTheme.bodyMedium?.color,
           fontSize: onlyEmojis ? 32 : 14,
         ),
         children: _buildSpans(context, matches),
@@ -113,7 +115,7 @@ class DecoratedText extends StatelessWidget {
       final type = _resolveType(match);
 
       if (type == null) {
-        spans.add(TextSpan(text: matchText));
+        spans.add(TextSpan(text: matchText, style: TextStyle(color: decorateColor?.text)));
         lastIndex = match.end;
         continue;
       }
@@ -130,7 +132,7 @@ class DecoratedText extends StatelessWidget {
                   ? '${matchText.substring(0, 60)}...'
                   : matchText,
               style: const TextStyle(
-                color: Colors.blue,
+                color: Color.fromARGB(255, 68, 169, 252),
                 decoration: TextDecoration.underline,
               ),
             ),
@@ -161,7 +163,7 @@ class DecoratedText extends StatelessWidget {
                     rule.offset,
                     matchText.length - rule.offset,
                   ),
-                  style: DefaultTextStyle.of(context).style.merge(rule.style),
+                  style: DefaultTextStyle.of(context).style.merge(rule.style).copyWith(color: decorateColor?.text),
                 ),
               );
             }
@@ -172,7 +174,7 @@ class DecoratedText extends StatelessWidget {
     }
 
     if (lastIndex < text.length) {
-      spans.add(TextSpan(text: text.substring(lastIndex)));
+      spans.add(TextSpan(text: text.substring(lastIndex),style: TextStyle(color: decorateColor?.text)));
     }
 
     return spans;

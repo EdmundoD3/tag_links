@@ -8,8 +8,14 @@ class LinkPreviewRepository {
   LinkPreviewRepository(this._dao);
 
   Future<void> replace(LinkPreview link) async {
-    if (!link.hasMetadata) return;
+    if (!link.hasPreviewData) return;
     await _dao.replace(noteId: link.noteId, link: link);
+  }
+
+  Future<void> invalidatePreviewImage(LinkPreview preview) async {
+    if (preview.image == null) return;
+
+    await _dao.invalidatePreviewImage(preview.id);
   }
 }
 

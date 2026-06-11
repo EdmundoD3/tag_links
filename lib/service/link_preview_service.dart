@@ -7,23 +7,18 @@ import 'package:tag_links/models/link_preview.dart';
 class LinkPreviewService {
   static Future<LinkPreview?> prepareForSave(LinkPreview? link) async {
     if (link == null) return null;
-    
-    // Si ya tiene metadata, no hacemos nada (a menos que quieras forzar un refresco)
-    if (link.hasMetadata) return link;
+
+    if (!link.shouldRefreshThumbnail) {
+      return link;
+    }
+    final now = DateTime.now().millisecondsSinceEpoch;
 
     try {
       final enriched = await _fetchMetadata(link);
-      
-      // Si enriched es null (falló el scraping), devolvemos el link original 
-      // pero con el lastUpdate actualizado para no reintentar de inmediato.
-      return (enriched ?? link).copyWith(
-        lastUpdate: DateTime.now().millisecondsSinceEpoch,
-      );
+
+      return (enriched ?? link).copyWith(lastUpdate: now);
     } catch (_) {
-      // En caso de error catastrófico, marcamos el intento igual
-      return link.copyWith(
-        lastUpdate: DateTime.now().millisecondsSinceEpoch,
-      );
+      return link.copyWith(lastUpdate: now);
     }
   }
 
@@ -63,7 +58,7 @@ class LinkPreviewService {
         img = "${uri.scheme}://${uri.host}$img";
       }
 
-      // IMPORTANTE: Aquí no ponemos el lastUpdate todavía, 
+      // IMPORTANTE: Aquí no ponemos el lastUpdate todavía,
       // dejamos que prepareForSave lo haga para centralizar la lógica.
       return link.copyWith(
         title: title?.trim(),
