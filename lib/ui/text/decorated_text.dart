@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tag_links/utils/decorated_color_themes.dart';
+import 'package:tag_links/core/decorate_color/decorated_color_themes.dart';
 
 /// ─────────────────────────────────────────────────────────────
 /// MODELOS

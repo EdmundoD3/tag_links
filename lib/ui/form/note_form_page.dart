@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/ads/ads_service_provider.dart';
 import 'package:tag_links/core/ads/interstitial_ads_provider.dart';
+import 'package:tag_links/core/decorate_color/color_picker.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/models/link_preview.dart';
 import 'package:tag_links/models/note.dart';
@@ -21,7 +22,7 @@ import 'package:tag_links/ui/link/link_preview_form.dart';
 import 'package:tag_links/ui/tags/tags_selector_menu.dart';
 import 'package:tag_links/ui/form/title_form_controller.dart';
 import 'package:tag_links/utils/debouncer.dart';
-import 'package:tag_links/utils/decorated_color_themes.dart';
+import 'package:tag_links/core/decorate_color/decorated_color_themes.dart';
 import 'package:uuid/uuid.dart';
 
 class NoteFormPage extends ConsumerStatefulWidget {
@@ -217,7 +218,7 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
 
   List<Widget> _body() {
     return [
-      ColorPicker(
+      ColorPickerAppBarButton(
         selectedColor: _decorateColor?.code,
         onChanged: (value) {
           if(value == _decorateColor?.code) return;

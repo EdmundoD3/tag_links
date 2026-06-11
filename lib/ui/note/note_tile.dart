@@ -13,7 +13,7 @@ import 'package:tag_links/ui/menu/menu_container.dart';
 import 'package:tag_links/ui/form/note_form_page.dart';
 import 'package:tag_links/ui/text/visual_expandable_text.dart';
 import 'package:tag_links/ui/utils/page_buil.dart';
-import 'package:tag_links/utils/decorated_color_themes.dart';
+import 'package:tag_links/core/decorate_color/decorated_color_themes.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:math' as math;
 
