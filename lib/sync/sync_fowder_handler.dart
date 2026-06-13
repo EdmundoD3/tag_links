@@ -5,7 +5,7 @@ import 'package:tag_links/core/google/models/auth_exeptions.dart';
 import 'package:tag_links/sync/sync_notifier_provider.dart';
 import 'dart:async';
 
-import 'package:tag_links/ui/alerts/confirm_dialog.dart';
+import 'package:tag_links/ui/modals/confirm_dialog.dart';
 class SyncFlowHandler {
 
   static Future<void> handleInteractiveLogin(

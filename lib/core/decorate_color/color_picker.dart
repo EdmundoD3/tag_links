@@ -18,7 +18,6 @@ class ColorPickerAppBarButton extends StatelessWidget {
     final buttonBgColor = currentColorEnum?.strong ?? Colors.transparent;
 
     // MenuAnchor es ideal para el AppBar porque despliega el menú justo debajo del botón
-    // TODO falta agregar tema a este widget
     return MenuAnchor(
       style: MenuStyle(backgroundColor: WidgetStateProperty.all(Theme.of(context).cardTheme.color)),
       builder:

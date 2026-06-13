@@ -6,7 +6,7 @@ import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/state/pending_folder_provider.dart';
 import 'package:tag_links/sync/sync_notifier_provider.dart';
-import 'package:tag_links/ui/alerts/confirm_dialog.dart';
+import 'package:tag_links/ui/modals/confirm_dialog.dart';
 import 'package:tag_links/ui/banners/banner_pending.dart';
 
 class BannerPendingFolder extends ConsumerWidget {
@@ -116,12 +116,7 @@ class BannerPendingFolder extends ConsumerWidget {
     return BannerOptionsTile(
       onTap: () async {
         // 1. Mostramos el diálogo PRIMERO.
-        final confirm = await showConfirmDialog(
-          context,
-          title: ref.tr(TKeys.alerts.notMove),
-          message: ref.tr(TKeys.alerts.discardAction),
-          ref: ref,
-        );
+        final confirm = await ConfirmDialog.discardPendingFolder(context: context, ref: ref);
 
         // 2. Si confirma, limpiamos Todo rápido
         if (confirm == true) {

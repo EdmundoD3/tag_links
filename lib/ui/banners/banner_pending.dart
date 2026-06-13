@@ -7,7 +7,9 @@ Color _getColorForType({
   required Color defaultColor,
 }) {
   if (type == TypeBannerPending.normal) return defaultColor;
-  if (type == TypeBannerPending.bloqued) return Colors.amber.shade100;
+  if (type == TypeBannerPending.bloqued) {
+    return Colors.amber.withValues(alpha: 0.15);
+  }
   return defaultColor;
 }
 
@@ -25,15 +27,25 @@ class BannerPending extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
+    final highlight = theme.textTheme.labelMedium?.color;
     return MaterialBanner(
       backgroundColor: _getColorForType(
         type: type,
         defaultColor: theme.cardColor,
       ),
-      content: Text(
-        title,
-        style: TextStyle(color: theme.textTheme.labelSmall?.color),
+        dividerColor: Colors.transparent,
+  surfaceTintColor: Colors.transparent,
+      content: Row(
+        children: [
+          Icon(Icons.pending_actions, color: highlight, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(color: theme.textTheme.labelSmall?.color),
+            ),
+          ),
+        ],
       ),
       actions: actions,
     );
@@ -53,11 +65,13 @@ class BannerOptionsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final highlight = theme.textTheme.labelMedium?.color;
+
     return TextButton(
       onPressed: onTap,
       child: Text(
         title,
-        style: TextStyle(color: theme.textTheme.titleLarge?.color),
+        style: TextStyle(color: highlight, fontWeight: FontWeight.w600),
       ),
     );
   }

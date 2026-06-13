@@ -6,6 +6,7 @@ import 'package:tag_links/state/tags_provider.dart';
 import 'package:tag_links/sync/db/local_sync_queue_repository.dart';
 import 'package:tag_links/sync/models/local_sync_queue.dart';
 import 'package:tag_links/ui/button/action_button.dart';
+import 'package:tag_links/ui/modals/show_app_modal.dart';
 import 'package:tag_links/ui/tags/input_tag_widgets.dart';
 import 'package:uuid/uuid.dart';
 
@@ -15,55 +16,55 @@ Future<Tag?> showCreateTagModal({
   String? initText,
 }) {
   final controller = TextEditingController(text: initText);
-  final theme = Theme.of(context);
-  return showModalBottomSheet<Tag>(
+  return showAppModal<Tag>(
     context: context,
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+    child: CreateTagWidget(
+      controller: controller,
+      createTagLabel: ref.tr(TKeys.tags.create, fallback: 'Crear tag'),
+      nameTagLabel: ref.tr(TKeys.tags.nameField, fallback: 'Nombre del tag'),
+      submit: () async =>
+          await _submit(context: context, controller: controller, ref: ref),
     ),
-    // backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
-    builder: (context) {
-      return Padding(
-        padding: EdgeInsets.only(
-          left: 16,
-          right: 16,
-          top: 16,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              ref.tr(TKeys.tags.create, fallback: 'Crear tag'),
-              style: theme.textTheme.titleLarge?.copyWith(fontSize: 18),
-            ),
-            const SizedBox(height: 12),
-
-            InputTitleTag(
-              controller: controller,
-              label: ref.tr(TKeys.tags.nameField, fallback: 'Nombre del tag'),
-            ),
-
-            const SizedBox(height: 12),
-
-            Align(
-              alignment: Alignment.centerRight,
-              child: ActionButtonFilled(
-                onPressed: () async => await _submit(
-                  context: context,
-                  controller: controller,
-                  ref: ref,
-                ),
-                label:ref.tr(TKeys.tags.create, fallback: 'Crear tag'),
-              ),
-            ),
-          ],
-        ),
-      );
-    },
   );
+}
+
+class CreateTagWidget extends StatelessWidget {
+  final String createTagLabel;
+  final String nameTagLabel;
+  final Future<void> Function() submit;
+
+  final TextEditingController controller;
+
+  const CreateTagWidget({
+    super.key,
+    required this.createTagLabel,
+    required this.controller,
+    required this.nameTagLabel,
+    required this.submit,
+  });
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ModalTitle(title: createTagLabel),
+        const SizedBox(height: 12),
+
+        InputTitleTag(controller: controller, label: nameTagLabel),
+
+        const SizedBox(height: 12),
+
+        ModalActions(
+          leading: const SizedBox.shrink(),
+          trailing: ActionButtonFilled(
+            onPressed: submit,
+            label: createTagLabel,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 Future<void> _submit({
@@ -72,7 +73,10 @@ Future<void> _submit({
   required TextEditingController controller,
 }) async {
   final name = controller.text.trim();
-  if (name.isEmpty) return;
+  if (name.isEmpty) {
+    FocusScope.of(context).requestFocus(FocusNode());
+    return;
+  }
 
   // 1. Quitar el foco inmediatamente para liberar el teclado
   FocusScope.of(context).unfocus();

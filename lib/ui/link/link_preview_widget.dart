@@ -2,21 +2,24 @@ import 'dart:async';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:tag_links/core/decorate_color/decorated_color_themes.dart';
 import 'package:tag_links/models/link_preview.dart';
 
 class LinkPreviewWidget extends StatelessWidget {
   final LinkPreview preview;
+  final DecorateColor? decorateColor;
   final Future<void> Function()? clearLinkPreview;
   const LinkPreviewWidget({
     super.key,
     required this.preview,
+    this.decorateColor,
     this.clearLinkPreview,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     if (preview.url.isEmpty) return const SizedBox.shrink();
+    final theme = Theme.of(context);
     return Row(
       children: [
         if (preview.image != null)
@@ -39,27 +42,33 @@ class LinkPreviewWidget extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                preview.title ?? preview.siteName ?? preview.url,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              if (preview.description != null)
-                Text(
-                  preview.description!,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
+              _title(theme),
+              if (preview.description != null) _description(theme),
             ],
           ),
         ),
       ],
+    );
+  }
+
+  Widget _title(ThemeData theme) {
+    return Text(
+      preview.title ?? preview.siteName ?? preview.url,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: theme.textTheme.labelSmall?.copyWith(
+        fontWeight: FontWeight.w500,
+        color: decorateColor?.text,
+      ),
+    );
+  }
+
+  Widget _description(ThemeData theme) {
+    return Text(
+      preview.description!,
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+      style: theme.textTheme.bodySmall?.copyWith(color: decorateColor?.strong),
     );
   }
 }

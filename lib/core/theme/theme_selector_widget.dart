@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
+import 'package:tag_links/core/theme/generate_palete.dart';
 import 'package:tag_links/core/theme/theme_provider.dart';
 import 'package:tag_links/core/theme/app_theme.dart';
 

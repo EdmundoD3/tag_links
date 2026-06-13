@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/ads/small_banner.dart';
 import 'package:tag_links/core/debug/go_debug_page_buton.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
+import 'package:tag_links/core/media_in_coming/pending_note_provider.dart';
 import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/models/folder_preference.dart';
 import 'package:tag_links/state/folder_preference_provider.dart';
@@ -45,6 +46,8 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final preferenceAsync = ref.watch(_foldersPreferenceProvider);
+        final pendingNote = ref.watch(pendingNoteProvider);
+
     final theme = Theme.of(context);
 
     return preferenceAsync.when(
@@ -67,8 +70,9 @@ class HomePage extends ConsumerWidget {
                 children: [
                   Column(
                     children: [
-                      BannerPendingNote(
+                      if(pendingNote != null) BannerPendingNote(
                         key: const ValueKey('banner_note'),
+                        pendingNote: pendingNote,
                         toFolderId: folder?.id,
                         onToggleView: () =>
                             _selectView(FolderDefaultView.notes, ref),

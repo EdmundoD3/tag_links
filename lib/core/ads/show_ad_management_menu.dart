@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/ads/ads_disable_provider.dart';
 import 'package:tag_links/core/ads/interstitial_ads_provider.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
-import 'package:tag_links/ui/alerts/feedback_alert_confirm.dart';
+import 'package:tag_links/ui/modals/feedback_alert_confirm.dart';
 
 void showAdManagementMenu(
   BuildContext context,

@@ -62,6 +62,7 @@ class LangSelector extends ConsumerWidget {
     );
   }
 }
+
 class _LanguageCard extends StatelessWidget {
   final AppLang lang;
   final bool isSelected;
@@ -76,11 +77,9 @@ class _LanguageCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
+    final accent = theme.iconTheme.color;
+    final highlight = theme.textTheme.labelMedium?.color;
     return Material(
-      color: isSelected
-          ? theme.colorScheme.primaryContainer
-          : theme.cardColor,
       elevation: isSelected ? 2 : 0,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
@@ -88,46 +87,42 @@ class _LanguageCard extends StatelessWidget {
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 6,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: isSelected
-                  ? theme.colorScheme.primary
+                  ? (highlight ?? accent ?? Colors.blue)
                   : theme.dividerColor.withValues(alpha: 0.25),
               width: isSelected ? 1.8 : 1,
             ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: (highlight ?? accent ?? Colors.blue).withValues(
+                        alpha: 0.15,
+                      ),
+                      blurRadius: 8,
+                      spreadRadius: 0,
+                    ),
+                  ]
+                : null,
           ),
           child: Row(
             children: [
-              Text(
-                lang.emoji,
-                style: const TextStyle(fontSize: 20),
-              ),
+              Text(lang.emoji, style: const TextStyle(fontSize: 20)),
 
               const SizedBox(width: 8),
 
               Expanded(
                 child: Text(
                   lang.label,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight:
-                        isSelected ? FontWeight.w600 : FontWeight.w500,
-                  ),
+                  style: TextStyle(color: isSelected ? highlight : null),
                 ),
               ),
 
               if (isSelected)
-                Icon(
-                  Icons.check_rounded,
-                  size: 18,
-                  color: theme.colorScheme.primary,
-                ),
+                Icon(Icons.check_rounded, size: 18, color: highlight),
             ],
           ),
         ),

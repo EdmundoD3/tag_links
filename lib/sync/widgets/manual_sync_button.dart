@@ -6,7 +6,7 @@ import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/sync/last_sync_storage.dart';
 import 'package:tag_links/sync/sync_fowder_handler.dart';
 import 'package:tag_links/sync/sync_notifier_provider.dart';
-import 'package:tag_links/ui/alerts/text_dialog.dart';
+import 'package:tag_links/ui/modals/text_dialog.dart';
 import 'package:tag_links/ui/button/action_button.dart';
 
 class ManualSyncButton extends ConsumerWidget {
@@ -128,25 +128,24 @@ class ManualSyncButton extends ConsumerWidget {
   }) {
     // 🔘 Estado Gris: No hay nube configurada
     if (!isAuth) return const Icon(Icons.cloud_off, color: Colors.grey);
+    final accent = Theme.of(context).iconTheme.color;
+    final highlight = Theme.of(context).textTheme.labelMedium?.color;
 
     switch (state.status) {
       case SyncStatus.syncing:
-        return const SizedBox(
+        return SizedBox(
           width: 20,
           height: 20,
-          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.blue),
+          child: CircularProgressIndicator(color: highlight),
         );
       case SyncStatus.error:
         // 🟠 Estado Naranja: Hay un problema que requiere atención
         return const Icon(Icons.sync_problem, color: Colors.orangeAccent);
       case SyncStatus.success:
         // 🟢 Estado Verde: Todo al día
-        return const Icon(Icons.cloud_done, color: Colors.green);
+        return Icon(Icons.cloud_done, color: highlight);
       default:
-        return Icon(
-          Icons.sync_outlined,
-          color: Theme.of(context).iconTheme.color,
-        );
+        return Icon(Icons.sync_outlined, color: accent);
     }
   }
 

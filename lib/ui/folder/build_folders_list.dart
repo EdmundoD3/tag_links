@@ -5,7 +5,7 @@ import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/pages/home_page.dart';
 import 'package:tag_links/state/folders_provider.dart';
 import 'package:tag_links/state/pending_folder_provider.dart';
-import 'package:tag_links/ui/alerts/confirm_dialog.dart';
+import 'package:tag_links/ui/modals/confirm_dialog.dart';
 import 'package:tag_links/ui/folder/folder_tile.dart';
 import 'package:tag_links/ui/is_loading_indicators/shimmer_folder_list.dart';
 import 'package:tag_links/ui/utils/empty_indicator.dart';

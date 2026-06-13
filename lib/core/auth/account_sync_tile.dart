@@ -4,7 +4,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:tag_links/core/google/auth_provider.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/sync/sync_fowder_handler.dart';
-import 'package:tag_links/ui/alerts/confirm_dialog.dart';
+import 'package:tag_links/ui/modals/confirm_dialog.dart';
 
 class AccountSyncTile extends ConsumerWidget {
   const AccountSyncTile({super.key});

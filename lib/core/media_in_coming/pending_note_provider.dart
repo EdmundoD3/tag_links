@@ -122,4 +122,4 @@ class TypeNoteMove {
   const TypeNoteMove({required this.note, required this.type});
 }
 
-enum TypeMove { newNote, move }
+enum TypeMove { newNote, move, prueba }

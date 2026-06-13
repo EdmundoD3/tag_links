@@ -11,7 +11,7 @@ class GoSettingsButton extends StatelessWidget {
 
     return IconButton(
       onPressed: () => goPage(context: context, page: SupportProjectPage()),
-      icon: Icon(Icons.settings, color:theme.iconTheme.color),
+      icon: Icon(Icons.settings, color:theme.colorScheme.onPrimary),
     );
   }
 }

@@ -17,7 +17,8 @@ class CreateNewNoteButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     return IconButton(
-      icon: Icon(Icons.note_add, color: theme.iconTheme.color),
+      style: theme.iconButtonTheme.style?.copyWith(iconSize:WidgetStateProperty.all(28)),
+      icon: Icon(Icons.note_add, color: theme.colorScheme.onPrimary),
       tooltip: ref.tr(TKeys.ui.addNote, fallback: 'Add note'),
       onPressed: () async {
         // 1. Despachamos la tarea a segundo plano usando el contexto fresco del click

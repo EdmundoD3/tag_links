@@ -11,7 +11,7 @@ import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/state/notes_provider.dart';
 import 'package:tag_links/core/media_in_coming/pending_note_provider.dart';
 import 'package:tag_links/sync/sync_notifier_provider.dart';
-import 'package:tag_links/ui/alerts/confirm_dialog.dart';
+import 'package:tag_links/ui/modals/confirm_dialog.dart';
 import 'package:tag_links/ui/form/app_bar_form.dart';
 import 'package:tag_links/ui/form/body_form.dart';
 import 'package:tag_links/ui/form/content_form_controller.dart';

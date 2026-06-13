@@ -22,11 +22,6 @@ class TitleFormController extends StatelessWidget {
     return TextFormField(
       controller: titleCtrl,
       maxLength: LimitAppConfig.titleMaxLength,
-      style: TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w500,
-        color: theme.textTheme.bodyLarge?.color,
-      ),
       decoration: InputStyleForm.inputDecoration(
         theme: theme,
         label: label,

@@ -316,6 +316,7 @@ class _NoteTileCard extends StatelessWidget {
       LinkPreviewWidget(
         preview: note.link!,
         clearLinkPreview: clearLinkPreview,
+        decorateColor: _decorateColor,
       ),
       const SizedBox(height: 6),
       _lineColorDecorator(),

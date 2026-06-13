@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
-import 'package:tag_links/ui/alerts/text_dialog.dart';
-import 'package:tag_links/ui/alerts/feedback_alert_confirm.dart';
+import 'package:tag_links/ui/modals/text_dialog.dart';
+import 'package:tag_links/ui/modals/feedback_alert_confirm.dart';
 
 class ConfirmDialog {
   static Future<void> deleteNote(
@@ -86,7 +86,7 @@ class ConfirmDialog {
   }
 
   static Future<bool?> moveFolder(BuildContext context, WidgetRef ref) {
-    return showConfirmDialog(
+    return _showConfirmDialog(
       context,
       title: ref.tr(TKeys.alerts.moveFolderTitle, fallback: 'Cambiar carpeta'),
       message: ref.tr(
@@ -98,7 +98,7 @@ class ConfirmDialog {
   }
 
   static Future<bool?> moveNote(BuildContext context, WidgetRef ref) async {
-    return showConfirmDialog(
+    return _showConfirmDialog(
       context,
       title: ref.tr(TKeys.alerts.moveNoteTitle, fallback: 'Cambiar carpeta'),
       message: ref.tr(
@@ -110,7 +110,7 @@ class ConfirmDialog {
   }
 
   static Future<bool?> discardForm(BuildContext context, WidgetRef ref) async {
-    return showConfirmDialog(
+    return _showConfirmDialog(
       context,
       title: ref.tr(TKeys.alerts.discard, fallback: 'Descatar cambios'),
       message: ref.tr(
@@ -125,7 +125,7 @@ class ConfirmDialog {
     BuildContext context,
     WidgetRef ref,
   ) async {
-    return showConfirmDialog(
+    return _showConfirmDialog(
       context,
       ref: ref,
       title: ref.tr(TKeys.alerts.limitReached, fallback: 'Límite de niveles'),
@@ -137,7 +137,7 @@ class ConfirmDialog {
   }
 
   static Future<bool?> logout(BuildContext context, WidgetRef ref) async {
-    return showConfirmDialog(
+    return _showConfirmDialog(
       context,
       title: ref.tr(TKeys.auth.logOut, fallback: 'Cerrar sesión'),
       message: ref.tr(
@@ -149,48 +149,84 @@ class ConfirmDialog {
       ref: ref,
     );
   }
-  static Future<bool> accountConflict(
-    {required BuildContext context,
+
+  static Future<bool> accountConflict({
+    required BuildContext context,
     required WidgetRef ref,
     required String emailViejo,
-    required String emailNuevo,}
-  )async {
-
+    required String emailNuevo,
+  }) async {
     final resultado = await showDialog<bool>(
       context: context,
       barrierDismissible: false, // Obliga al usuario a tomar una decisión
       builder: (context) {
         return AlertDialog(
-          title:  Row(
+          title: Row(
             children: [
               const Icon(Icons.swap_horizontal_circle, color: Colors.orange),
               const SizedBox(width: 10),
-              Text(ref.tr(TKeys.auth.cambiarCuenta,fallback: "¿Cambiar de cuenta?")),
+              Text(
+                ref.tr(
+                  TKeys.auth.cambiarCuenta,
+                  fallback: "¿Cambiar de cuenta?",
+                ),
+              ),
             ],
           ),
           content: Text(
-            ref.tr(TKeys.auth.accountConflictMsg)
-      .replaceAll('{emailViejo}', emailViejo)
-      .replaceAll('{emailNuevo}', emailNuevo),
+            ref
+                .tr(TKeys.auth.accountConflictMsg)
+                .replaceAll('{emailViejo}', emailViejo)
+                .replaceAll('{emailNuevo}', emailNuevo),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false), // NO
-              child: Text(ref.tr(TKeys.actions.cancel, fallback: 'Cancelar'), style: TextStyle(color: Colors.grey)),
+              child: Text(
+                ref.tr(TKeys.actions.cancel, fallback: 'Cancelar'),
+                style: TextStyle(color: Colors.grey),
+              ),
             ),
             ElevatedButton(
               onPressed: () => Navigator.of(context).pop(true), // SÍ
               style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-              child: Text(ref.tr(TKeys.auth.siFusionar,fallback: "SÍ, FUSIONAR")),
+              child: Text(
+                ref.tr(TKeys.auth.siFusionar, fallback: "SÍ, FUSIONAR"),
+              ),
             ),
           ],
         );
       },
     );
-
     return resultado ?? false;
   }
-  
+
+  static Future<bool?> discardPendingFolder({
+    required BuildContext context,
+    required WidgetRef ref,
+  }) async {
+    return await _showConfirmDialog(
+      context,
+      title: ref.tr(TKeys.alerts.notMove),
+      message: ref.tr(TKeys.alerts.discardAction),
+      ref: ref,
+    );
+  }
+
+  static Future<bool?> discardPendingNote({
+    required BuildContext context,
+    required WidgetRef ref,
+  }) async {
+    return await _showConfirmDialog(
+      context,
+      title: ref.tr(TKeys.alerts.notMove, fallback: 'No mover la nota'),
+      message: ref.tr(
+        TKeys.alerts.discardAction,
+        fallback: '¿Estás seguro de descartar la acción?',
+      ),
+      ref: ref,
+    );
+  }
 }
 
 Future<void> _deleteAction(
@@ -202,7 +238,7 @@ Future<void> _deleteAction(
   required String succesText,
   required String errorText,
 }) async {
-  final isDelete = await showConfirmDialog(
+  final isDelete = await _showConfirmDialog(
     context,
     ref: ref,
     title: title,
@@ -224,46 +260,70 @@ Future<void> _deleteAction(
   }
 }
 
-Future<bool?> showConfirmDialog(
+Future<bool?> _showConfirmDialog(
   BuildContext context, {
   required String title,
   required String? message,
   required WidgetRef ref,
 }) {
-  final theme = Theme.of(context);
   return showDialog<bool>(
     context: context,
     barrierDismissible: false, // obliga a elegir opción
     builder: (context) {
-      return AlertDialog(
-        backgroundColor: Theme.of(context).cardColor,
-        title: TextDialogTitle(title: title),
-        content: message != null ? TextDialogContent(text: message) : null,
-        actions: [
-          TextButton(
-            style: TextButton.styleFrom(
-              foregroundColor: theme.textTheme.titleLarge?.color,
-            ),
-            onPressed: () {
-              Navigator.of(context).pop(false);
-            },
-            child: Text(ref.tr(TKeys.actions.cancel, fallback: 'Cancelar')),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor:
-                  theme.inputDecorationTheme.fillColor, // Color de fondo
-              foregroundColor:
-                  theme.textTheme.titleLarge?.color, // Color del texto
-            ),
-
-            onPressed: () {
-              Navigator.of(context).pop(true);
-            },
-            child: Text(ref.tr(TKeys.actions.accept, fallback: 'Aceptar')),
-          ),
-        ],
+      return MyAlertDialog(
+        title: title,
+        message: message,
+        cancel: ref.tr(TKeys.actions.cancel, fallback: 'Cancelar'),
+        confirm: ref.tr(TKeys.actions.accept, fallback: 'Aceptar'),
       );
     },
   );
+}
+
+class MyAlertDialog extends StatelessWidget {
+  final String title;
+  final String? message;
+  final String cancel;
+  final String confirm;
+
+  const MyAlertDialog({
+    super.key,
+    required this.title,
+    this.message,
+    required this.cancel,
+    required this.confirm,
+  });
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AlertDialog(
+      backgroundColor: theme.cardColor,
+      title: TextDialogTitle(title: title),
+      content: message != null ? TextDialogContent(text: message!) : null,
+      actions: [
+        TextButton(
+          style: TextButton.styleFrom(
+            foregroundColor: theme.textTheme.titleLarge?.color,
+          ),
+          onPressed: () {
+            Navigator.of(context).pop(false);
+          },
+          child: Text(cancel),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor:
+                theme.inputDecorationTheme.fillColor, // Color de fondo
+            foregroundColor:
+                theme.textTheme.titleLarge?.color, // Color del texto
+          ),
+
+          onPressed: () {
+            Navigator.of(context).pop(true);
+          },
+          child: Text(confirm),
+        ),
+      ],
+    );
+  }
 }

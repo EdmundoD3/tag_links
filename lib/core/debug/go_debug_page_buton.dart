@@ -15,7 +15,7 @@ class GoDebugPageButon extends StatelessWidget {
       },
       padding: const EdgeInsets.all(0),
       tooltip: 'Debug',
-      icon: Icon(Icons.bug_report, color:theme.iconTheme.color),
+      icon: Icon(Icons.bug_report, color:theme.colorScheme.onPrimary),
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/ui/button/action_button.dart';
+import 'package:tag_links/ui/modals/show_app_modal.dart';
 import 'package:tag_links/ui/tags/input_tag_widgets.dart';
 
 class EditedTag {
@@ -19,35 +20,17 @@ Future<EditedTag?> showEditTagModal(
 ) {
   final titleCtrol = TextEditingController(text: tag.title);
   bool isFavorite = tag.isFavorite;
-
-  return showModalBottomSheet<EditedTag>(
-    context: context,
-    isScrollControlled: true,
-    builder: (context) {
-      return StatefulBuilder(
-        builder: (context, setState) {
-          return Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-              left: 16,
-              right: 16,
-              top: 16,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  children: [
-                    // 1. El título a la izquierda
-                    Expanded(
-                      child: Text(
-                        ref.tr(TKeys.tags.edit, fallback: 'Editar tag'),
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                    ),
-
-                    // 2. El corazón a la derecha
-                    IconButton(
+return showAppModal<EditedTag>(
+  context: context,
+  child: StatefulBuilder(
+    builder: (context, setState) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+                  // 1. El título a la izquierda
+                  ModalTitle(
+                    title: ref.tr(TKeys.tags.edit),
+                    trailing: IconButton(
                       visualDensity: VisualDensity.compact,
                       icon: Icon(
                         isFavorite ? Icons.favorite : Icons.favorite_border,
@@ -61,66 +44,51 @@ Future<EditedTag?> showEditTagModal(
                         fallback: 'Marcar como favorito',
                       ),
                     ),
-                  ],
-                ),
-                InputTitleTag(
-                  controller: titleCtrol,
-                  label: ref.tr(
-                    TKeys.tags.nameField,
-                    fallback: 'Nombre del tag',
                   ),
-                ),
 
-                // Botones de acción (Guardar / Cancelar)
-                Row(
-                  children: [
-                    ActionButtonFilled(
-                      onPressed: () =>
-                          Navigator.pop(context), // Retorna null (Cancelar)
-                      label: ref.tr(TKeys.actions.cancel, fallback: 'Cancelar'),
-                    ),
-                    const Spacer(),
-                    ActionButtonFilled(
-                      onPressed: () {
-                        // Retornamos el objeto con isDeleted en false
-                        Navigator.pop(
-                          context,
-                          EditedTag(
-                            isDeleted: false,
-                            tag: tag.copyWith(
-                              title: titleCtrol.text.trim(),
-                              isFavorite: isFavorite,
-                            ),
-                          ),
-                        );
-                      },
-                      label: ref.tr(TKeys.actions.save, fallback: 'Guardar'),
-                    ),
-                  ],
-                ),
+              InputTitleTag(
+                controller: titleCtrol,
+                label: ref.tr(TKeys.tags.nameField, fallback: 'Nombre del tag'),
+              ),
 
-                const Divider(),
-
-                // Botón de Eliminar
-                TextButton.icon(
-                  style: TextButton.styleFrom(foregroundColor: Colors.red),
-                  icon: const Icon(Icons.delete),
-                  label: Text(
-                    ref.tr(TKeys.actions.delete, fallback: 'Eliminar'),
-                  ),
-                  onPressed: () {
-                    // Retornamos el objeto con isDeleted en true
-                    Navigator.pop(
-                      context,
-                      EditedTag(tag: tag, isDeleted: true),
-                    );
-                  },
-                ),
-              ],
-            ),
-          );
-        },
+              // Botones de acción (Guardar / Cancelar)
+ModalActions(
+  leading: ActionButtonFilled(
+    onPressed: () => Navigator.pop(context),
+    label: ref.tr(TKeys.actions.cancel),
+  ),
+  trailing: ActionButtonFilled(
+    onPressed: () {
+      Navigator.pop(
+        context,
+        EditedTag(
+          isDeleted: false,
+          tag: tag.copyWith(
+            title: titleCtrol.text.trim(),
+            isFavorite: isFavorite,
+          ),
+        ),
       );
     },
+    label: ref.tr(TKeys.actions.save),
+  ),
+),
+
+              const Divider(),
+
+              // Botón de Eliminar
+              TextButton.icon(
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                icon: const Icon(Icons.delete),
+                label: Text(ref.tr(TKeys.actions.delete, fallback: 'Eliminar')),
+                onPressed: () {
+                  // Retornamos el objeto con isDeleted en true
+                  Navigator.pop(context, EditedTag(tag: tag, isDeleted: true));
+                },
+              ),
+            ],
+        );
+      },
+    ),
   );
 }

@@ -10,32 +10,51 @@ class InputTitleTag extends StatelessWidget {
     required this.controller,
     required this.label,
   });
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    final accent = theme.iconTheme.color ?? theme.primaryColor;
+    final highlight = theme.textTheme.labelMedium?.color ?? accent;
+
     return TextField(
       controller: controller,
       autofocus: true,
-      style: TextStyle(color: theme.textTheme.bodyMedium?.color),
-      cursorColor: theme.scaffoldBackgroundColor,
       maxLength: LimitAppConfig.tagMaxLength,
+
+      style: TextStyle(color: theme.textTheme.bodyMedium?.color),
+
+      cursorColor: accent,
+
       decoration: InputDecoration(
         filled: true,
-        fillColor: theme.inputDecorationTheme.fillColor?.withAlpha(60),
+        fillColor: theme.cardColor,
         labelText: label,
+        labelStyle: TextStyle(color: theme.textTheme.bodySmall?.color),
         alignLabelWithHint: true,
-        border: OutlineInputBorder(),
-        labelStyle: TextStyle(color: theme.textTheme.bodyMedium?.color),
+
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+
         enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: theme.hintColor, width: 1),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(
+            color: theme.dividerColor.withValues(alpha: 0.35),
+            width: 1,
+          ),
         ),
+
         focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: theme.hintColor, width: 2),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: highlight, width: 2),
+        ),
+        floatingLabelStyle: TextStyle(
+          color: highlight,
+          fontWeight: FontWeight.w600,
         ),
       ),
+
       textInputAction: TextInputAction.done,
     );
   }
 }
-
-

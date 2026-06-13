@@ -4,11 +4,20 @@ import 'package:tag_links/core/ads/interstitial_ads_provider.dart';
 import 'package:tag_links/core/auth/skiped_auth_provider.dart';
 import 'package:tag_links/core/locate/lang_selector.dart';
 import 'package:tag_links/core/ads/ads_disable_provider.dart';
+import 'package:tag_links/core/media_in_coming/pending_note_provider.dart';
 import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/models/note.dart';
 import 'package:tag_links/core/theme/theme_selector_widget.dart';
+import 'package:tag_links/sync/widgets/manual_sync_button.dart';
+import 'package:tag_links/ui/modals/confirm_dialog.dart';
+import 'package:tag_links/ui/app_bar/app_bar_folder.dart';
+import 'package:tag_links/ui/button/go_settings_button.dart';
 import 'package:tag_links/ui/folder/folder_tile.dart';
+import 'package:tag_links/ui/form/note_mini_form.dart';
+import 'package:tag_links/ui/menu/menu_container.dart';
+import 'package:tag_links/ui/note/banner_pending_note.dart';
 import 'package:tag_links/ui/note/note_tile.dart';
+import 'package:tag_links/ui/tags/show_create_tag_modal.dart';
 
 class DebugPage extends ConsumerWidget {
   const DebugPage({super.key});
@@ -35,7 +44,37 @@ class DebugPage extends ConsumerWidget {
       children: [
         ThemeSelector(),
         LangSelector(),
+        const SizedBox(height: 6),
+        AppBarPages(
+          title: "titulo",
+          actions: [const ManualSyncButton(), const GoSettingsButton()],
+        ),
+        const SizedBox(height: 6),
         _cleanAdsCache(context, ref),
+        BannerPendingNote(
+          toFolderId: null,
+          onToggleView: () async {},
+          pendingNote: TypeNoteMove(
+            note: Note.baseNote(fileId: "pruebas"),
+            type: TypeMove.prueba,
+          ),
+        ),
+        const SizedBox(height: 6),
+        MyAlertDialog(
+          title: "Dialogo de prueba",
+          cancel: "cancelar",
+          confirm: "aceptar",
+        ),
+        Padding(
+          padding: EdgeInsetsGeometry.directional(start: 50, end: 15),
+          child: ActionMenuView(
+            items: [
+              ActionMenuItem(icon: Icons.departure_board, label: "prueba"),
+              ActionMenuItem(icon: Icons.catching_pokemon, label: "prueba"),
+            ],
+            onClose: () {},
+          ),
+        ),
         NoteTile(
           note: Note(
             id: "",
@@ -62,17 +101,24 @@ class DebugPage extends ConsumerWidget {
             title: "Carpeta de prueba",
             tags: [],
             createdAt: DateTime.now().millisecondsSinceEpoch,
-            updatedAt: DateTime.now().millisecondsSinceEpoch
+            updatedAt: DateTime.now().millisecondsSinceEpoch,
           ),
           actionsItems: [],
-          onDeleteFolder: () {
-            
-          },
+          onDeleteFolder: () {},
           onMove: () {
             debugPrint("onMove: nothing");
           },
-          goFolder: (){},
+          goFolder: () {},
         ),
+        const SizedBox(height: 6),
+        // Tags
+        CreateTagWidget(
+          createTagLabel: "prueba create tag",
+          controller: TextEditingController(),
+          nameTagLabel: "Name Tag Label",
+          submit: ()async{},
+        ),
+        NoteMiniForm(folderId: null),
       ],
     );
   }

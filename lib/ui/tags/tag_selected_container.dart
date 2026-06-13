@@ -4,7 +4,7 @@ import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/repository/tags_repository.dart';
 import 'package:tag_links/state/tags_provider.dart';
-import 'package:tag_links/ui/alerts/confirm_dialog.dart';
+import 'package:tag_links/ui/modals/confirm_dialog.dart';
 import 'package:tag_links/ui/tags/show_create_tag_modal.dart';
 import 'package:tag_links/ui/tags/show_edit_tag_modal.dart';
 
@@ -21,6 +21,7 @@ class TagsSelectedContainer extends ConsumerWidget {
     this.onGetNewTag,
     this.isCreateTag = true,
   });
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Wrap(
@@ -49,7 +50,9 @@ class TagsSelectedContainer extends ConsumerWidget {
 
               // 2. Si marcó para eliminar
               if (result.isDeleted) {
-                debugPrint( "TagSelectedContainer: ${result.isDeleted.toString()}");
+                debugPrint(
+                  "TagSelectedContainer: ${result.isDeleted.toString()}",
+                );
                 if (!context.mounted) return;
                 await ConfirmDialog.deleteTag(context, ref, () async {
                   onDeleted(tag);
@@ -70,15 +73,18 @@ class TagsSelectedContainer extends ConsumerWidget {
 
   ActionChip _createTagChip(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final highlight = theme.textTheme.labelMedium?.color;
     return ActionChip(
       elevation: 0,
       label: Text(
         ref.tr(TKeys.tags.create, fallback: 'Crear nuevo tag'),
-        style: TextStyle(color: theme.textTheme.titleLarge?.color),
+        style: TextStyle(color: highlight, fontWeight: FontWeight.w600),
       ),
-      backgroundColor: theme.cardColor,
-      side: BorderSide(color: theme.focusColor, width: 1),
-      avatar: Icon(Icons.add, color: theme.textTheme.titleLarge?.color),
+      backgroundColor: theme.cardColor, //para diferenciar el boton un poco
+      side: BorderSide(
+        color: highlight?.withValues(alpha: 0.35) ?? theme.focusColor,
+      ),
+      avatar: Icon(Icons.add, color: highlight),
       surfaceTintColor: Colors.transparent,
       onPressed: () async {
         final newTag = await showCreateTagModal(context: context, ref: ref);
@@ -100,15 +106,20 @@ class _TagChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final accent = theme.iconTheme.color;
+    final highlight = theme.textTheme.labelMedium?.color;
     return GestureDetector(
       onLongPress: () => onEdit(tag),
       child: Chip(
-        backgroundColor: theme.appBarTheme.backgroundColor,
+        backgroundColor: highlight?.withValues(alpha: 0.12),
+        side: BorderSide(
+          color: highlight?.withValues(alpha: 0.35) ?? Colors.transparent,
+        ),
         label: Text(
           tag.title,
-          style: TextStyle(color: theme.textTheme.titleLarge?.color),
+          style: TextStyle(color: highlight, fontWeight: FontWeight.w600),
         ),
-        deleteIcon: const Icon(Icons.close),
+        deleteIcon: Icon(Icons.close, size: 18, color: accent),
         onDeleted: () => onDeleted(tag),
       ),
     );

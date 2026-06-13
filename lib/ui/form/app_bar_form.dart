@@ -43,6 +43,7 @@ class AppBarForm extends StatelessWidget implements PreferredSizeWidget {
     } else {
       titleWidget = Text(title);
     }
+    final highlight = theme.textTheme.labelMedium?.color;
     return AppBar(
       title: titleWidget,
       actions: [
@@ -50,29 +51,24 @@ class AppBarForm extends StatelessWidget implements PreferredSizeWidget {
           selectedColor: decorateColor?.code,
           onChanged: colorChange,
         ),
-        isFavorite
-            ? IconButton(
-                onPressed: onFavoriteToogle,
-                icon: const Icon(Icons.favorite, color: Colors.red),
-              )
-            : IconButton(
-                onPressed: onFavoriteToogle,
-                icon: Icon(
-                  Icons.favorite_border,
-                  color: theme.iconTheme.color ?? Colors.grey,
-                ),
-              ),
+        IconButton(
+          onPressed: onFavoriteToogle,
+          icon: Icon(
+            isFavorite ? Icons.favorite : Icons.favorite_border,
+            color: isFavorite ? Colors.red : theme.appBarTheme.foregroundColor,
+          ),
+        ),
         IconButton(
           icon: isSaving
-              ? const SizedBox(
+              ? SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: highlight,
+                  ),
                 )
-              : Icon(
-                  Icons.save,
-                  color: theme.iconTheme.color ?? Colors.deepPurple,
-                ),
+              : Icon(Icons.save, color: highlight ?? theme.iconTheme.color),
           onPressed: onSave,
         ),
       ],

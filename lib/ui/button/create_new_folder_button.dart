@@ -18,7 +18,8 @@ class CreateNewFolderButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     return IconButton(
-      icon: Icon(Icons.create_new_folder, color: theme.iconTheme.color),
+      style: theme.iconButtonTheme.style?.copyWith(iconSize:WidgetStateProperty.all(28)),
+      icon: Icon(Icons.create_new_folder, color: theme.colorScheme.onPrimary),
       tooltip: ref.tr(TKeys.ui.createFolder, fallback: 'Crear carpeta'),
       onPressed: () async {
         // 1. Despachamos la tarea a segundo plano usando el contexto fresco del click
