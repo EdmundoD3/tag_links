@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/ads/ads_service_provider.dart';
 import 'package:tag_links/core/ads/interstitial_ads_provider.dart';
-import 'package:tag_links/core/decorate_color/color_picker.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/models/link_preview.dart';
 import 'package:tag_links/models/note.dart';
@@ -213,21 +212,19 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
       onFavoriteToogle: _isFavoriteToogle,
       onSave: _onSaveAndClose,
       isSaving: _autoSave.isSaving,
+      decorateColor: _decorateColor,
+      colorChange: (value) {
+        if (value == _decorateColor?.code) return;
+        setState(() {
+          _decorateColor = DecorateColor.fromCode(value);
+        });
+        _onUserChange();
+      },
     );
   }
 
   List<Widget> _body() {
     return [
-      ColorPickerAppBarButton(
-        selectedColor: _decorateColor?.code,
-        onChanged: (value) {
-          if(value == _decorateColor?.code) return;
-          setState(() {
-            _decorateColor = DecorateColor.fromCode(value);
-          });
-          _onUserChange();
-        },
-      ),
       TitleFormController(
         titleCtrl: _titleCtrl,
         label: ref.tr(TKeys.forms.title, fallback: 'Título'),

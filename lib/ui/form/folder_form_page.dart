@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/ads/ads_service_provider.dart';
 import 'package:tag_links/core/ads/interstitial_ads_provider.dart';
+import 'package:tag_links/core/decorate_color/decorated_color_themes.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/models/tag.dart';
@@ -50,6 +51,7 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
   late final FormAutoSaveController<Folder> _autoSave;
   AsyncNotifierProvider<FoldersNotifier, List<Folder>> get _provider =>
       foldersProvider(widget.parentFolderId);
+  late DecorateColor? _decorateColor;
 
   @override
   void initState() {
@@ -63,6 +65,7 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
           fileId: widget.fileId,
         );
     _tags = widget.folder?.tags ?? [];
+    _decorateColor = DecorateColor.fromCode(widget.folder?.color);
 
     _titleCtrl = TextEditingController(text: widget.folder?.title ?? '');
     _isFavorite = widget.folder?.isFavorite ?? false;
@@ -132,6 +135,14 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
       onFavoriteToogle: _isFavoriteToogle,
       onSave: _onSave,
       isSaving: _autoSave.isSaving,
+      decorateColor: _decorateColor,
+      colorChange: (value) {
+          if(value == _decorateColor?.code) return;
+          setState(() {
+            _decorateColor = DecorateColor.fromCode(value);
+          });
+          _saveDebouncer.run(_scheduleAutoSave);
+        },
     );
   }
 
@@ -207,7 +218,7 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
       id: _folder.id,
       parentId: widget.parentFolderId,
       fileId: widget.fileId,
-      color: _folder.color,
+      color: _decorateColor?.code,
       title: _titleCtrl.text.trim(),
       tags: _tags,
       image: _folder.image,

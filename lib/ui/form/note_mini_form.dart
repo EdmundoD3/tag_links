@@ -180,7 +180,7 @@ class _NoteMiniFormState extends ConsumerState<NoteMiniForm> {
         return Icon(
           Icons.send_rounded,
           size: 22,
-          color: _canSubmit ? theme.primaryColor : Colors.grey.withAlpha(120),
+          color: _canSubmit ? const Color.fromARGB(255, 82, 185, 232).withAlpha(200) : Colors.grey.withAlpha(120),
         );
     }
   }
@@ -192,7 +192,7 @@ class _NoteMiniFormState extends ConsumerState<NoteMiniForm> {
       onChanged: (_) => setState(() {}),
       maxLength: LimitAppConfig.titleMaxLength,
       maxLines: 1,
-      style:  TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: theme.hintColor),
+      style:  theme.textTheme.titleMedium?.copyWith(fontSize: 14, fontWeight: FontWeight.w400),
       decoration: InputDecoration(
         hintText: ref.tr(TKeys.forms.title, fallback: 'Título'),
         border: InputBorder.none,
@@ -209,7 +209,7 @@ class _NoteMiniFormState extends ConsumerState<NoteMiniForm> {
       controller: _textController,
       maxLines: 3,
       onChanged: (_) => setState(() {}),
-      style:  TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: theme.hintColor),
+      style: theme.textTheme.titleMedium?.copyWith(fontSize: 14, fontWeight: FontWeight.w400),
       decoration: InputDecoration(
         hintText: ref.tr(TKeys.forms.content, fallback: 'Contenido'),
         border: InputBorder.none,
@@ -229,7 +229,7 @@ class _NoteMiniFormState extends ConsumerState<NoteMiniForm> {
 
     // Colores dinámicos basados en tu tema
     final Color activeColor = theme.cardColor;
-    final Color expandedColor = theme.primaryColor.withAlpha(200);
+    final Color expandedColor = theme.appBarTheme.backgroundColor?.withAlpha(240) ?? const Color.fromARGB(255, 111, 148, 140);
     final Color? textColor = _isHidden ? theme.bottomNavigationBarTheme.selectedIconTheme?.color : Colors.white;
 
     return Align(
@@ -288,7 +288,7 @@ class _NoteMiniFormState extends ConsumerState<NoteMiniForm> {
                             fallback: 'Ocultar',
                           ),
                     style: TextStyle(
-                      color: _isHidden ? theme.bottomNavigationBarTheme.unselectedItemColor : Colors.white,
+                      color: _isHidden ? theme.bottomNavigationBarTheme.selectedItemColor : Colors.white,
                       fontSize: 13,
                       fontWeight: _isHidden
                           ? FontWeight.normal

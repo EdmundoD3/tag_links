@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 
 enum DecorateColor {
-  red('red'),
-  green('green'),
-  blue('blue'),
-  pink('pink');
+  red('red'), //sin referencias pero esta bien
+  orange('orange'), //charizard
+  yellow('yellow'),
+  green('green'), //meowscarada
+  teal('teal'),
+  blue('blue'), //sin referencias pero esta bien
+  purple('purple'),
+  pink('pink'); // tinkaton
 
   final String code;
   const DecorateColor(this.code);
@@ -17,7 +21,22 @@ enum DecorateColor {
     }
     return null;
   }
-}   
+}
+
+class DecorateColorTheme {
+  final Color strong;
+  final Color light;
+  final Color text;
+  final Color accent;
+
+  const DecorateColorTheme({
+    required this.strong,
+    required this.light,
+    required this.text,
+    required this.accent,
+  });
+}
+
 
 extension DecorateColorThemeX on DecorateColor {
   DecorateColorTheme get theme => decorateThemes[this]!;
@@ -27,39 +46,65 @@ extension DecorateColorThemeX on DecorateColor {
   Color get light => theme.light;
 
   Color get text => theme.text;
+
+  Color get acent => theme.accent;
 }
 
-class DecorateColorTheme {
-  final Color strong;
-  final Color light;
-  final Color text;
-
-  const DecorateColorTheme({
-    required this.strong,
-    required this.light,
-    required this.text,
-  });
-}
 
 const Map<DecorateColor, DecorateColorTheme> decorateThemes = {
   DecorateColor.red: DecorateColorTheme(
     strong: Color(0xFFD32F2F),
     light: Color(0xFFFFEBEE),
-    text: Color.fromARGB(255, 26, 1, 1),
+    text: Color(0xFF350404),
+    accent: Color(0xFF00897B),
   ),
+
+  DecorateColor.orange: DecorateColorTheme(
+    strong: Color(0xFFF34D26),
+    light: Color(0xFFFAD6B0),
+    text: Color(0xFF3A0C0E),
+    accent: Color.fromARGB(255, 76, 38, 243),
+  ),
+
+  DecorateColor.yellow: DecorateColorTheme(
+    strong: Color(0xFFFBC02D),
+    light: Color.fromRGBO(255, 250, 214, 19),
+    text: Color.fromARGB(255, 49, 37, 22),
+    accent: Color.fromARGB(255, 20, 174, 156),
+  ),
+
   DecorateColor.green: DecorateColorTheme(
-    strong: Color(0xFF388E3C),
-    light: Color(0xFFE8F5E9),
-    text: Color.fromARGB(255, 7, 23, 7),
+    strong: Color(0xFF559153),
+    light: Color(0xFFECF3DF),
+    text: Color(0xFF042A04),
+    accent: Color.fromARGB(255, 130, 94, 163),
   ),
+
+  DecorateColor.teal: DecorateColorTheme(
+    strong: Color(0xFF00897B),
+    light: Color(0xFFE0F2F1),
+    text: Color(0xFF032B28),
+    accent: Color.fromARGB(255, 156, 94, 163),
+  ),
+
   DecorateColor.blue: DecorateColorTheme(
     strong: Color(0xFF1976D2),
     light: Color(0xFFE3F2FD),
-    text: Color.fromARGB(255, 0, 16, 31),
+    text: Color(0xFF00101F),
+    accent: Color(0xFFFF7043),
   ),
+
+  DecorateColor.purple: DecorateColorTheme(
+    strong: Color(0xFF7B1FA2),
+    light: Color(0xFFF3E5F5),
+    text: Color(0xFF22042E),
+    accent: Color(0xFF26A69A),
+  ),
+
   DecorateColor.pink: DecorateColorTheme(
-    strong: Color(0xFFC2185B),
-    light: Color(0xFFFCE4EC),
-    text: Color.fromARGB(255, 27, 0, 11),
+    strong: Color.fromARGB(255, 230, 105, 160),
+    light: Color.fromARGB(255, 243, 225, 233),
+    text: Color.fromARGB(255, 75, 27, 51),
+    accent: Color(0xFF26A69A),
   ),
 };

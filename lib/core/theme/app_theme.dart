@@ -22,7 +22,7 @@ class AppTheme {
   // Getter estático para acceder al tema fácilmente
   static ThemeData get lightTheme {
     return _generatePalette(
-      strongBackground: const Color(0xFFF2F3F5),
+      strongBackground: const Color.fromARGB(255, 226, 228, 232),
       strongBackgroundText: const Color(0xFF1A1C1E),
       icon: const Color(0xFF5D5F66),
       badge: const Color(0xFF5D5F66),

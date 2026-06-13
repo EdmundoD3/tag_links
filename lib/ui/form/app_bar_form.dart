@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:tag_links/core/decorate_color/color_picker.dart';
+import 'package:tag_links/core/decorate_color/decorated_color_themes.dart';
 
 class AppBarForm extends StatelessWidget implements PreferredSizeWidget {
   final bool isFavorite;
@@ -9,7 +11,8 @@ class AppBarForm extends StatelessWidget implements PreferredSizeWidget {
   final List<Widget>? actions;
   final bool isSaving;
   final ValueListenable<TextEditingValue>? titleListenable;
-
+  final DecorateColor? decorateColor;
+  final void Function(String?) colorChange;
 
   const AppBarForm({
     super.key,
@@ -18,7 +21,10 @@ class AppBarForm extends StatelessWidget implements PreferredSizeWidget {
     required this.onSave,
     required this.isFavorite,
     required this.onFavoriteToogle,
-    required this.isSaving, this.titleListenable,
+    required this.isSaving,
+    this.titleListenable,
+    required this.decorateColor,
+    required this.colorChange,
   });
 
   @override
@@ -40,6 +46,10 @@ class AppBarForm extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       title: titleWidget,
       actions: [
+        ColorPickerAppBarButton(
+          selectedColor: decorateColor?.code,
+          onChanged: colorChange,
+        ),
         isFavorite
             ? IconButton(
                 onPressed: onFavoriteToogle,

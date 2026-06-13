@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/core/decorate_color/decorated_color_themes.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/core/locate/time/format_time.dart';
 import 'package:tag_links/models/folder.dart';
-import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/ui/container/tile_container.dart';
 import 'package:tag_links/ui/form/folder_form_page.dart';
 import 'package:tag_links/ui/menu/menu_container.dart';
+import 'package:tag_links/ui/text/mini_tags_footer.dart';
 import 'package:tag_links/ui/utils/page_buil.dart';
 import 'package:tag_links/ui/container/bouncing_widget.dart';
 
@@ -113,34 +114,23 @@ class _FolderCard extends StatelessWidget {
 
   const _FolderCard({required this.folder, required this.updatedAt});
 
+  DecorateColor? get _decorateColor => DecorateColor.fromCode(folder.color);
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return TileContainer(
       borderRadius: BorderRadius.circular(8),
-      cardColor: theme.cardTheme.color,
+      cardColor: theme.cardTheme.copyWith(color: _decorateColor?.light).color,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.folder, color: theme.badgeTheme.textColor),
+              _folderIcon(theme),
               const SizedBox(width: 12),
-              Expanded(
-                child: Padding(
-                  // Agregamos padding a la derecha para que el texto no choque con el botón
-                  padding: const EdgeInsets.only(right: 30),
-                  child: Text(
-                    folder.title,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
+              _title(theme),
               if (folder.isFavorite)
                 const Icon(Icons.favorite, color: Colors.red, size: 20),
               if (folder.isFavorite) const SizedBox(width: 20),
@@ -152,13 +142,34 @@ class _FolderCard extends StatelessWidget {
       ),
     );
   }
+  Widget _folderIcon(ThemeData theme){
+    return Icon(Icons.folder, color: theme.badgeTheme.copyWith(textColor: _decorateColor?.strong.withAlpha(220)).textColor);
+  }
+
+  Widget _title(ThemeData theme) {
+    return Expanded(
+      child: Padding(
+        // Agregamos padding a la derecha para que el texto no choque con el botón
+        padding: const EdgeInsets.only(right: 30),
+        child: Text(
+          folder.title,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: _decorateColor?.text,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    );
+  }
 
   Widget _footer({required ThemeData theme}) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Expanded(
-          child: _miniTags(theme: theme, tags: folder.tags),
+          child: MiniTagsFooter(tags: folder.tags,color: _decorateColor?.acent,),
         ),
         const SizedBox(width: 8),
         _dateWidget(theme: theme, date: updatedAt),
@@ -169,18 +180,8 @@ class _FolderCard extends StatelessWidget {
   Widget _dateWidget({required ThemeData theme, required String date}) {
     return Text(
       date,
-      style: theme.textTheme.labelSmall?.copyWith(color: theme.hintColor),
+      style: theme.textTheme.labelSmall?.copyWith(color: _decorateColor?.text?? theme.hintColor),
       textAlign: TextAlign.right,
-    );
-  }
-
-  Widget _miniTags({required ThemeData theme, List<Tag> tags = const []}) {
-    String resultado = tags.map((tag) => '#${tag.title}').join(' ');
-    return Text(
-      resultado,
-      style: theme.textTheme.labelMedium,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
     );
   }
 }

@@ -242,7 +242,7 @@ class _NoteTileCard extends StatelessWidget {
       trailing: Trailing(
         top: 12,
         right: 10,
-        child: MoreVertButton(onPressed: () => onShowMenu(null)),
+        child: MoreVertButton(onPressed: () => onShowMenu(null),),
       ),
       child: TileContainer(
         cardColor: _decorateColor?.light ?? theme.cardColor,
