@@ -69,6 +69,10 @@ class NotesDao {
     await _fetch.upsertAll(notes);
   }
 
+  Future<List<Note>> extractNewerNotes(List<Note> incomingNotes) async {
+    return await _fetch.extractNewerNotes(incomingNotes);
+  }
+
   Future<void> serverDeleteByIds(List<String> ids) async {
     await _fetch.serverDeleteByIds(ids);
   }
@@ -543,7 +547,7 @@ class FetchersNotesDao {
     });
   }
 
-Future<void> upsertAll(List<Note> rawNotes) async {
+  Future<void> upsertAll(List<Note> rawNotes) async {
     if (rawNotes.isEmpty) return;
 
     // 🛡️ Filtro inicial rápido fuera de la transacción
@@ -552,7 +556,9 @@ Future<void> upsertAll(List<Note> rawNotes) async {
       ids: rawNotes.map((e) => e.id).toList(),
       type: DeletedType.note,
     );
-    final unverifyNotes = rawNotes.where((e) => !dirtysIds.contains(e.id)).toList();
+    final unverifyNotes = rawNotes
+        .where((e) => !dirtysIds.contains(e.id))
+        .toList();
     if (unverifyNotes.isEmpty) return;
 
     // 1. Pre-procesamiento de IDs de archivo (Fuera de la transacción para velocidad)
@@ -561,16 +567,21 @@ Future<void> upsertAll(List<Note> rawNotes) async {
     );
 
     final notes = unverifyNotes.map((n) {
-      return (n.fileId.isEmpty)
-          ? n.copyWith(fileId: sharedFileId)
-          : n;
+      return (n.fileId.isEmpty) ? n.copyWith(fileId: sharedFileId) : n;
     }).toList();
 
     await _db.transaction((txn) async {
       // 🛡️ PASO 0: Asegurar que los Buckets de las notas y sus Tags existan
-      final uniqueFileIds = notes.map((n) => n.fileId).whereType<String>().toSet();
+      final uniqueFileIds = notes
+          .map((n) => n.fileId)
+          .whereType<String>()
+          .toSet();
       for (final fId in uniqueFileIds) {
-        await LocalSyncQueueDao.ensureExistenceTxn(txn, id: fId, type: TypeQueue.notes);
+        await LocalSyncQueueDao.ensureExistenceTxn(
+          txn,
+          id: fId,
+          type: TypeQueue.notes,
+        );
       }
 
       // Aseguramos las etiquetas y obtenemos cuáles están borradas para evitar "Zombies"
@@ -578,19 +589,21 @@ Future<void> upsertAll(List<Note> rawNotes) async {
       await TagsDao.ensureTagsDependencies(txn, allTags);
 
       // Obtenemos los IDs de tags borrados para filtrar las relaciones en el batch
-      final Set<String> deletedTagIds = await DeletedDao.extractDirtyIdsByTypeTxn(
-        txn,
-        ids: allTags.map((t) => t.id).toList(),
-        type: DeletedType.tag,
-      );
+      final Set<String> deletedTagIds =
+          await DeletedDao.extractDirtyIdsByTypeTxn(
+            txn,
+            ids: allTags.map((t) => t.id).toList(),
+            type: DeletedType.tag,
+          );
 
       // 🛡️ PASO 1: Filtrar notas borradas localmente (Verificación atómica)
       final List<String> incomingIds = notes.map((e) => e.id).toList();
-      final Set<String> dirtyDeletedIds = await DeletedDao.extractDirtyIdsByTypeTxn(
-        txn,
-        ids: incomingIds,
-        type: DeletedType.note,
-      );
+      final Set<String> dirtyDeletedIds =
+          await DeletedDao.extractDirtyIdsByTypeTxn(
+            txn,
+            ids: incomingIds,
+            type: DeletedType.note,
+          );
 
       // 🔍 PASO 2: Verificar folders existentes
       final Set<String> incomingFolderIds = notes
@@ -616,8 +629,9 @@ Future<void> upsertAll(List<Note> rawNotes) async {
 
         // 🎯 Lógica de Rescate: Si el folder no existe, mandamos a NULL (Raíz)
         String? finalFolderId = note.folderId;
-        if (finalFolderId != null && !existingFolderIds.contains(finalFolderId)) {
-          finalFolderId = null; 
+        if (finalFolderId != null &&
+            !existingFolderIds.contains(finalFolderId)) {
+          finalFolderId = null;
         }
 
         batch.rawInsert(
@@ -651,6 +665,7 @@ Future<void> upsertAll(List<Note> rawNotes) async {
         );
 
         // Tags y Links (Batch)
+
         TagsNotesDao.deleteBatch(batch, noteId: note.id);
         for (final tag in note.tags) {
           // 🛡️ Evitamos insertar la relación si el Tag fue borrado
@@ -669,6 +684,37 @@ Future<void> upsertAll(List<Note> rawNotes) async {
       await batch.commit(noResult: true);
     });
   }
+
+  // para revisar si las notas vale la pena actualizarlas
+Future<List<Note>> extractNewerNotes(
+  List<Note> incomingNotes,
+) async {
+  if (incomingNotes.isEmpty) return [];
+
+  final ids = incomingNotes.map((e) => e.id).toList();
+
+  final localRows = await _db.query(
+    'notes',
+    columns: ['id', 'updatedAt'],
+    where: 'id IN (${List.filled(ids.length, '?').join(',')})',
+    whereArgs: ids,
+  );
+
+  final localMap = <String, int>{
+    for (final row in localRows)
+      row['id'] as String: row['updatedAt'] as int,
+  };
+
+  return incomingNotes.where((note) {
+    final localUpdatedAt = localMap[note.id];
+
+    if (localUpdatedAt == null) {
+      return true;
+    }
+
+    return note.updatedAt > localUpdatedAt;
+  }).toList();
+}
   /* ----------------------------------------------------------------------
    * DELETE
    * -------------------------------------------------------------------- */

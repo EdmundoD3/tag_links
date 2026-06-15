@@ -10,10 +10,9 @@ import 'package:tag_links/ui/menu/menu_container.dart';
 import 'package:tag_links/ui/text/mini_tags_footer.dart';
 import 'package:tag_links/ui/utils/page_buil.dart';
 import 'package:tag_links/ui/container/bouncing_widget.dart';
+import '../button/more_vert_button.dart';
 
-import '../button/more_vert_button.dart'; // Asegúrate de que la ruta sea correcta
-
-class FolderTile extends ConsumerStatefulWidget {
+class FolderTile extends ConsumerWidget {
   final List<ActionMenuItem> actionsItems;
   final Folder folder;
   final void Function() goFolder;
@@ -30,20 +29,11 @@ class FolderTile extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<FolderTile> createState() => _FolderTileState();
-}
-
-class _FolderTileState extends ConsumerState<FolderTile> {
-  final GlobalKey _tileKey = GlobalKey();
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return BouncingButton(
-      key: _tileKey,
-      onTap: widget.goFolder,
+      onTap: goFolder,
       onLongPressStart: (details) =>
           _actionsMenu(context, ref, details.globalPosition),
-      // AGREGAMOS EL BOTÓN AQUÍ:
       trailing: Trailing(
         top: 12,
         right: 10,
@@ -52,25 +42,27 @@ class _FolderTileState extends ConsumerState<FolderTile> {
         ),
       ),
       child: _FolderCard(
-        folder: widget.folder,
-        updatedAt: ref.fmt(widget.folder.updatedAt),
+        folder: folder,
+        updatedAt: ref.fmt(folder.updatedAt),
       ),
     );
   }
 
-  void _actionsMenu(BuildContext context, WidgetRef ref, Offset? position) {
-    final box = _tileKey.currentContext?.findRenderObject() as RenderBox?;
-    if (box == null) return;
+  void _actionsMenu(
+    BuildContext context,
+    WidgetRef ref,
+    Offset? position,
+  ) {
+    final renderBox = context.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
 
-    final widgetPosition = box.localToGlobal(Offset.zero);
+    final topLeft = renderBox.localToGlobal(Offset.zero);
 
     ActionMenu.showActionMenu(
       context: context,
       position: Offset(
-        widgetPosition.dx + box.size.width - 260,
-        position != null
-            ? position.dy
-            : widgetPosition.dy + 10, // Ajuste leve si es desde el botón
+        topLeft.dx + renderBox.size.width - 260,
+        position?.dy ?? topLeft.dy + 10,
       ),
       items: [
         ActionMenuItem(
@@ -81,14 +73,14 @@ class _FolderTileState extends ConsumerState<FolderTile> {
         ActionMenuItem(
           icon: Icons.delete,
           label: ref.tr(TKeys.actions.delete, fallback: 'Eliminar'),
-          onTap: () => widget.onDeleteFolder(),
+          onTap: onDeleteFolder,
         ),
         ActionMenuItem(
           icon: Icons.move_down_rounded,
           label: ref.tr(TKeys.actions.move, fallback: 'Mover'),
-          onTap: () => widget.onMove(),
+          onTap: onMove,
         ),
-        ...widget.actionsItems,
+        ...actionsItems,
       ],
     );
   }
@@ -97,9 +89,9 @@ class _FolderTileState extends ConsumerState<FolderTile> {
     return goPage(
       context: context,
       page: FolderFormPage(
-        folder: widget.folder,
-        parentFolderId: widget.folder.parentId,
-        fileId: widget.folder.fileId,
+        folder: folder,
+        parentFolderId: folder.parentId,
+        fileId: folder.fileId,
       ),
     );
   }

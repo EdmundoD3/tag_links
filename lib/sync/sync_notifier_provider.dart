@@ -106,90 +106,98 @@ class SyncNotifier extends AsyncNotifier<SyncState> {
     } catch (e) {
       debugPrint("Sync Error: $e");
       if (ref.mounted) {
-        final SyncState newState = state.value?.copyWith(
-            status: SyncStatus.error,
-            lastError: _mapErrorToHumanMessage(e),
-          ) ?? SyncState(status: SyncStatus.error,lastError: _mapErrorToHumanMessage(e));
-        state = AsyncData(
-          newState,
-        );
+        final SyncState newState =
+            state.value?.copyWith(
+              status: SyncStatus.error,
+              lastError: _mapErrorToHumanMessage(e),
+            ) ??
+            SyncState(
+              status: SyncStatus.error,
+              lastError: _mapErrorToHumanMessage(e),
+            );
+        state = AsyncData(newState);
       }
     }
   }
 
   /// El "motor" de la sincronización. Aquí no manejamos estados de UI,
   /// solo la lógica de datos.
-Future<void> _realSyncLogic() async {
-  // A. REPARACIÓN Y CLIENTE
-  final isAuthReady = await ref.read(authProvider.notifier).attemptSessionRepair();
-  if (!isAuthReady) throw AuthSyncException();
+  Future<void> _realSyncLogic() async {
+    // A. REPARACIÓN Y CLIENTE
+    final isAuthReady = await ref
+        .read(authProvider.notifier)
+        .attemptSessionRepair();
+    if (!isAuthReady) throw AuthSyncException();
 
-  final driveApi = ref.read(authProvider).driveApi;
-  if (driveApi == null) throw AuthSyncException();
+    final driveApi = ref.read(authProvider).driveApi;
+    if (driveApi == null) throw AuthSyncException();
 
-  await Future.delayed(const Duration(milliseconds: 100));
+    await Future.delayed(const Duration(milliseconds: 100));
 
-  final configManager = ref.read(syncConfigProvider);
-  if (configManager == null) throw ConfigSyncException();
+    final configManager = ref.read(syncConfigProvider);
+    if (configManager == null) throw ConfigSyncException();
 
-  // B. FASE 0: CONFIGURACIÓN REMOTA (Limpio y directo)
-  // Si esto falla con 401, sube solo. Si devuelve null, es error de red.
-  final remoteData = await configManager.getOrInitializeRemoteConfig();
-  if (remoteData == null) throw NetworkSyncException();
+    // B. FASE 0: CONFIGURACIÓN REMOTA (Limpio y directo)
+    // Si esto falla con 401, sube solo. Si devuelve null, es error de red.
+    final remoteData = await configManager.getOrInitializeRemoteConfig();
+    if (remoteData == null) throw NetworkSyncException();
 
-  // A partir de aquí, remoteData ya no es nulo y es seguro usarlo
-  final idManager = ref.read(localIdManagerProvider);
-  final storage = ref.read(lastSyncProvider.notifier);
-  final lastPulled = state.value?.lastSyncTimestamp ?? 0;
+    // A partir de aquí, remoteData ya no es nulo y es seguro usarlo
+    final idManager = ref.read(localIdManagerProvider);
+    final storage = ref.read(lastSyncProvider.notifier);
+    final lastPulled = state.value?.lastSyncTimestamp ?? 0;
 
-  if (_syncPuller == null) return;
+    if (_syncPuller == null) return;
 
-  // C. FASE 1: PULL
-  final archiveRes = await _syncPuller!.processRemoteArchive(
-    remote: remoteData.config.archiveInfo,
-  );
-  if (!archiveRes.success) throw DataSyncException("Fallo en reconciliación");
+    // C. FASE 1: PULL
+    final archiveRes = await _syncPuller!.processRemoteArchive(
+      remote: remoteData.config.archiveInfo,
+    );
+    if (!archiveRes.success) throw DataSyncException("Fallo en reconciliación");
 
-  final deleteRes = await _syncPuller!.processRemoteDeletes(
-    remoteData.config.archiveInfo.deletes,
-    lastPulled,
-  );
-  if (!deleteRes.success) throw DataSyncException("Error en borrados");
+    final deleteRes = await _syncPuller!.processRemoteDeletes(
+      remoteData.config.archiveInfo.deletes,
+      lastPulled,
+    );
+    if (!deleteRes.success) throw DataSyncException("Error en borrados");
 
-  final dataRes = await _syncPuller!.processRemoteData(
-    remoteData.config.archiveInfo,
-    lastPulled,
-  );
-  if (!dataRes.success) throw DataSyncException("Error en descarga de datos");
+    final dataRes = await _syncPuller!.processRemoteData(
+      remoteData.config.archiveInfo,
+      lastPulled,
+    );
+    if (!dataRes.success) throw DataSyncException("Error en descarga de datos");
 
-  // D. ACTUALIZACIÓN DE UI
-  final totalPullChanges = deleteRes.merge(dataRes);
-  if (totalPullChanges.anyChanges) {
-    if (totalPullChanges.foldersChanged) ref.invalidate(foldersProvider);
-    if (totalPullChanges.notesChanged) ref.invalidate(notesProvider);
-    if(totalPullChanges.tagsChanged) ref.invalidate(tagsProvider);
-    debugPrint("✨ UI invalidada: Cambios detectados.");
+    // D. ACTUALIZACIÓN DE UI
+    final totalPullChanges = deleteRes.merge(dataRes);
+    if (totalPullChanges.anyChanges) {
+      Future.microtask(() {
+        if (totalPullChanges.foldersChanged) ref.invalidate(foldersProvider);
+        if (totalPullChanges.notesChanged) ref.invalidate(notesProvider);
+        if (totalPullChanges.tagsChanged) ref.invalidate(tagsProvider);
+      });
+
+      debugPrint("✨ UI invalidada: Cambios detectados.");
+    }
+
+    // E. FASE 2: PUSH
+    final pusher = ref.read(syncPusherProvider);
+    if (pusher == null) throw AuthSyncException();
+
+    final updatedArchive = await pusher.pushLocalChanges(
+      currentArchive: remoteData.config.archiveInfo,
+    );
+
+    // F. FASE 3: CIERRE
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final finalConfig = remoteData.config
+        .copyWith(archiveInfo: updatedArchive, lastGlobalUpdate: now)
+        .upsertDevice(
+          DeviceInfo.createCurrent(idManager.getOrCreateDeviceId()),
+        );
+
+    await configManager.updateRemoteConfig(remoteData.fileId, finalConfig);
+    storage.update(lastPulledAt: now);
   }
-
-  // E. FASE 2: PUSH
-  final pusher = ref.read(syncPusherProvider);
-  if (pusher == null) throw AuthSyncException();
-
-  final updatedArchive = await pusher.pushLocalChanges(
-    currentArchive: remoteData.config.archiveInfo,
-  );
-
-  // F. FASE 3: CIERRE
-  final now = DateTime.now().millisecondsSinceEpoch;
-  final finalConfig = remoteData.config
-      .copyWith(archiveInfo: updatedArchive, lastGlobalUpdate: now)
-      .upsertDevice(
-        DeviceInfo.createCurrent(idManager.getOrCreateDeviceId()),
-      );
-
-  await configManager.updateRemoteConfig(remoteData.fileId, finalConfig);
-  storage.update(lastPulledAt: now);
-}
 
   String _mapErrorToHumanMessage(Object e) {
     // Log para depuración

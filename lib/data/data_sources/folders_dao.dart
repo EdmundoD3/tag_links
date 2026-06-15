@@ -201,9 +201,9 @@ class FoldersDao {
     await LocalSyncQueueDao.markAsDirty(txn, bucketId: folder.fileId);
   }
 
-Future<void> upsertAll(List<Folder> rawFolders) async {
+  Future<void> upsertAll(List<Folder> rawFolders) async {
     if (rawFolders.isEmpty) return;
-    
+
     // 🛡️ Filtro inicial de borrados
     final incomingIds = rawFolders.map((e) => e.id).toList();
     final dirtysIds = await DeletedDao.extractDirtyIdsByTypeTxn(
@@ -223,20 +223,28 @@ Future<void> upsertAll(List<Folder> rawFolders) async {
 
     await _db.transaction((txn) async {
       // 🛡️ PASO 0: Asegurar que los Buckets de las Folders existan (Evitar Error 787)
-      final uniqueFileIds = sortedFolders.map((f) => f.fileId).whereType<String>().toSet();
+      final uniqueFileIds = sortedFolders
+          .map((f) => f.fileId)
+          .whereType<String>()
+          .toSet();
       for (final fId in uniqueFileIds) {
-        await LocalSyncQueueDao.ensureExistenceTxn(txn, id: fId, type: TypeQueue.folders);
+        await LocalSyncQueueDao.ensureExistenceTxn(
+          txn,
+          id: fId,
+          type: TypeQueue.folders,
+        );
       }
 
       // Aseguramos etiquetas y obtenemos borradas para filtrar relaciones
       final allTags = sortedFolders.expand((f) => f.tags).toList();
       await TagsDao.ensureTagsDependencies(txn, allTags);
 
-      final Set<String> deletedTagIds = await DeletedDao.extractDirtyIdsByTypeTxn(
-        txn,
-        ids: allTags.map((t) => t.id).toList(),
-        type: DeletedType.tag,
-      );
+      final Set<String> deletedTagIds =
+          await DeletedDao.extractDirtyIdsByTypeTxn(
+            txn,
+            ids: allTags.map((t) => t.id).toList(),
+            type: DeletedType.tag,
+          );
 
       final batch = txn.batch();
 
@@ -278,7 +286,11 @@ Future<void> upsertAll(List<Folder> rawFolders) async {
         for (final tag in folder.tags) {
           // 🛡️ Solo vinculamos si el tag NO está borrado
           if (!deletedTagIds.contains(tag.id)) {
-            FolderTagsDao.upsertBatch(batch, folderId: folder.id, tagId: tag.id);
+            FolderTagsDao.upsertBatch(
+              batch,
+              folderId: folder.id,
+              tagId: tag.id,
+            );
           }
         }
       }
@@ -286,6 +298,36 @@ Future<void> upsertAll(List<Folder> rawFolders) async {
       await batch.commit(noResult: true);
     });
   }
+
+Future<List<Folder>> extractNewerFolders(
+  List<Folder> incomingFolders,
+) async {
+  if (incomingFolders.isEmpty) return [];
+
+  final ids = incomingFolders.map((e) => e.id).toList();
+
+  final localRows = await _db.query(
+    'folders',
+    columns: ['id', 'updatedAt'],
+    where: 'id IN (${List.filled(ids.length, '?').join(',')})',
+    whereArgs: ids,
+  );
+
+  final localMap = <String, int>{
+    for (final row in localRows)
+      row['id'] as String: row['updatedAt'] as int,
+  };
+
+  return incomingFolders.where((folder) {
+    final localUpdatedAt = localMap[folder.id];
+
+    // No existe localmente
+    if (localUpdatedAt == null) return true;
+
+    // Remoto más nuevo
+    return folder.updatedAt > localUpdatedAt;
+  }).toList();
+}
 
   /// DELETE RECURSIVO DE CARPETAS (Optimizado para Sincronización y Conteos)
   Future<void> delete(String id) async {

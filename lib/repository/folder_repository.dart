@@ -28,10 +28,11 @@ class FolderRepository {
     return _dao.searchByQuery(query, paginated: paginated);
   }
 
-  Future<void> upsertAll(List<Folder> folders) async {
-    
-    return _dao.upsertAll(folders);
-  }
+Future<void> upsertAll(List<Folder> incomingFolders) async {
+  final validFolders = await _dao.extractNewerFolders(incomingFolders);
+
+  return _dao.upsertAll(validFolders);
+}
 
   Future<void> create(Folder folder) async {
     return _dao.upsert(folder);

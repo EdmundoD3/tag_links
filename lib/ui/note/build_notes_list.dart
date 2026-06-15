@@ -16,7 +16,6 @@ class BuildNotesList extends ConsumerWidget {
   final ScrollController scrollController;
   final List<ActionMenuItem>? actionsItems;
   final void Function(Note note)? goFolder;
-  final GlobalKey Function(String id) getKey;
 
   const BuildNotesList({
     super.key,
@@ -26,8 +25,8 @@ class BuildNotesList extends ConsumerWidget {
     this.goFolder,
     required this.isLoadingMore,
     required this.onDeleteNote,
-    required this.getKey,
   });
+
 
   @override
   Widget build(BuildContext context, ref) {

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/state/folders_provider.dart';
+import 'package:tag_links/state/pending_folder_provider.dart';
 import 'package:tag_links/ui/folder/build_folders_list.dart';
+import 'package:tag_links/ui/modals/confirm_dialog.dart';
 
 class FoldersSection extends ConsumerStatefulWidget {
   final String? parentId;
@@ -15,55 +18,59 @@ class FoldersSection extends ConsumerStatefulWidget {
 class _FoldersSectionState extends ConsumerState<FoldersSection> {
   final ScrollController _scrollController = ScrollController();
 
+  AsyncNotifierProvider<FoldersNotifier, List<Folder>> get _provider =>
+      foldersProvider(widget.parentId);
+
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
   }
 
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   void _onScroll() {
     if (!_scrollController.hasClients) return;
 
     final position = _scrollController.position;
-    final notifier = ref.read(foldersProvider(widget.parentId).notifier);
+    final notifier = ref.read(_provider.notifier);
 
-    // Un solo bloque para el scroll infinito es suficiente
     if (position.pixels >= position.maxScrollExtent - 200 &&
         notifier.hasMore &&
         !notifier.isLoadingMore) {
-      debugPrint('Cargando más carpetas para: ${widget.parentId ?? "Root"}');
       notifier.loadMore();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Los datos dependen de si es Root (posible búsqueda) o subcarpeta
     final foldersAsync = widget.parentId == null
         ? ref.watch(foldersViewProvider)
-        : ref.watch(foldersProvider(widget.parentId));
+        : ref.watch(_provider);
 
-    // Las acciones siempre van al notifier del parentId correspondiente
-    final notifier = ref.read(foldersProvider(widget.parentId).notifier);
+    final notifier = ref.read(_provider.notifier);
 
     return BuildFoldersList(
       foldersAsync: foldersAsync,
       scrollController: _scrollController,
-      notifier: notifier,
-      onDeleteFolder: (id) async {
-        await notifier.deleteFolder(id);
+      isLoadingMore: notifier.isLoadingMore,
+      onDeleteFolder: (folder) async {
+        await notifier.deleteFolder(folder);
 
-        // Solo invalidamos búsqueda si estamos en el Root
         if (widget.parentId == null) {
           ref.invalidate(folderSearchProvider);
         }
       },
+      onMoveFolder: (folder) async {
+        final isConfirm = await ConfirmDialog.moveFolder(context, ref);
+        if (isConfirm == true) {
+          ref.read(pendingFolderProvider.notifier).set(folder);
+        }
+      },
     );
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
   }
 }

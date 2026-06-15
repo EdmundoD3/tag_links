@@ -87,14 +87,26 @@ class FoldersNotifier extends AsyncNotifier<List<Folder>> {
     if (!_hasMore || _isLoadingMore) return;
 
     _isLoadingMore = true;
-    // page++ debería ir después de confirmar que se cargaron datos
 
     try {
       _page++;
-      final nextItems = await _fetchPage();
-      // Riverpod se encarga de que esto sea seguro, pero
-      // asegúrate de que _fetchPage use el estado actual correctamente.
-      state = AsyncData(nextItems);
+
+      final pagination = PaginatedByDate(
+        page: _page,
+        pageSize: _pageSize,
+        order: OrderDate.updatedDesc,
+      );
+
+      final items = parentFolderId == null
+          ? await _repo.getRootFolders(paginated: pagination)
+          : await _repo.getByParentId(parentFolderId!, paginated: pagination);
+
+      if (items.length < _pageSize) {
+        _hasMore = false;
+      }
+
+      final current = state.value ?? [];
+      state = AsyncData([...current, ...items]);
     } finally {
       _isLoadingMore = false;
     }
@@ -104,9 +116,10 @@ class FoldersNotifier extends AsyncNotifier<List<Folder>> {
 
   Future<void> addFolder(Folder folder) async {
     await _repo.create(folder);
-    // unawaited(ref.read(syncNotifierProvider.notifier).performSync());
-    // En el caso de añadir, invalidateSelf está bien para traer el orden correcto de DB
-    ref.invalidateSelf();
+
+    state.whenData((current) {
+      state = AsyncData([folder, ...current]);
+    });
   }
 
   // En FoldersNotifier...
@@ -154,8 +167,15 @@ class FoldersNotifier extends AsyncNotifier<List<Folder>> {
 
   Future<void> toggleFavorite(Folder folder) async {
     await _repo.toggleFavorite(folder);
-    // Para favoritos, como suele cambiar el icono, invalidar es lo más seguro
-    ref.invalidateSelf();
+
+    state.whenData((current) {
+      final index = current.indexWhere((f) => f.id == folder.id);
+      if (index == -1) return;
+
+      final updated = [...current];
+      updated[index] = folder.copyWith(isFavorite: !folder.isFavorite);
+      state = AsyncData(updated);
+    });
   }
 
   Future<FolderDefaultView> getPreference() async {

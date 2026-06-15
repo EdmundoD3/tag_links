@@ -39,7 +39,6 @@ class NoteTile extends ConsumerStatefulWidget {
 
 class _NoteTileState extends ConsumerState<NoteTile> {
   // AQUÍ ES DONDE DEBE VIVIR LA LLAVE
-  final GlobalKey _tileKey = GlobalKey();
   bool _isNoteExpanded = false;
   bool _showReadMore = false;
 
@@ -47,7 +46,6 @@ class _NoteTileState extends ConsumerState<NoteTile> {
   Widget build(BuildContext context) {
     return _NoteTileCard(
       // IMPORTANTE: Pasamos la llave aquí para que el RenderBox sea el de la tarjeta
-      tileKey: _tileKey,
       note: widget.note,
       updatedAt: ref.fmt(widget.note.updatedAt),
       //expandText
@@ -80,74 +78,65 @@ class _NoteTileState extends ConsumerState<NoteTile> {
     );
   }
 
-  void _actionsMenu({
-    required BuildContext context,
-    required WidgetRef ref,
-    Offset? position,
-  }) {
-    final renderBox = _tileKey.currentContext?.findRenderObject() as RenderBox?;
-    if (renderBox == null) return;
+void _actionsMenu({
+  required BuildContext context,
+  required WidgetRef ref,
+  Offset? position,
+}) {
+  final renderBox = context.findRenderObject() as RenderBox?;
+  if (renderBox == null) return;
 
-    final widgetPosition = renderBox.localToGlobal(Offset.zero);
-    final double screenWidth = MediaQuery.of(context).size.width;
-    const double menuWidth = 260.0;
-    double desiredX = widgetPosition.dx + renderBox.size.width - menuWidth;
-    double safeX = math.max(
-      10.0,
-      math.min(desiredX, screenWidth - menuWidth - 10.0),
-    );
+  final widgetPosition = renderBox.localToGlobal(Offset.zero);
+  final double screenWidth = MediaQuery.of(context).size.width;
+  const double menuWidth = 260.0;
 
-    ActionMenu.showActionMenu(
-      context: context,
-      position: Offset(
-        safeX,
-        position != null ? position.dy : widgetPosition.dy - 8,
+  double desiredX = widgetPosition.dx + renderBox.size.width - menuWidth;
+  double safeX = math.max(
+    10.0,
+    math.min(desiredX, screenWidth - menuWidth - 10.0),
+  );
+
+  ActionMenu.showActionMenu(
+    context: context,
+    position: Offset(
+      safeX,
+      position != null ? position.dy : widgetPosition.dy - 8,
+    ),
+    items: [
+      if (widget.note.link != null)
+        ActionMenuItem(
+          icon: Icons.open_in_new,
+          label: ref.tr(TKeys.actions.openLink, fallback: 'Abrir enlace'),
+          onTap: () => _openLink(context,
+            notOpenLinkMsg: ref.tr(TKeys.errors.notOpenLink),
+            errorOpenLinkMsg: ref.tr(TKeys.errors.openLink),
+          ),
+        ),
+      ActionMenuItem(
+        icon: Icons.edit,
+        label: ref.tr(TKeys.actions.edit, fallback: 'Editar'),
+        onTap: () => _editNote(context),
       ),
-      items: [
-        if (widget.note.link != null)
-          ActionMenuItem(
-            icon: Icons.open_in_new,
-            label: ref.tr(TKeys.actions.openLink, fallback: 'Abrir enlace'),
-            onTap: () => _openLink(
-              context,
-              notOpenLinkMsg: ref.tr(
-                TKeys.errors.notOpenLink,
-                fallback: 'No se encontró una app para abrir este enlace',
-              ),
-              errorOpenLinkMsg: ref.tr(
-                TKeys.errors.openLink,
-                fallback: 'URL no válida o mal formada',
-              ),
-            ),
-          ),
-        ActionMenuItem(
-          icon: Icons.edit,
-          label: ref.tr(TKeys.actions.edit, fallback: 'Editar'),
-          onTap: () => _editNote(context),
-        ),
-        ActionMenuItem(
-          icon: Icons.copy,
-          label: ref.tr(TKeys.actions.copy, fallback: 'Copiar'),
-          onTap: () => _copyText(
-            context,
-            ref.tr(TKeys.actions.copiedSuccess, fallback: 'Texto copiado'),
-          ),
-        ),
-        ActionMenuItem(
-          icon: Icons.move_down_rounded,
-          label: ref.tr(TKeys.actions.move, fallback: 'Mover'),
-          onTap: () => widget.onMove(widget.note),
-        ),
-        ActionMenuItem(
-          icon: Icons.delete,
-          label: ref.tr(TKeys.actions.delete, fallback: 'Eliminar'),
-          onTap: () => widget.onDeleteNote(),
-        ),
-
-        ...widget.actionsItems,
-      ],
-    );
-  }
+      ActionMenuItem(
+        icon: Icons.copy,
+        label: ref.tr(TKeys.actions.copy, fallback: 'Copiar'),
+        onTap: () => _copyText(context,
+          ref.tr(TKeys.actions.copiedSuccess)),
+      ),
+      ActionMenuItem(
+        icon: Icons.move_down_rounded,
+        label: ref.tr(TKeys.actions.move, fallback: 'Mover'),
+        onTap: () => widget.onMove(widget.note),
+      ),
+      ActionMenuItem(
+        icon: Icons.delete,
+        label: ref.tr(TKeys.actions.delete, fallback: 'Eliminar'),
+        onTap: () => widget.onDeleteNote(),
+      ),
+      ...widget.actionsItems,
+    ],
+  );
+}
 
   // functions
   void _copyText(BuildContext context, String okMessage) {
@@ -210,7 +199,6 @@ class _NoteTileState extends ConsumerState<NoteTile> {
 
 class _NoteTileCard extends StatelessWidget {
   final Note note;
-  final GlobalKey tileKey;
   final void Function(Offset?) onShowMenu;
   final bool isExpanded;
   final void Function() onTap;
@@ -222,7 +210,6 @@ class _NoteTileCard extends StatelessWidget {
   const _NoteTileCard({
     required this.note,
     required this.onShowMenu,
-    required this.tileKey,
     required this.isExpanded,
     required this.onTap,
     required this.onLineCountCheck,
@@ -236,7 +223,6 @@ class _NoteTileCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     return BouncingButton(
-      key: tileKey, // Asociamos la GlobalKey al contenedor que rebota
       onTap: onTap,
       onLongPressStart: (details) => onShowMenu(details.globalPosition),
       trailing: Trailing(

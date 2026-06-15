@@ -60,9 +60,10 @@ class NotesRepository {
     return _dao.upsert(note);
   }
 
-  Future<void> upsertAll(List<Note> notes) async {
-    
-    return _dao.upsertAll(notes);
+  Future<void> upsertAll(List<Note> incomingNotes) async {
+    final validNotes = await _dao.extractNewerNotes(incomingNotes);
+
+    return _dao.upsertAll(validNotes);
   }
 
   Future<void> serverDeleteByIds(List<String> ids) async {
@@ -88,13 +89,13 @@ class NotesRepository {
 
   // Obtener los registros borrados para subirlos a la nube
   Future<List<DeletedData>> getDeletedBatch(String fileId) =>
-      _deletedDao.getBatchByFileIdAndType(fileId,DeletedType.note);
+      _deletedDao.getBatchByFileIdAndType(fileId, DeletedType.note);
   Future<bool> hasAnyData() => _dao.hasAnyData();
 }
 
 final notesRepositoryProvider = Provider<NotesRepository>((ref) {
   final db = ref.read(databaseProvider);
   final deletedDao = ref.read(deletedDaoProvider);
-  final notesDao = NotesDao(db,deletedDao);
+  final notesDao = NotesDao(db, deletedDao);
   return NotesRepository(notesDao, deletedDao);
 });
