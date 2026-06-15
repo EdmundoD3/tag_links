@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/google/auth_provider.dart';
 import 'package:tag_links/state/tags_provider.dart';
@@ -169,15 +170,21 @@ class SyncNotifier extends AsyncNotifier<SyncState> {
 
     // D. ACTUALIZACIÓN DE UI
     final totalPullChanges = deleteRes.merge(dataRes);
-    if (totalPullChanges.anyChanges) {
-      Future.microtask(() {
-        if (totalPullChanges.foldersChanged) ref.invalidate(foldersProvider);
-        if (totalPullChanges.notesChanged) ref.invalidate(notesProvider);
-        if (totalPullChanges.tagsChanged) ref.invalidate(tagsProvider);
-      });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!ref.mounted) return;
 
-      debugPrint("✨ UI invalidada: Cambios detectados.");
-    }
+      if (totalPullChanges.foldersChanged) {
+        ref.invalidate(foldersProvider);
+      }
+
+      if (totalPullChanges.notesChanged) {
+        ref.invalidate(notesProvider);
+      }
+
+      if (totalPullChanges.tagsChanged) {
+        ref.invalidate(tagsProvider);
+      }
+    });
 
     // E. FASE 2: PUSH
     final pusher = ref.read(syncPusherProvider);
@@ -196,7 +203,10 @@ class SyncNotifier extends AsyncNotifier<SyncState> {
         );
 
     await configManager.updateRemoteConfig(remoteData.fileId, finalConfig);
-    storage.update(lastPulledAt: now);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!ref.mounted) return;
+      storage.update(lastPulledAt: now);
+    });
   }
 
   String _mapErrorToHumanMessage(Object e) {
