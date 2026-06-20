@@ -42,7 +42,7 @@ extension DecorateColorThemeX on DecorateColor {
   DecorateColorTheme get theme => decorateThemes[this]!;
 
   Color get strong => theme.strong;
-
+  Color get background => theme.strong;
   Color get light => theme.light;
 
   Color get text => theme.text;
@@ -61,7 +61,7 @@ const Map<DecorateColor, DecorateColorTheme> decorateThemes = {
 
   DecorateColor.orange: DecorateColorTheme(
     strong: Color(0xFFF34D26),
-    light: Color(0xFFFAD6B0),
+    light: Color.fromARGB(255, 252, 222, 189),
     text: Color(0xFF3A0C0E),
     accent: Color.fromARGB(255, 76, 38, 243),
   ),

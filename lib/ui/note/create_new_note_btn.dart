@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/core/decorate_color/decorated_color_themes.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/sync/db/local_sync_queue_repository.dart';
 import 'package:tag_links/sync/models/local_sync_queue.dart';
@@ -11,14 +12,15 @@ import 'package:tag_links/ui/utils/page_buil.dart';
 
 class CreateNewNoteButton extends ConsumerWidget {
   final String? folderId;
-  const CreateNewNoteButton({super.key, required this.folderId});
+  final DecorateColor? decorateColor;
+  const CreateNewNoteButton({super.key, required this.folderId, this.decorateColor});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     return IconButton(
       style: theme.iconButtonTheme.style?.copyWith(iconSize:WidgetStateProperty.all(28)),
-      icon: Icon(Icons.note_add, color: theme.colorScheme.onPrimary),
+      icon: Icon(Icons.note_add, color: decorateColor?.light?? theme.colorScheme.onPrimary),
       tooltip: ref.tr(TKeys.ui.addNote, fallback: 'Add note'),
       onPressed: () async {
         // 1. Despachamos la tarea a segundo plano usando el contexto fresco del click

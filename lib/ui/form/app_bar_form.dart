@@ -30,22 +30,38 @@ class AppBarForm extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
+    final accent = decorateColor?.strong.withAlpha(100);
+    final foregroundColor =
+        decorateColor?.text ?? theme.appBarTheme.foregroundColor;
     Widget titleWidget;
 
     if (titleListenable != null) {
       titleWidget = ValueListenableBuilder<TextEditingValue>(
         valueListenable: titleListenable!,
         builder: (_, value, _) {
-          return Text(value.text);
+          return Text(
+            value.text,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: foregroundColor),
+          );
         },
       );
     } else {
       titleWidget = Text(title);
     }
-    final highlight = theme.textTheme.labelMedium?.color;
+    final highlight =
+        decorateColor?.acent.withAlpha(200) ??
+        theme.textTheme.labelMedium?.color;
     return AppBar(
       title: titleWidget,
+      backgroundColor: decorateColor?.strong.withAlpha(210),
+      iconTheme: IconThemeData(color: foregroundColor),
+      bottom: accent == null
+          ? null
+          : PreferredSize(
+              preferredSize: const Size.fromHeight(3),
+              child: Container(height: 3, color: accent),
+            ),
       actions: [
         ColorPickerAppBarButton(
           selectedColor: decorateColor?.code,
@@ -55,7 +71,10 @@ class AppBarForm extends StatelessWidget implements PreferredSizeWidget {
           onPressed: onFavoriteToogle,
           icon: Icon(
             isFavorite ? Icons.favorite : Icons.favorite_border,
-            color: isFavorite ? Colors.red : theme.appBarTheme.foregroundColor,
+            color: isFavorite ? Colors.red : decorateColor?.light,
+            shadows: [
+                    Shadow(color: Colors.black.withAlpha(40), blurRadius: 4),
+                  ],
           ),
         ),
         IconButton(
@@ -68,7 +87,13 @@ class AppBarForm extends StatelessWidget implements PreferredSizeWidget {
                     color: highlight,
                   ),
                 )
-              : Icon(Icons.save, color: highlight ?? theme.iconTheme.color),
+              : Icon(
+                  Icons.save,
+                  color: decorateColor?.light ,
+                  shadows: [
+                    Shadow(color: Colors.black.withAlpha(40), blurRadius: 4),
+                  ],
+                ),
           onPressed: onSave,
         ),
       ],

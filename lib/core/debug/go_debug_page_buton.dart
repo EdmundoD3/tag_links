@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:tag_links/core/debug/debug_page.dart';
+import 'package:tag_links/core/decorate_color/decorated_color_themes.dart';
 import 'package:tag_links/ui/utils/page_buil.dart';
 
 class GoDebugPageButon extends StatelessWidget {
-  const GoDebugPageButon({super.key});
+  final DecorateColor? decorateColor;
+  const GoDebugPageButon({super.key, this.decorateColor});
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +17,7 @@ class GoDebugPageButon extends StatelessWidget {
       },
       padding: const EdgeInsets.all(0),
       tooltip: 'Debug',
-      icon: Icon(Icons.bug_report, color:theme.colorScheme.onPrimary),
+      icon: Icon(Icons.bug_report, color: decorateColor?.light??theme.colorScheme.onPrimary),
     );
   }
 }

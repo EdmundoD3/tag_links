@@ -138,8 +138,9 @@ class HomePage extends ConsumerWidget {
       title: _isRoot
           ? ref.tr(TKeys.pages.appName, fallback: 'Tag Links')
           : folder!.title,
+          decorateColor: folder?.decorateColor,
       actions: [
-        if (kDebugMode) GoDebugPageButon(),
+        if (_isRoot && kDebugMode) GoDebugPageButon(decorateColor: folder?.decorateColor,),
         if (_isRoot) const ManualSyncButton(),
         if (_isRoot) const GoSettingsButton(),
         _buildCreationButton(showFolders),

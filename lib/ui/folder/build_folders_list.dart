@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/models/folder.dart';
 import 'package:tag_links/pages/home_page.dart';
-import 'package:tag_links/ui/modals/confirm_dialog.dart';
 import 'package:tag_links/ui/folder/folder_tile.dart';
 import 'package:tag_links/ui/is_loading_indicators/shimmer_folder_list.dart';
 import 'package:tag_links/ui/utils/empty_indicator.dart';

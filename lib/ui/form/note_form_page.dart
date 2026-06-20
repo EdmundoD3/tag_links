@@ -71,7 +71,7 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
     _contentCtrl = TextEditingController(text: widget.note?.content ?? '');
     _isFavorite = widget.note?.isFavorite ?? false;
     _linkPreview = widget.note?.link;
-    _decorateColor = DecorateColor.fromCode(widget.note?.color);
+    _decorateColor = widget.note?.decorateColor;
     _id = widget.note?.id ?? const Uuid().v4();
 
     _debouncer = Debouncer(milliseconds: 500);

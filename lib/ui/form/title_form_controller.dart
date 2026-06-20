@@ -28,6 +28,7 @@ class TitleFormController extends StatelessWidget {
         counterText: '',
       ),
       onChanged: (value) => onChange?.call(),
+      cursorColor: theme.textTheme.titleSmall?.color,
       validator: (value) {
         if (value == null || value.trim().isEmpty) return validatorMsg;
         return null;

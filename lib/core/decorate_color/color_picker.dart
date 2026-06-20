@@ -19,7 +19,11 @@ class ColorPickerAppBarButton extends StatelessWidget {
 
     // MenuAnchor es ideal para el AppBar porque despliega el menú justo debajo del botón
     return MenuAnchor(
-      style: MenuStyle(backgroundColor: WidgetStateProperty.all(Theme.of(context).cardTheme.color)),
+      style: MenuStyle(
+        backgroundColor: WidgetStateProperty.all(
+          Theme.of(context).cardTheme.color,
+        ),
+      ),
       builder:
           (BuildContext context, MenuController controller, Widget? child) {
             return IconButton(
@@ -41,28 +45,28 @@ class ColorPickerAppBarButton extends StatelessWidget {
                   color: buttonBgColor,
                   shape: BoxShape.circle,
                   border: Border.all(
-                    // Si es null (sin color), mostramos un borde grisáceo sutil
-                    color: currentColorEnum == null
-                        ? Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withAlpha(125)
-                        : Colors.transparent,
+                    color:
+                        currentColorEnum?.text.withAlpha(120) ??
+                        Theme.of(context).primaryIconTheme.color??Theme.of(context).dividerColor,
                     width: 1.5,
                   ),
+                  boxShadow: [
+                    if(currentColorEnum != null) BoxShadow(
+                      color: currentColorEnum.text.withAlpha(40),
+                      blurRadius: 4,
+                    ),
+                  ],
                 ),
                 child: currentColorEnum == null
                     ? Icon(
                         Icons.palette_outlined,
                         size: 14,
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withAlpha(150),
                       )
                     : null,
               ),
             );
           },
-          
+
       // Lista de opciones de la ventana emergente flotante
       menuChildren: [
         Padding(
@@ -117,7 +121,7 @@ class _ColorCircle extends StatelessWidget {
           shape: BoxShape.circle,
           border: Border.all(
             color: selected
-                ? color?.acent?? Theme.of(context).colorScheme.primary
+                ? color?.acent ?? Theme.of(context).colorScheme.primary
                 : Theme.of(context).dividerColor,
             width: selected ? 2 : 1,
           ),

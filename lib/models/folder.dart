@@ -1,3 +1,4 @@
+import 'package:tag_links/core/decorate_color/decorated_color_themes.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/sync/models/sync_item_wrapper.dart';
 import 'package:uuid/uuid.dart';
@@ -115,6 +116,7 @@ class Folder extends BaseSyncModel {
       updatedAt: DateTime.now().millisecondsSinceEpoch,
     );
   }
+  DecorateColor? get decorateColor => DecorateColor.fromCode(color);
 }
 
 String folderTable = '''

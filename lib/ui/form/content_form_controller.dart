@@ -89,6 +89,7 @@ class _ContentControllerState extends State<ContentController> {
             controller: widget.contentCtrl,
             focusNode: _focusNode, // Asignamos el focusNode
             maxLength: LimitAppConfig.contentMaxLength,
+
             maxLines: 12,
             minLines: 8,
             keyboardType: TextInputType.multiline,
@@ -100,7 +101,7 @@ class _ContentControllerState extends State<ContentController> {
             decoration: InputStyleForm.inputDecoration(
               theme: theme,
               label: widget.label,
-              contentPadding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+              contentPadding: const EdgeInsets.fromLTRB(16, 22, 16, 12),
             ),
             onChanged: (value) {
               // Si el usuario escribe, nos aseguramos de que el estado refleje actividad
@@ -111,12 +112,14 @@ class _ContentControllerState extends State<ContentController> {
         ),
         // Los botones con animación de opacidad
         Positioned(
-          top: 0, // Nada de margen para que sobre salga
+          top: 0,
           right: 0,
-          child: AnimatedOpacity(
-            duration: const Duration(milliseconds: 300),
-            opacity: _isTyping ? 0.8 : 1.0, // Semi-transparente al escribir
-            child: _DecoratorButtons(_insertText),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 180),
+            switchInCurve: Curves.easeOut,
+            child: _isTyping
+                ? _DecoratorButtons(_insertText)
+                : const SizedBox(),
           ),
         ),
       ],
@@ -134,11 +137,13 @@ class _DecoratorButtons extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Material(
-      color: theme.colorScheme.surface.withAlpha(200),
+      color: theme.colorScheme.surface.withValues(alpha: 0.95),
       borderRadius: BorderRadius.circular(
         8,
       ), // Un poco más redondeado para el grupo largo
-      elevation: 1, // Una sombra mínima para separarlo del fondo
+      surfaceTintColor: Colors.transparent,
+      shadowColor: theme.iconTheme.color?.withValues(alpha: 0.40),
+      elevation: 2, // Una sombra mínima para separarlo del fondo
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         child: Row(
@@ -180,7 +185,9 @@ class _DecoratorButtons extends StatelessWidget {
       height: 16,
       width: 1,
       margin: const EdgeInsets.symmetric(vertical: 4),
-      color: theme.dividerColor.withAlpha(50),
+      color: (theme.iconTheme.color ?? theme.colorScheme.primary).withValues(
+        alpha: 0.25,
+      ),
     );
   }
 }
@@ -195,10 +202,11 @@ class _FormatButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return InkWell(
-      // Usamos InkWell para un control total del área de toque
       onTap: onTap,
-      borderRadius: BorderRadius.circular(
-        4,
+      borderRadius: BorderRadius.circular(4),
+      splashColor: theme.textTheme.titleSmall?.color?.withValues(alpha: 0.15),
+      highlightColor: theme.textTheme.titleSmall?.color?.withValues(
+        alpha: 0.08,
       ), // Agrega esto para que el clic sea redondeado
       child: Padding(
         padding: const EdgeInsets.all(
@@ -207,7 +215,9 @@ class _FormatButton extends StatelessWidget {
         child: Icon(
           icon,
           size: 18, // Un poco más grande para legibilidad, pero discreto
-          color: theme.colorScheme.onSurfaceVariant, // Color más equilibrado
+          color:
+              theme.iconTheme.color ??
+              theme.colorScheme.primary, // Color más equilibrado
         ),
       ),
     );

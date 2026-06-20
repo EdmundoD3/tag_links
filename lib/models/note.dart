@@ -1,3 +1,4 @@
+import 'package:tag_links/core/decorate_color/decorated_color_themes.dart';
 import 'package:tag_links/models/link_preview.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/sync/models/sync_item_wrapper.dart';
@@ -129,6 +130,7 @@ class Note extends BaseSyncModel {
     final String url = link?.url ?? '';
     return '$title\n\n$url\n$content';
   }
+  DecorateColor? get decorateColor => DecorateColor.fromCode(color);
 }
 
 String noteTable = '''
