@@ -34,10 +34,6 @@ Future<void> upsertAll(List<Folder> incomingFolders) async {
   return _dao.upsertAll(validFolders);
 }
 
-  Future<void> create(Folder folder) async {
-    return _dao.upsert(folder);
-  }
-
   Future<void> upsert(Folder folder) async {
     return _dao.upsert(folder);
   }

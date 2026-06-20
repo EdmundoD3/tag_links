@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/core/ads/ads_service_provider.dart';
 import 'package:tag_links/core/ads/interstitial_ads_provider.dart';
 import 'package:tag_links/core/auth/skiped_auth_provider.dart';
 import 'package:tag_links/core/locate/lang_selector.dart';
@@ -40,6 +41,7 @@ class DebugPage extends ConsumerWidget {
   }
 
   Widget _buildBody(BuildContext context, WidgetRef ref, bool? adsActive) {
+    final adService = ref.read(adServiceProvider);
     return ListView(
       children: [
         ThemeSelector(),
@@ -58,6 +60,17 @@ class DebugPage extends ConsumerWidget {
             note: Note.baseNote(fileId: "pruebas"),
             type: TypeMove.prueba,
           ),
+        ),
+        const SizedBox(height: 6),
+        IconButton(
+          onPressed: () {
+            adService.showInterstitialAd(
+              onAdClosed: () {
+                if (context.mounted) Navigator.pop(context);
+              },
+            );
+          },
+          icon: Icon(Icons.monetization_on),
         ),
         const SizedBox(height: 6),
         MyAlertDialog(
@@ -116,7 +129,7 @@ class DebugPage extends ConsumerWidget {
           createTagLabel: "prueba create tag",
           controller: TextEditingController(),
           nameTagLabel: "Name Tag Label",
-          submit: ()async{},
+          submit: () async {},
         ),
         NoteMiniForm(folderId: null),
       ],

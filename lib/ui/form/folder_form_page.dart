@@ -75,11 +75,7 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
     _autoSave = FormAutoSaveController<Folder>(
       onSave: (folder) async {
         _didAutoSaveAtLeastOnce = true;
-        if (widget.isEdit) {
-          await ref.read(_provider.notifier).updateFolder(folder);
-        } else {
-          await ref.read(_provider.notifier).addFolder(folder);
-        }
+        await ref.read(_provider.notifier).saveFolder(folder);
       },
       hash: (f) {
         final tagIds = f.tags.map((t) => t.id).toList()..sort();
@@ -137,12 +133,12 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
       isSaving: _autoSave.isSaving,
       decorateColor: _decorateColor,
       colorChange: (value) {
-          if(value == _decorateColor?.code) return;
-          setState(() {
-            _decorateColor = DecorateColor.fromCode(value);
-          });
-          _saveDebouncer.run(_scheduleAutoSave);
-        },
+        if (value == _decorateColor?.code) return;
+        setState(() {
+          _decorateColor = DecorateColor.fromCode(value);
+        });
+        _saveDebouncer.run(_scheduleAutoSave);
+      },
     );
   }
 
@@ -243,10 +239,11 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
     try {
       await _autoSave.flush(folder);
 
-        unawaited(ref.read(syncProvider.notifier).synchronize(
-          delay: const Duration(minutes: 1, seconds: 10)
-        ));
-      
+      unawaited(
+        ref
+            .read(syncProvider.notifier)
+            .synchronize(delay: const Duration(minutes: 1, seconds: 10)),
+      );
 
       final adService = ref.read(adServiceProvider);
       final tocaIntersticial = ref.read(showInterstitialAdsProvider);

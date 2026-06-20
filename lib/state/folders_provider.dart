@@ -114,37 +114,19 @@ class FoldersNotifier extends AsyncNotifier<List<Folder>> {
 
   // ───────────── CRUD ─────────────
 
-  Future<void> addFolder(Folder folder) async {
-    await _repo.create(folder);
+Future<void> saveFolder(Folder folder) async {
+  await _repo.upsert(folder);
 
-    state.whenData((current) {
-      state = AsyncData([folder, ...current]);
-    });
-  }
+  state.whenData((currentItems) {
+    final map = {
+      for (final item in currentItems) item.id: item,
+    };
 
-  // En FoldersNotifier...
+    map[folder.id] = folder;
 
-  Future<void> updateFolder(Folder folder) async {
-    // 1. Guardar en DB para que el cambio sea permanente
-    await _repo.upsert(folder);
-
-    // 2. Sync
-    // unawaited(ref.read(syncNotifierProvider.notifier).performSync());
-
-    // 3. Actualizar UI manualmente para que el movimiento sea fluido
-    state.whenData((currentItems) {
-      final index = currentItems.indexWhere((f) => f.id == folder.id);
-      if (index != -1) {
-        // Si ya está aquí, reemplazamos
-        final newList = [...currentItems];
-        newList[index] = folder;
-        state = AsyncData(newList);
-      } else {
-        // Si no está (es porque viene de otro padre), la añadimos
-        state = AsyncData([folder, ...currentItems]);
-      }
-    });
-  }
+    state = AsyncData(map.values.toList());
+  });
+}
 
   void removeFolder(String folderId) {
     state.whenData((currentItems) {

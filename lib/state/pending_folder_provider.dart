@@ -47,7 +47,7 @@ class PendingFolderNotifier extends Notifier<Folder?> {
   @override
   Folder? build() => null;
 
-  void set(Folder folder) => state = folder;
+  void set(Folder folder){ state = folder;}
   void clear() => state = null;
 }
 
@@ -116,7 +116,7 @@ Future<void> move({
     }
 
     if (ref.exists(foldersProvider(toParentId))) {
-      ref.read(foldersProvider(toParentId).notifier).updateFolder(updatedFolder);
+      ref.read(foldersProvider(toParentId).notifier).saveFolder(updatedFolder);
     } else {
       // Si el destino no está cargado, invalidamos para que cargue fresco al entrar
       ref.invalidate(foldersProvider(toParentId));

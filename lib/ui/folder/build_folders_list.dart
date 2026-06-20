@@ -59,12 +59,8 @@ class BuildFoldersList extends ConsumerWidget {
               goFolder: () => _goFolder(context, folder),
               onDeleteFolder: () => onDeleteFolder(folder),
               onMove: () async {
-                final isConfirm =
-                    await ConfirmDialog.moveFolder(context, ref);
-
-                if (isConfirm == true) {
                   await onMoveFolder(folder);
-                }
+                
               },
             );
           },
