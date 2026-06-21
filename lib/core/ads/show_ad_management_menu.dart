@@ -1,25 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/core/ads/ads_disable_provider.dart';
-import 'package:tag_links/core/ads/interstitial_ads_provider.dart';
+import 'package:tag_links/core/ads/rewarded_ad_button.dart';
+import 'package:tag_links/core/app_purchases/widget/premium_purchase_button.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
-import 'package:tag_links/ui/modals/feedback_alert_confirm.dart';
 
-void showAdManagementMenu(
-  BuildContext context,
-  WidgetRef ref, {
-  required Future<bool> Function() showRewardedAd,
-  required Future<void> Function() processPurchase,
-}) {
+void showAdManagementMenu(BuildContext context, WidgetRef ref) {
   showModalBottomSheet(
-    backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+    backgroundColor: Theme.of(context).cardColor,
     showDragHandle: true,
     context: context,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
     builder: (context) {
-      bool isLoading = false;
       final theme = Theme.of(context);
       return StatefulBuilder(
         builder: (context, setState) {
@@ -33,7 +26,10 @@ void showAdManagementMenu(
                     TKeys.ads.disableTitle,
                     fallback: '¿Quieres quitar la publicidad?',
                   ),
-                  style: theme.textTheme.titleLarge?.copyWith(fontSize: 18),
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontSize: 18,
+                    color: theme.textTheme.labelMedium?.color,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -44,71 +40,17 @@ void showAdManagementMenu(
                   ),
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: theme.textTheme.bodySmall?.color,
+                    color: theme.textTheme.bodySmall?.color?.withAlpha(220),
                     fontSize: 14,
                   ),
                 ),
                 const SizedBox(height: 24),
+                // Premium
+                const PremiumPurchaseButton(),
+                const SizedBox(height: 12),
 
                 /// 🎥 REWARDED AD
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: isLoading
-                        ? null
-                        : () async {
-                            setState(() => isLoading = true);
-
-                            final success = await showRewardedAd();
-
-                            if (success) {
-                              // 🔹 Desactiva banners 24h
-                              await ref
-                                  .read(adsDisabledUntilProvider.notifier)
-                                  .disableForHours(24);
-
-                              // 🔹 Reinicia interstitial (48h)
-                              await ref
-                                  .read(interstitialAdsProvider.notifier)
-                                  .registerAdShown();
-
-                              if (context.mounted) {
-                                Navigator.pop(context);
-                              }
-                              if (context.mounted) {
-                                FeedbackAlertConfirm.thanksForRewardedAd(
-                                  context,
-                                  ref,
-                                );
-                              }
-                            } else {
-                              if (context.mounted) {
-                                FeedbackAlertConfirm.errorForRewardedAd(
-                                  context,
-                                  ref,
-                                );
-                              }
-                            }
-
-                            setState(() => isLoading = false);
-                          },
-                    icon: const Icon(Icons.play_circle_fill),
-                    label: Text(
-                      ref.tr(
-                        TKeys.ads.remove24h,
-                        fallback: 'Quitar anuncios por 24h',
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      elevation: 1,
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                      backgroundColor:
-                          theme.inputDecorationTheme.fillColor, // Fondo oscuro
-                      foregroundColor:
-                          theme.textTheme.titleLarge?.color, // Texto blanco
-                    ),
-                  ),
-                ),
+                const RewardedAdButton(),
 
                 const SizedBox(height: 12),
 
@@ -117,9 +59,11 @@ void showAdManagementMenu(
                   onPressed: () => Navigator.pop(context),
                   child: Text(
                     ref.tr(TKeys.ads.maybeLater, fallback: 'Tal vez luego'),
-                    style: TextStyle(color: theme.textTheme.titleLarge?.color),
+                    style: TextStyle(color: theme.textTheme.bodySmall?.color),
                   ),
                 ),
+                //espacio para los dispositivos que no lo generan por default
+                SizedBox(height: MediaQuery.paddingOf(context).bottom),
               ],
             ),
           );

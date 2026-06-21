@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/core/ads/ads_service_provider.dart';
 import 'package:tag_links/core/ads/show_ad_management_menu.dart';
 import 'package:tag_links/core/app_purchases/premium_sales_sheet.dart';
 import 'package:tag_links/core/auth/account_sync_tile.dart';
@@ -59,7 +58,7 @@ class SupportProjectPage extends ConsumerWidget {
           child: Text(
             ref.tr(
               TKeys.ads.supportTitle,
-              fallback: '¿Cómo quieres apoyar el proyecto?',
+              fallback: '¿Te gusta la app? \n Compártela o apóyanos',
             ),
             style: TextStyle(
               fontSize: 18,
@@ -69,9 +68,9 @@ class SupportProjectPage extends ConsumerWidget {
             textAlign: TextAlign.center,
           ),
         ),
-        PremiumSalesSheet(showEmpty: null),
+        const PremiumSalesSheet(showEmpty: null),
 
-        InvitameUnCaffe(),
+        const InvitameUnCaffe(),
 
         if (adsActive)
           const Divider(
@@ -97,16 +96,6 @@ class SupportProjectPage extends ConsumerWidget {
             onTap: () => showAdManagementMenu(
               context,
               ref,
-              showRewardedAd: () async {
-                return await ref.read(adServiceProvider).showRewardedAd();
-              },
-              processPurchase: () async {
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  builder: (_) => const PremiumSalesSheet(showEmpty: null),
-                );
-              },
             ),
           ),
 

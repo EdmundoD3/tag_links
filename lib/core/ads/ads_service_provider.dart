@@ -4,6 +4,8 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:tag_links/config/ad_mob_config.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+enum RewardedResult { shown, unavailable, alreadyShowing }
+
 class AdService {
   // --- Rewarded Ads ---
   RewardedAd? _rewardedAd;
@@ -15,34 +17,34 @@ class AdService {
   bool _isShowingAd = false;
 
   // ================= REWARDED LOGIC =================
-  Future<bool> showRewardedAd() async {
+  Future<RewardedResult> showRewardedAd() async {
     if (_isShowingAd) {
       debugPrint('Ya existe un anuncio fullscreen activo');
-      return false;
+      return RewardedResult.alreadyShowing;
     }
 
     if (_rewardedAd == null) {
       loadRewardedAd();
-      return false;
+      return RewardedResult.unavailable;
     }
 
     _isShowingAd = true;
 
-    final completer = Completer<bool>();
+    final completer = Completer<RewardedResult>();
 
     _rewardedAd!.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (ad) {
         _resetRewardedAd();
 
         if (!completer.isCompleted) {
-          completer.complete(false);
+          completer.complete(RewardedResult.unavailable);
         }
       },
       onAdFailedToShowFullScreenContent: (ad, error) {
         _resetRewardedAd();
 
         if (!completer.isCompleted) {
-          completer.complete(false);
+          completer.complete(RewardedResult.unavailable);
         }
       },
     );
@@ -51,7 +53,7 @@ class AdService {
       _rewardedAd!.show(
         onUserEarnedReward: (ad, reward) {
           if (!completer.isCompleted) {
-            completer.complete(true);
+            completer.complete(RewardedResult.shown);
           }
         },
       );
@@ -59,7 +61,7 @@ class AdService {
       _resetRewardedAd();
 
       if (!completer.isCompleted) {
-        completer.complete(false);
+        completer.complete(RewardedResult.unavailable);
       }
 
       debugPrint('Error mostrando rewarded: $e');
@@ -67,8 +69,6 @@ class AdService {
 
     return completer.future;
   }
-
-  // En tu clase AdService...
 
   void loadRewardedAd() {
     if (_rewardedAd != null || _isRewardedLoading) return;

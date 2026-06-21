@@ -21,6 +21,16 @@ enum DecorateColor {
     }
     return null;
   }
+
+  static const Set<DecorateColor> freeColors = {
+    DecorateColor.red,
+    DecorateColor.blue,
+    DecorateColor.green,
+  };
+
+  bool get isFree => freeColors.contains(this);
+
+  bool get isPremium => !isFree;
 }
 
 class DecorateColorTheme {
@@ -37,7 +47,6 @@ class DecorateColorTheme {
   });
 }
 
-
 extension DecorateColorThemeX on DecorateColor {
   DecorateColorTheme get theme => decorateThemes[this]!;
 
@@ -49,7 +58,6 @@ extension DecorateColorThemeX on DecorateColor {
 
   Color get acent => theme.accent;
 }
-
 
 const Map<DecorateColor, DecorateColorTheme> decorateThemes = {
   DecorateColor.red: DecorateColorTheme(

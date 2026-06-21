@@ -7,6 +7,7 @@ class TranslatesPremium {
   final String benefit = 'premiumBenefit';
   final String maybeLater = 'premiumMaybeLater';
   final String thanks = 'premiumThanks';
+  final String buyYear = 'premiumBuyYear';
 
   static const Map<String, Map<AppLang, String>> translations = {
     'premiumTitle': {
@@ -48,6 +49,16 @@ class TranslatesPremium {
       AppLang.ru: 'Спасибо за покупку! Теперь у вас Премиум.',
       AppLang.ja: 'ご購入ありがとうございます！プレミアムになりました。',
       AppLang.zh: '感谢你的购买！你现在已成为高级用户。',
+    },
+    'premiumBuyYear': {
+      AppLang.es: 'Desbloquear Premium por 1 año',
+      AppLang.en: 'Unlock Premium for 1 year',
+      AppLang.de: 'Premium für 1 Jahr freischalten',
+      AppLang.pt: 'Desbloquear Premium por 1 ano',
+      AppLang.fr: 'Débloquer Premium pendant 1 an',
+      AppLang.ru: 'Разблокировать Премиум на 1 год',
+      AppLang.ja: 'プレミアムを1年間アンロック',
+      AppLang.zh: '解锁高级版一年',
     },
   };
 }

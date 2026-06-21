@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tag_links/core/decorate_color/decorated_color_themes.dart';
+import 'package:tag_links/core/premium/premium_locker.dart';
 
 class ColorPickerAppBarButton extends StatelessWidget {
   final String? selectedColor;
@@ -47,21 +48,20 @@ class ColorPickerAppBarButton extends StatelessWidget {
                   border: Border.all(
                     color:
                         currentColorEnum?.text.withAlpha(120) ??
-                        Theme.of(context).primaryIconTheme.color??Theme.of(context).dividerColor,
+                        Theme.of(context).primaryIconTheme.color ??
+                        Theme.of(context).dividerColor,
                     width: 1.5,
                   ),
                   boxShadow: [
-                    if(currentColorEnum != null) BoxShadow(
-                      color: currentColorEnum.text.withAlpha(40),
-                      blurRadius: 4,
-                    ),
+                    if (currentColorEnum != null)
+                      BoxShadow(
+                        color: currentColorEnum.text.withAlpha(40),
+                        blurRadius: 4,
+                      ),
                   ],
                 ),
                 child: currentColorEnum == null
-                    ? Icon(
-                        Icons.palette_outlined,
-                        size: 14,
-                      )
+                    ? Icon(Icons.palette_outlined, size: 14)
                     : null,
               ),
             );
@@ -82,10 +82,13 @@ class ColorPickerAppBarButton extends StatelessWidget {
               ),
 
               for (final color in DecorateColor.values)
-                _ColorCircle(
-                  color: color,
-                  selected: selectedColor == color.name,
-                  onTap: () => onChanged(color.name),
+                PremiumLocked(
+                  locked: color.isPremium,
+                  child: _ColorCircle(
+                    color: color,
+                    selected: selectedColor == color.name,
+                    onTap: () => onChanged(color.name),
+                  ),
                 ),
             ],
           ),

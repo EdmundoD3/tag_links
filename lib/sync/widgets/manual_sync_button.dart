@@ -121,33 +121,56 @@ class ManualSyncButton extends ConsumerWidget {
     syncNotifier.forceSynchronize();
   }
 
-  Widget _buildIcon(
-    BuildContext context, {
-    required SyncState state,
-    required bool isAuth,
-  }) {
-    // 🔘 Estado Gris: No hay nube configurada
-    if (!isAuth) return const Icon(Icons.cloud_off, color: Colors.grey);
-    final accent = Theme.of(context).iconTheme.color;
-    final highlight = Theme.of(context).textTheme.labelMedium?.color;
+Widget _buildIcon(
+  BuildContext context, {
+  required SyncState state,
+  required bool isAuth,
+}) {
+  final theme = Theme.of(context);
 
-    switch (state.status) {
-      case SyncStatus.syncing:
-        return SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(color: highlight),
-        );
-      case SyncStatus.error:
-        // 🟠 Estado Naranja: Hay un problema que requiere atención
-        return const Icon(Icons.sync_problem, color: Colors.orangeAccent);
-      case SyncStatus.success:
-        // 🟢 Estado Verde: Todo al día
-        return Icon(Icons.cloud_done, color: highlight);
-      default:
-        return Icon(Icons.sync_outlined, color: accent);
-    }
+  if (!isAuth) {
+    return Icon(
+      Icons.cloud_off_outlined,
+      color: theme.disabledColor,
+    );
   }
+
+  switch (state.status) {
+    case SyncStatus.syncing:
+      return SizedBox(
+        width: 20,
+        height: 20,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: theme.textTheme.labelMedium?.color,
+        ),
+      );
+
+    case SyncStatus.error:
+      return Icon(
+        Icons.sync_problem,
+        color: Colors.orange.shade600,
+      );
+
+    case SyncStatus.success:
+      return Icon(
+        Icons.cloud_done,
+        color: theme.textTheme.labelMedium?.color,
+        shadows: [
+          Shadow(
+            color: Colors.black.withAlpha(25),
+            blurRadius: 3,
+          ),
+        ],
+      );
+
+    default:
+      return Icon(
+        Icons.sync_outlined,
+        color:theme.colorScheme.onPrimary,
+      );
+  }
+}
 
   String _getTooltip(SyncState state, bool isAuth, WidgetRef ref) {
     if (!isAuth) {

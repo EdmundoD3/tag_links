@@ -3,10 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/config/ad_mob_config.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:tag_links/core/ads/ads_disable_provider.dart';
-import 'package:tag_links/core/ads/ads_service_provider.dart';
 import 'package:tag_links/core/ads/banner_with_closed_button.dart';
 import 'package:tag_links/core/ads/show_ad_management_menu.dart';
-import 'package:tag_links/core/app_purchases/premium_sales_sheet.dart';
 
 class SmartBannerAd extends ConsumerStatefulWidget {
   const SmartBannerAd({super.key});
@@ -78,15 +76,6 @@ class _SmartBannerAdState extends ConsumerState<SmartBannerAd> {
     return showAdManagementMenu(
       context,
       ref,
-      showRewardedAd: () async =>
-          await ref.read(adServiceProvider).showRewardedAd(),
-      processPurchase: () async {
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          builder: (_) => const PremiumSalesSheet(showEmpty: null),
-        );
-      },
     );
   }
 }

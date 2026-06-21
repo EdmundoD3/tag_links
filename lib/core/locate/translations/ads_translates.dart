@@ -13,7 +13,7 @@ class TranslatesAds {
   final String disableTitle = 'modalDisableAdsTitle';
 
   final String disableSubtitle = 'modalDisableAdsSubtitle';
-  final String remove24h = 'removeAds24h';
+  final String premium24h = 'premium24h';
 
   final String maybeLater = 'maybeLater';
 
@@ -51,42 +51,44 @@ class TranslatesAds {
       AppLang.ja: '広告の表示中にエラーが発生しました。後でもう一度お試しください。',
       AppLang.zh: '广告加载失败，请稍后再试。',
     },
-    'modalDisableAdsTitle': {
-      AppLang.es: '¿Quieres quitar la publicidad?',
-      AppLang.en: 'Want to remove ads?',
-      AppLang.de: 'Möchtest du die Werbung entfernen?',
-      AppLang.pt: 'Quer remover os anúncios?',
-      AppLang.fr: 'Voulez-vous supprimer les publicités ?',
-      AppLang.ru: 'Хотите убрать рекламу?',
-      AppLang.ja: '広告を削除しますか？',
-      AppLang.zh: '想要移除广告吗？',
-    },
-    'modalDisableAdsSubtitle': {
-      AppLang.es:
-          'Puedes quitar los anuncios viendo un video o apoyar el proyecto',
-      AppLang.en:
-          'You can remove ads by watching a short video or supporting the project.',
-      AppLang.de:
-          'Du kannst Werbung entfernen, indem du ein Video ansiehst oder das Projekt unterstützt.',
-      AppLang.pt:
-          'Você pode remover os anúncios assistindo a um vídeo ou apoiando o projeto.',
-      AppLang.fr:
-          'Vous pouvez supprimer les publicités en regardant une vidéo ou en soutenant le projet.',
-      AppLang.ru:
-          'Вы можете убрать рекламу, посмотрев видео или поддержав проект.',
-      AppLang.ja: '短い動画を視聴するか、プロジェクトをサポートすることで広告を削除できます。',
-      AppLang.zh: '观看短视频或支持项目即可移除广告。',
-    },
-    'removeAds24h': {
-      AppLang.es: 'Quitar anuncios por 24h',
-      AppLang.en: 'Remove ads for 24 hours',
-      AppLang.de: 'Werbung für 24 Stunden entfernen',
-      AppLang.pt: 'Remover anúncios por 24h',
-      AppLang.fr: 'Supprimer les publicités pendant 24 h',
-      AppLang.ru: 'Убрать рекламу на 24 часа',
-      AppLang.ja: '24時間広告を削除',
-      AppLang.zh: '移除24小时广告',
-    },
+'modalDisableAdsTitle': {
+  AppLang.es: 'Obtén acceso Premium',
+  AppLang.en: 'Get Premium Access',
+  AppLang.de: 'Premium-Zugang erhalten',
+  AppLang.pt: 'Obtenha acesso Premium',
+  AppLang.fr: 'Obtenez l’accès Premium',
+  AppLang.ru: 'Получите Premium-доступ',
+  AppLang.ja: 'プレミアム機能を利用する',
+  AppLang.zh: '获取高级权限',
+},
+'modalDisableAdsSubtitle': {
+  AppLang.es:
+      'Prueba las funciones Premium durante 24 horas viendo un video o desbloquéalas durante un año apoyando el proyecto.',
+  AppLang.en:
+      'Try Premium features for 24 hours by watching a video, or unlock them for a year by supporting the project.',
+  AppLang.de:
+      'Teste Premium-Funktionen 24 Stunden lang durch das Ansehen eines Videos oder schalte sie für ein Jahr frei, indem du das Projekt unterstützt.',
+  AppLang.pt:
+      'Experimente os recursos Premium por 24 horas assistindo a um vídeo ou desbloqueie-os por um ano apoiando o projeto.',
+  AppLang.fr:
+      'Essayez les fonctionnalités Premium pendant 24 heures en regardant une vidéo ou débloquez-les pendant un an en soutenant le projet.',
+  AppLang.ru:
+      'Попробуйте Premium-функции на 24 часа, посмотрев видео, или получите доступ на год, поддержав проект.',
+  AppLang.ja:
+      '動画を視聴して24時間プレミアム機能を試すか、プロジェクトを支援して1年間利用できます。',
+  AppLang.zh:
+      '观看视频即可体验24小时高级功能，或通过支持项目解锁一整年。',
+},
+'premium24h': {
+  AppLang.es: 'Premium por 24 horas',
+  AppLang.en: 'Premium for 24 Hours',
+  AppLang.de: 'Premium für 24 Stunden',
+  AppLang.pt: 'Premium por 24 horas',
+  AppLang.fr: 'Premium pendant 24 heures',
+  AppLang.ru: 'Премиум на 24 часа',
+  AppLang.ja: '24時間プレミアム',
+  AppLang.zh: '24小时高级版',
+},
     'maybeLater': {
       AppLang.es: 'Tal vez luego',
       AppLang.en: 'Maybe later',

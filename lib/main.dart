@@ -120,6 +120,7 @@ class _MyAppState extends ConsumerState<MyApp> {
 
     // 2. Envolvemos SIEMPRE en el MaterialApp
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       theme: getPalette(palette: palette),
       home: const AppLifecycleObserver(child: MainPageRouter()),
     );

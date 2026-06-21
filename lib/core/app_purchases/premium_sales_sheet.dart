@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
-import 'package:tag_links/config/name_of_app.dart';
 import 'package:tag_links/core/app_purchases/premium_provider.dart';
 import 'package:tag_links/core/app_purchases/products_provider.dart';
 import 'package:tag_links/core/locate/t_keys.dart';
@@ -37,42 +36,14 @@ class PremiumSalesSheet extends ConsumerWidget {
       error: (err, stack) => showEmpty ?? const SizedBox.shrink(),
       data: (products) {
         if (products.isEmpty) return showEmpty ?? const SizedBox.shrink();
-        final titlePremium = ref.tr(
-          TKeys.premium.title,
-          fallback: '${NameOfApp.upperCase} Premium',
-        );
-        //el unico beneficio de ser premium es no tener anuncios, por ahora
-        final benefitText = ref.tr(
-          TKeys.premium.benefit,
-          fallback: 'Sin anuncios.',
-        );
-        final maybeLater = ref.tr(
-          TKeys.premium.maybeLater,
-          fallback: 'Quizás más tarde',
-        );
+
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.stars, size: 50, color: Colors.amber),
-              const SizedBox(height: 12),
-              Text(
-                titlePremium,
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              ),
-              Padding(
-                padding: EdgeInsets.symmetric(vertical: 8.0),
-                child: Text(benefitText, textAlign: TextAlign.center),
-              ),
-              const SizedBox(height: 16),
               ...products.map(
                 (product) => _PremiumProductTile(product: product),
-              ),
-              const SizedBox(height: 12),
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(maybeLater),
               ),
             ],
           ),
@@ -82,34 +53,56 @@ class PremiumSalesSheet extends ConsumerWidget {
   }
 }
 
-class _PremiumProductTile extends StatelessWidget {
+class _PremiumProductTile extends ConsumerWidget {
   // Ya no necesita ser ConsumerWidget
   final ProductDetails product;
   const _PremiumProductTile({required this.product});
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Card(
-      elevation: 2,
+      elevation: 1,
       margin: const EdgeInsets.symmetric(vertical: 6),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        title: Text(
-          product.title,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text(product.description),
-        trailing: Text(
-          product
-              .price, // Ya incluye el símbolo de moneda local (e.g., "$9.99")
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.green,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => _buyProduct(product, context),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.workspace_premium),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      product.title,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+              Text(product.description),
+
+              const SizedBox(height: 16),
+
+              Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  product.price,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        onTap: () => _buyProduct(product, context),
       ),
     );
   }
