@@ -278,14 +278,27 @@ class _NoteFormPageState extends ConsumerState<NoteFormPage> {
   // controllers
 
   void _onTagSelected(Tag tag) {
-    final hasSameId = _tags.any((t) => t.id == tag.id);
-    if (hasSameId) return;
+    final index = _tags.indexWhere((t) => t.id == tag.id);
+
+    if (index != -1) {
+      final currentTag = _tags[index];
+
+      // Ya existe y no cambió nada
+      if (currentTag.title == tag.title) return;
+
+      setState(() {
+        _tags = _tags.map((t) => t.id == tag.id ? tag : t).toList();
+      });
+
+      // El nombre cambió, guardar inmediatamente
+      _forceImmediateSave();
+      return;
+    }
 
     setState(() {
       _tags = [..._tags, tag];
     });
 
-    // ⚡ FORZAMOS EL GUARDADO INMEDIATO
     _forceImmediateSave();
   }
 

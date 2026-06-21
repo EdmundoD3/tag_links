@@ -63,6 +63,8 @@ class TagsSelectedContainer extends ConsumerWidget {
 
               // 3. Si no es borrado, es una actualización normal
               await ref.read(tagsProvider.notifier).updateTag(result.tag);
+              //TODO revisar, esto es para actualizar el tag
+              onGetNewTag?.call(result.tag);
             },
           ),
         ),

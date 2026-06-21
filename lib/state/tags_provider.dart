@@ -56,6 +56,9 @@ class TagsNotifier extends AsyncNotifier<List<Tag>> {
 
   Future<void> updateTag(Tag tag) async {
     await _repo.update(tag);
+
+    ref.invalidate(notesProvider);
+    ref.invalidate(foldersProvider);
     ref.invalidateSelf();
   }
 

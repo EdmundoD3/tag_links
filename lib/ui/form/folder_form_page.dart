@@ -189,15 +189,29 @@ class _FolderFormPageState extends ConsumerState<FolderFormPage> {
     _saveDebouncer.run(_scheduleAutoSave);
   }
 
-  void _onTagSelected(Tag tag) {
-    if (_tags.any((t) => t.id == tag.id)) return;
+void _onTagSelected(Tag tag) {
+  final index = _tags.indexWhere((t) => t.id == tag.id);
+
+  if (index != -1) {
+    final currentTag = _tags[index];
+
+    // No cambió nada
+    if (currentTag.title == tag.title) return;
 
     setState(() {
-      _tags = [..._tags, tag];
+      _tags = _tags.map((t) => t.id == tag.id ? tag : t).toList();
     });
 
     _saveDebouncer.run(_scheduleAutoSave);
+    return;
   }
+
+  setState(() {
+    _tags = [..._tags, tag];
+  });
+
+  _saveDebouncer.run(_scheduleAutoSave);
+}
 
   void _onDeletedTag(Tag tag) {
     setState(() {

@@ -3,7 +3,24 @@ import 'package:tag_links/core/theme/generate_palete.dart';
 
 const defaultTheme = AppPalette.lavender;
 
-enum AppPalette { dark, light, lavender, rosePastel, arcticBlue, lavenderNight }
+enum AppPalette {
+  dark,
+  light,
+  lavender,
+  rosePastel,
+  arcticBlue,
+  lavenderNight;
+
+  static const Set<AppPalette> freeColors = {
+    AppPalette.dark,
+    AppPalette.light,
+    AppPalette.lavender,
+  };
+
+  bool get isFree => freeColors.contains(this);
+
+  bool get isPremium => !isFree;
+}
 
 class AppTheme {
   // Getter estático para acceder al tema fácilmente
