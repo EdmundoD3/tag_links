@@ -41,13 +41,12 @@ class HomePage extends ConsumerWidget {
   bool get _isLimitFolder => folder?.parentId != null;
 
   AsyncNotifierProvider<FolderPreferenceNotifier, FolderDefaultView>
-      get _foldersPreferenceProvider => folderPreferenceProvider(folder?.id);
+  get _foldersPreferenceProvider => folderPreferenceProvider(folder?.id);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final preferenceAsync = ref.watch(_foldersPreferenceProvider);
-        final pendingNote = ref.watch(pendingNoteProvider);
-
+    final pendingNote = ref.watch(pendingNoteProvider);
     final theme = Theme.of(context);
 
     return preferenceAsync.when(
@@ -61,6 +60,7 @@ class HomePage extends ConsumerWidget {
             preference == FolderDefaultView.folders && !_isLimitFolder;
 
         return GestureDetector(
+          // 🛡️ Al tocar CUALQUIER parte del scaffold, desenfocar
           onTap: () => FocusScope.of(context).unfocus(),
           child: Scaffold(
             backgroundColor: theme.scaffoldBackgroundColor,
@@ -70,13 +70,14 @@ class HomePage extends ConsumerWidget {
                 children: [
                   Column(
                     children: [
-                      if(pendingNote != null) BannerPendingNote(
-                        key: const ValueKey('banner_note'),
-                        pendingNote: pendingNote,
-                        toFolderId: folder?.id,
-                        onToggleView: () =>
-                            _selectView(FolderDefaultView.notes, ref),
-                      ),
+                      if (pendingNote != null)
+                        BannerPendingNote(
+                          key: const ValueKey('banner_note'),
+                          pendingNote: pendingNote,
+                          toFolderId: folder?.id,
+                          onToggleView: () =>
+                              _selectView(FolderDefaultView.notes, ref),
+                        ),
                       BannerPendingFolder(
                         key: const ValueKey('banner_folder'),
                         toParent: folder,
@@ -84,7 +85,13 @@ class HomePage extends ConsumerWidget {
                             _selectView(FolderDefaultView.folders, ref),
                       ),
 
-                      if (_isRoot) const RootSearchSection(),
+                      if (_isRoot)
+                        RootSearchSection(
+                          key: const ValueKey(
+                            'root_search',
+                          ), // 🛡️ Key fija para evitar recreación
+                          currentView: preference,
+                        ),
 
                       Expanded(
                         child: _isLimitFolder
@@ -138,9 +145,10 @@ class HomePage extends ConsumerWidget {
       title: _isRoot
           ? ref.tr(TKeys.pages.appName, fallback: 'Tag Links')
           : folder!.title,
-          decorateColor: folder?.decorateColor,
+      decorateColor: folder?.decorateColor,
       actions: [
-        if (_isRoot && kDebugMode) GoDebugPageButon(decorateColor: folder?.decorateColor,),
+        if (_isRoot && kDebugMode)
+          GoDebugPageButon(decorateColor: folder?.decorateColor),
         if (_isRoot) const ManualSyncButton(),
         if (_isRoot) const GoSettingsButton(),
         _buildCreationButton(showFolders),
@@ -148,14 +156,14 @@ class HomePage extends ConsumerWidget {
     );
   }
 
-  /// 🔁 Cambiar vista (Guardando preferencia desde los botones)
   Future<void> _selectView(FolderDefaultView select, WidgetRef ref) async {
+    // 🛡️ Al cambiar vista desde botón/banner, desenfocar primero
+    FocusScope.of(ref.context).unfocus();
     await ref
         .read(_foldersPreferenceProvider.notifier)
         .updatePreference(select);
   }
 
-  /// ➕ FAB dinámico
   Widget _buildCreationButton(bool showFolders) {
     return showFolders
         ? CreateNewFolderButton(parentFolderId: folder?.id)
@@ -181,11 +189,10 @@ class HomeSwipeableBody extends ConsumerStatefulWidget {
 
 class _HomeSwipeableBodyState extends ConsumerState<HomeSwipeableBody> {
   late final PageController _pageController;
-  // 🔑 Guardamos localmente el índice real de la página para desempatar eventos
   late int _localPageIndex;
 
   AsyncNotifierProvider<FolderPreferenceNotifier, FolderDefaultView>
-      get _preferenceProvider => folderPreferenceProvider(widget.folder?.id);
+  get _preferenceProvider => folderPreferenceProvider(widget.folder?.id);
 
   @override
   void initState() {
@@ -197,16 +204,11 @@ class _HomeSwipeableBodyState extends ConsumerState<HomeSwipeableBody> {
   @override
   void didUpdateWidget(HomeSwipeableBody oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
-    // 🛡️ Solo saltamos de página si la preferencia externa cambió 
-    // Y no coincide con la página que el usuario ya está viendo localmente.
+
     if (oldWidget.preference != widget.preference &&
         widget.preference.pageIndex != _localPageIndex &&
         _pageController.hasClients) {
-      
       _localPageIndex = widget.preference.pageIndex;
-      
-      // Usamos jumpToPage de forma segura tras el post-frame para evitar colisiones estéticas
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_pageController.hasClients) {
           _pageController.jumpToPage(_localPageIndex);
@@ -226,15 +228,15 @@ class _HomeSwipeableBodyState extends ConsumerState<HomeSwipeableBody> {
     return PageView(
       controller: _pageController,
       onPageChanged: (index) async {
-        // Actualizamos la posición local de inmediato
         _localPageIndex = index;
-        
+
         final view = FolderDefaultViewX.fromPage(index);
         if (view == widget.preference) return;
 
-        await ref
-            .read(_preferenceProvider.notifier)
-            .updatePreference(view);
+        // 🛡️ Al cambiar de pestaña por swipe, desenfocar
+        FocusScope.of(context).unfocus();
+
+        await ref.read(_preferenceProvider.notifier).updatePreference(view);
       },
       children: [
         FoldersSection(parentId: widget.folder?.id),

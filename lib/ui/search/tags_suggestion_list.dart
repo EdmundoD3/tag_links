@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/models/tag.dart';
-import 'package:tag_links/ui/search/search_bar.dart';
 import 'package:tag_links/ui/text/empty_tags_text.dart';
 
-class TagsSuggestionList extends SuggestionListBuilder<Tag> {
+/// Widget que renderiza la lista de sugerencias de tags.
+/// Ahora es un StatelessWidget normal, NO extiende una clase abstracta.
+class TagsSuggestionList extends StatelessWidget {
+  final AsyncValue<List<Tag>> itemsSuggestion;
+  final void Function(Tag item) onItemSelected;
+
   const TagsSuggestionList({
     super.key,
-    required super.itemsSuggestion, // Pasa los datos al padre
-    required super.onItemSelected,  // Pasa el callback al padre
+    required this.itemsSuggestion,
+    required this.onItemSelected,
   });
 
   @override
   Widget build(BuildContext context) {
-    // Usamos 'itemsSuggestion' que viene heredado de la clase abstracta
     return itemsSuggestion.when(
       data: (tags) => _whenData(tags, context),
       loading: _loading,
@@ -27,7 +30,7 @@ class TagsSuggestionList extends SuggestionListBuilder<Tag> {
   Widget _whenData(List<Tag> tags, BuildContext context) {
     if (tags.isEmpty) {
       return const Padding(
-        padding: EdgeInsets.all(8), 
+        padding: EdgeInsets.all(8),
         child: EmptyTagsText(),
       );
     }
@@ -39,7 +42,7 @@ class TagsSuggestionList extends SuggestionListBuilder<Tag> {
 
   Widget _listTags(List<Tag> tags, BuildContext context) {
     final theme = Theme.of(context);
-    return ListView.builder( // Cambiado a builder por rendimiento
+    return ListView.builder(
       shrinkWrap: true,
       physics: const BouncingScrollPhysics(),
       itemCount: tags.length,
@@ -50,7 +53,7 @@ class TagsSuggestionList extends SuggestionListBuilder<Tag> {
             tag.title,
             style: TextStyle(color: theme.textTheme.labelSmall?.color),
           ),
-          onTap: () => onItemSelected(tag), // Usamos el método del padre
+          onTap: () => onItemSelected(tag),
         );
       },
     );
@@ -62,5 +65,4 @@ class TagsSuggestionList extends SuggestionListBuilder<Tag> {
       child: Center(child: CircularProgressIndicator()),
     );
   }
-
 }

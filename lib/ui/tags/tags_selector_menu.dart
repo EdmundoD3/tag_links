@@ -8,8 +8,8 @@ import 'package:tag_links/ui/search/tags_suggestion_list.dart';
 import 'package:tag_links/ui/tags/show_create_tag_modal.dart';
 import 'package:tag_links/ui/tags/tag_selected_container.dart';
 
-class TagsSelectorMenu extends ConsumerWidget {
-  final List<Tag> tags; // tags que contiene la nota o el folder o buscador
+class TagsSelectorMenu extends ConsumerStatefulWidget {
+  final List<Tag> tags;
   final void Function(Tag tag) onTagSelected;
   final ValueChanged<Tag> onDeletedTag;
   final void Function()? onClearSave;
@@ -22,82 +22,98 @@ class TagsSelectorMenu extends ConsumerWidget {
     this.onClearSave,
   });
 
-@override
-Widget build(BuildContext context, WidgetRef ref) {
-  final queryText = ref.watch(tagSearchTextProvider);
-  final tagsSuggestion = ref.watch(tagsProvider);
-  final bool canAddMoreTags = tags.length < LimitAppConfig.maxTagsPerItem;
+  @override
+  ConsumerState<TagsSelectorMenu> createState() => _TagsSelectorMenuState();
+}
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      // 1. Usamos AnimatedOpacity para dar feedback visual suave
-      AnimatedOpacity(
-        duration: const Duration(milliseconds: 300),
-        opacity: canAddMoreTags ? 1.0 : 0.5, // Opacamos al 50% si llegó al límite
-        child: AbsorbPointer(
-          absorbing: !canAddMoreTags, // Evita que los toques traspasen si está bloqueado
-          child: SearchListBar<Tag>(
-            queryText: queryText,
-            enabled: canAddMoreTags,
-            itemsSuggestion: tagsSuggestion,
-            onChangeText: (text) {
-              if (text.length <= LimitAppConfig.tagMaxLength) {
-                ref.read(tagSearchTextProvider.notifier).state = text;
-              }
-            },
-            onTagSelected: (Tag tag) {
-              if (canAddMoreTags) {
-                onTagSelected(tag);
-                ref.read(tagSearchTextProvider.notifier).state = '';
-              }
-            },
-            suggestionBuilder: TagsSuggestionList(
+class _TagsSelectorMenuState extends ConsumerState<TagsSelectorMenu> {
+  late final FocusNode _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode = FocusNode();
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  bool get _canAddMoreTags => widget.tags.length < LimitAppConfig.maxTagsPerItem;
+
+  void _onTagSelected(Tag tag) {
+    if (!_canAddMoreTags) return;
+    widget.onTagSelected(tag);
+    ref.read(tagSearchTextProvider.notifier).state = '';
+    _focusNode.unfocus();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final queryText = ref.watch(tagSearchTextProvider);
+    final tagsSuggestion = ref.watch(tagsProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AnimatedOpacity(
+          duration: const Duration(milliseconds: 300),
+          opacity: _canAddMoreTags ? 1.0 : 0.5,
+          child: AbsorbPointer(
+            absorbing: !_canAddMoreTags,
+            child: SearchListBar<Tag>(
+              queryText: queryText,
+              enabled: _canAddMoreTags,
+              focusNode: _focusNode,
               itemsSuggestion: tagsSuggestion,
-              onItemSelected: (Tag tag) {
-                if (canAddMoreTags) {
-                  onTagSelected(tag);
-                  ref.read(tagSearchTextProvider.notifier).state = '';
+              onChangeText: (text) {
+                if (text.length <= LimitAppConfig.tagMaxLength) {
+                  ref.read(tagSearchTextProvider.notifier).state = text;
                 }
               },
-            ),
-            addIconBtnCtrl: canAddMoreTags
-                ? (tagName) async {
-                    onClearSave?.call();
-                    final newTag = await showCreateTagModal(
-                      context: context,
-                      ref: ref,
-                      initText: tagName,
-                    );
-                    if (newTag != null) onTagSelected(newTag);
-                  }
-                : null,
-                counterWidget: Text(
-              "${tags.length}/${LimitAppConfig.maxTagsPerItem}",
-              style: TextStyle(
-                fontSize: 12,
-                color: canAddMoreTags ? Colors.black54 : Colors.orange,
-                fontWeight: canAddMoreTags ? FontWeight.normal : FontWeight.bold,
+              onItemSelected: _onTagSelected,
+              suggestionBuilder: (context, itemsSuggestion, onItemSelected) {
+                return TagsSuggestionList(
+                  itemsSuggestion: itemsSuggestion,
+                  onItemSelected: onItemSelected,
+                );
+              },
+              addIconBtnCtrl: _canAddMoreTags
+                  ? (tagName) async {
+                      widget.onClearSave?.call();
+                      final newTag = await showCreateTagModal(
+                        context: context,
+                        ref: ref,
+                        initText: tagName,
+                      );
+                      if (newTag != null) _onTagSelected(newTag);
+                    }
+                  : null,
+              counterWidget: Text(
+                "${widget.tags.length}/${LimitAppConfig.maxTagsPerItem}",
+                style: TextStyle(
+                  fontSize: 12,
+                  color: _canAddMoreTags ? Colors.black54 : Colors.orange,
+                  fontWeight: _canAddMoreTags ? FontWeight.normal : FontWeight.bold,
+                ),
               ),
             ),
           ),
         ),
-      ),
-
-      const SizedBox(height: 8),
-
-      // Los tags seleccionados NO se opacan, para que sigan siendo legibles y editables
-      TagsSelectedContainer(
-        tags: tags,
-        onDeleted: onDeletedTag,
-        onGetNewTag: (tag) {
-          if (canAddMoreTags) {
-            onClearSave?.call();
-            onTagSelected(tag);
-          }
-        },
-      ),
-    ],
-  );
-}
+        const SizedBox(height: 8),
+        TagsSelectedContainer(
+          tags: widget.tags,
+          onDeleted: widget.onDeletedTag,
+          onGetNewTag: (tag) {
+            if (_canAddMoreTags) {
+              widget.onClearSave?.call();
+              widget.onTagSelected(tag);
+            }
+          },
+        ),
+      ],
+    );
+  }
 }
