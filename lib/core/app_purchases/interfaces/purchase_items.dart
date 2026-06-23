@@ -12,6 +12,7 @@ enum PurchaseItems {
   }
 }
 
+
 class PurchaseStatus {
   final PurchaseOwnershipStatus status;
   final int? expirationDate;

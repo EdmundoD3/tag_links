@@ -13,7 +13,7 @@ final premiumStatusProvider = NotifierProvider<PremiumNotifier, bool>(
 
 class PremiumNotifier extends Notifier<bool> {
   StreamSubscription<List<PurchaseDetails>>? _subscription;
-  final _purchaseManager = InAppPurchaseManager();
+  final _purchaseManager = MobileInAppPurchaseManager();
 
   @override
   bool build() {

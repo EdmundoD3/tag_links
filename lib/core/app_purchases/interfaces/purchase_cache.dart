@@ -4,34 +4,27 @@ import 'package:tag_links/core/app_purchases/interfaces/purchase_items.dart';
 const delayCheckPurchase = Duration(days: 7);
 
 class PurchaseCache {
-  final Map<PurchaseItems, PurchaseStatus> purchases;
-  const PurchaseCache({required this.purchases});
+  final PurchaseStatus premium;
+  const PurchaseCache({required this.premium});
   Map<String, dynamic> toJson() {
-    return {
-      for (final entry in purchases.entries) entry.key.id: entry.value.toJson(),
-    };
+    return {'premium': premium.toJson()};
+  }
+
+  factory PurchaseCache.fromPurchases(
+    Map<PurchaseItems, PurchaseStatus> purchases,
+  ) {
+    final premium =
+        purchases[PurchaseItems.premiumYearly] ??
+        PurchaseStatus.notOwned;
+
+    return PurchaseCache(
+      premium: premium,
+    );
   }
 
   factory PurchaseCache.fromJson(Map<String, dynamic> json) {
-    final purchases = <PurchaseItems, PurchaseStatus>{};
-    for (final item in PurchaseItems.values) {
-      final data = json[item.id];
-      if (data is Map) {
-        purchases[item] = PurchaseStatus.fromJson(
-          Map<String, dynamic>.from(data),
-        );
-      }
-    }
-    return PurchaseCache(purchases: purchases);
-  }
-  PurchaseStatus getStatus(PurchaseItems item) {
-    return purchases[item] ?? PurchaseStatus.notOwned;
+    return PurchaseCache(premium: PurchaseStatus.fromJson(json['premium']));
   }
 
-  bool hasPurchase(PurchaseItems item) {
-    return getStatus(item).isActive;
-  }
-
-  bool get isPremium =>
-      purchases[PurchaseItems.premiumYearly]?.isActive ?? false;
+  bool get isPremium => premium.isActive;
 }
