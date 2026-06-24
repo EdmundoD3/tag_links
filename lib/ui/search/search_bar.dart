@@ -18,6 +18,7 @@ class SearchListBar<T> extends StatefulWidget {
   final Widget? counterWidget;
   final bool enabled;
   final FocusNode focusNode;
+  final String hintText;
 
   /// Builder para renderizar la lista de sugerencias.
   final Widget Function(
@@ -37,7 +38,7 @@ class SearchListBar<T> extends StatefulWidget {
     required this.suggestionBuilder,
     this.counterWidget,
     this.enabled = true,
-    required this.focusNode,
+    required this.focusNode, required this.hintText,
   });
 
   @override
@@ -143,6 +144,7 @@ class _SearchListBarState<T> extends State<SearchListBar<T>> {
           iconLeftButton: widget.iconLeftBtn,
           suffixRightIconBtnCtrl: widget.addIconBtnCtrl,
           counterWidget: widget.counterWidget,
+          hintText: widget.hintText,
         ),
         const SizedBox(height: 8),
         if (showSuggestions)
@@ -169,6 +171,7 @@ class _SearchInput extends StatelessWidget {
   final VoidCallback onTapField; // 🆕
   final Widget? counterWidget;
   final bool enabled;
+  final String hintText;
 
   const _SearchInput({
     required this.controller,
@@ -178,7 +181,7 @@ class _SearchInput extends StatelessWidget {
     this.iconLeftButton,
     required this.suffixRightIconBtnCtrl,
     required this.enabled,
-    this.counterWidget,
+    this.counterWidget, required this.hintText,
   });
 
   @override
@@ -203,7 +206,7 @@ class _SearchInput extends StatelessWidget {
             ),
             filled: true,
             icon: iconLeftButton,
-            hintText: context.tr(TKeys.ui.searchHint, fallback: 'Buscar...'),
+            hintText: hintText,
             hintStyle: TextStyle(color: theme.textTheme.labelSmall?.color),
             prefixIcon: Icon(Icons.search, color: theme.hintColor),
             suffixIcon: value.text.isNotEmpty ? _suffixIcon(theme, value) : null,

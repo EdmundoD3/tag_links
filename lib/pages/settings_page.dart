@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/core/ads/show_ad_management_menu.dart';
-import 'package:tag_links/core/app_purchases/premium_sales_sheet.dart';
+import 'package:tag_links/core/app_purchases/widget/premium_sales_sheet.dart';
 import 'package:tag_links/core/auth/account_sync_tile.dart';
 import 'package:tag_links/core/coffe/invitame_un_caffe.dart';
 import 'package:tag_links/core/locate/lang_selector.dart';

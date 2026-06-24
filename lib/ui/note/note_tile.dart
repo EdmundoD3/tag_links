@@ -241,7 +241,7 @@ class _NoteTileCard extends StatelessWidget {
             const SizedBox(height: 6),
             ..._linkPreviewWidget(theme, note),
             const SizedBox(height: 10),
-            VisualExpandableText(
+            if(note.content.isNotEmpty) VisualExpandableText(
               text: note.content,
               isExpanded: isExpanded,
               decorateColor: _decorateColor,

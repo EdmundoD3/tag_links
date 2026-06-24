@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/models/folder_preference.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/state/folders_provider.dart';
@@ -89,6 +90,7 @@ class _SearchBarInternal extends ConsumerWidget {
       queryText: queryText,
       itemsSuggestion: tagsAsync,
       focusNode: focusNode,
+      hintText: ref.tr(TKeys.ui.searchHint, fallback: 'Buscar...'),
       iconLeftBtn: SwitchFavorite(
         isFavorite: ref.read(searchQueryProvider).isFavorite,
         onChanged: () {

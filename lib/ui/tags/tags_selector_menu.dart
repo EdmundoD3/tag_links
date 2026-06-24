@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tag_links/config/limit_config.dart';
+import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:tag_links/models/tag.dart';
 import 'package:tag_links/state/tags_provider.dart';
 import 'package:tag_links/ui/search/search_bar.dart';
@@ -68,6 +69,7 @@ class _TagsSelectorMenuState extends ConsumerState<TagsSelectorMenu> {
               enabled: _canAddMoreTags,
               focusNode: _focusNode,
               itemsSuggestion: tagsSuggestion,
+              hintText: ref.tr(TKeys.ui.searchHint, fallback: 'Buscar...'),
               onChangeText: (text) {
                 if (text.length <= LimitAppConfig.tagMaxLength) {
                   ref.read(tagSearchTextProvider.notifier).state = text;
