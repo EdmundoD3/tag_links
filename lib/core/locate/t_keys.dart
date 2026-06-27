@@ -1,19 +1,20 @@
 // lib/core/locate/t_keys.dart
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/core/locate/translations/actions_translations.dart';
-import 'package:tag_links/core/locate/translations/ads_translates.dart';
-import 'package:tag_links/core/locate/translations/alert_translations.dart';
-import 'package:tag_links/core/locate/translations/auth_translations.dart';
-import 'package:tag_links/core/locate/translations/errors_translations.dart';
-import 'package:tag_links/core/locate/translations/form_translations.dart';
-import 'package:tag_links/core/locate/translations/page_translations.dart';
-import 'package:tag_links/core/locate/translations/premium_translations.dart';
-import 'package:tag_links/core/locate/translations/sync_translations.dart';
-import 'package:tag_links/core/locate/translations/tags_translations.dart';
-import 'package:tag_links/core/locate/translations/ui_translate.dart';
+
 import 'app_lang.dart';
 import 'lang_provider.dart';
+import 'translations/actions_translations.dart';
+import 'translations/ads_translates.dart';
+import 'translations/alert_translations.dart';
+import 'translations/auth_translations.dart';
+import 'translations/errors_translations.dart';
+import 'translations/form_translations.dart';
+import 'translations/page_translations.dart';
+import 'translations/premium_translations.dart';
+import 'translations/sync_translations.dart';
+import 'translations/tags_translations.dart';
+import 'translations/ui_translate.dart';
 
 // La extensión vive aquí para que siempre esté disponible al importar TKeys
 extension RefTranslate on WidgetRef {

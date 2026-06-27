@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/core/locate/t_keys.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import '../locate/t_keys.dart';
 
 final Uri _donationUrl = Uri.parse('https://buymeacoffee.com/Notita');
 

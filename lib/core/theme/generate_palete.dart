@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tag_links/core/theme/app_theme.dart';
+import 'app_theme.dart';
 
 Map<AppPalette, ThemeData> _palettes = {
   AppPalette.light: AppTheme.lightTheme,

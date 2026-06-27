@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/core/ads/ads_disable_provider.dart';
-import 'package:tag_links/core/ads/show_ad_management_menu.dart';
+
+import '../ads/ads_disable_provider.dart';
+import '../ads/show_ad_management_menu.dart';
+
 
 class PremiumLocked extends ConsumerWidget {
   final bool locked;

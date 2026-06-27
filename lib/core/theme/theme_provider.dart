@@ -1,7 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tag_links/core/theme/app_theme.dart';
-import 'package:tag_links/data/shared_prefs_provider.dart';
+
+import '../../data/shared_prefs_provider.dart';
+import 'app_theme.dart';
+
 
 // --- El Almacenamiento ---
 final _paletteStorageProvider = Provider((ref) {

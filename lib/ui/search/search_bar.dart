@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/core/locate/t_keys.dart';
 
 /// Widget de búsqueda con lista de sugerencias.
 ///
@@ -189,7 +188,7 @@ class _SearchInput extends StatelessWidget {
     final theme = Theme.of(context);
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: controller,
-      builder: (_, value, __) {
+      builder: (_, value, _) {
         return TextField(
           enabled: enabled,
           controller: controller,

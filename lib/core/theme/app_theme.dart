@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tag_links/core/theme/generate_palete.dart';
+import 'generate_palete.dart';
 
 const defaultTheme = AppPalette.lavender;
 

@@ -1,7 +1,8 @@
 import 'package:intl/intl.dart';
-import 'package:tag_links/core/locate/app_lang.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tag_links/core/locate/lang_provider.dart';
+
+import '../app_lang.dart';
+import '../lang_provider.dart';
 
 extension RefFormat on WidgetRef {
   /// Formatea un timestamp o DateTime según el idioma actual del provider

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:tag_links/core/decorate_color/decorated_color_themes.dart';
-import 'package:tag_links/core/premium/premium_locker.dart';
+
+import '../premium/premium_locker.dart';
+import 'decorated_color_themes.dart';
+
 
 class ColorPickerAppBarButton extends StatelessWidget {
   final String? selectedColor;
