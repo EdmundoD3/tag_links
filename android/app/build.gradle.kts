@@ -16,16 +16,12 @@ plugins {
 
 android {
     namespace = "com.papitas.notita"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
     // 2. CONFIGURACIÓN DE FIRMAS
@@ -51,10 +47,19 @@ android {
             // 3. USAR LA FIRMA DE RELEASE PARA PRODUCCIÓN
             signingConfig = signingConfigs.getByName("release")
         }
+
         debug {
             // Mantiene la firma de debug para desarrollo diario
             signingConfig = signingConfigs.getByName("debug")
         }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(
+            org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+        )
     }
 }
 

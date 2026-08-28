@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:share_handler/share_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:tag_links/config/google_sign_in_config.dart';
@@ -69,14 +68,13 @@ class _MyAppState extends ConsumerState<MyApp> {
   @override
   void initState() {
     super.initState();
+
     MobileAds.instance.initialize();
 
     _subHandleUrl = ShareListener.stream.listen(_handleMedia);
+
     ShareListener.getInitial().then(_handleMedia);
 
-    // 2. 🚀 CARGA DE ADS INTELIGENTE
-    // No necesitamos PostFrameCallback para despertar al notifier porque
-    // el estado ya es accesible sincrónicamente gracias al override.
     _initAdsLogic();
   }
 
@@ -103,14 +101,16 @@ class _MyAppState extends ConsumerState<MyApp> {
     });
   }
 
-  void _handleMedia(SharedMedia? media) {
-    if (media == null) return;
-    return handleMedia(media, ref);
+  void _handleMedia(String? text) {
+    if (text == null) return;
+
+    handleMedia(text, ref);
   }
 
   @override
   void dispose() {
     _subHandleUrl.cancel();
+
     super.dispose();
   }
 
@@ -135,7 +135,6 @@ class MainPageRouter extends ConsumerStatefulWidget {
 }
 
 class _MainPageRouterState extends ConsumerState<MainPageRouter> {
-
   @override
   void initState() {
     super.initState();
